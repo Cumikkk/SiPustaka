@@ -9,7 +9,7 @@
 
           <!-- SUMMARY CARDS SAYA (MATCHING DASHBOARD SISWA ORDER) -->
           <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-12 col-sm-6 col-md-4">
               <div class="stat-card-item stat-blue">
                 <div>
                   <div class="stat-title">TOTAL PINJAMAN AKTIF</div>
@@ -18,7 +18,7 @@
                 <div class="icon-box-stat"><i class="bi bi-journal-bookmark-fill"></i></div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-sm-6 col-md-4">
               <div class="stat-card-item stat-red">
                 <div>
                   <div class="stat-title">TOTAL PENGEMBALIAN TERLAMBAT</div>
@@ -27,7 +27,7 @@
                 <div class="icon-box-stat"><i class="bi bi-exclamation-triangle-fill"></i></div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-sm-6 col-md-4">
               <div class="stat-card-item stat-green">
                 <div>
                   <div class="stat-title">TOTAL BUKU DIBACA</div>
@@ -41,7 +41,7 @@
           <!-- TABLE & FILTER PEMINJAMAN SISWA -->
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="peminjaman-siswa-entries" class="form-select form-select-sm w-auto rounded-3" onchange="peminjamanSiswaCurrentPage = 1; renderPeminjamanSiswaTable();">
@@ -54,13 +54,13 @@
                   <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-md-5 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-5">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="peminjaman-siswa-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul buku..." onkeyup="peminjamanSiswaCurrentPage = 1; renderPeminjamanSiswaTable();">
                 </div>
               </div>
-              <div class="col-md-4 col-sm-12">
+              <div class="col-12 col-sm-12 col-lg-4">
                 <select id="peminjaman-siswa-filter-status" class="form-select rounded-3" onchange="peminjamanSiswaCurrentPage = 1; renderPeminjamanSiswaTable();">
                   <option value="semua">Semua Status Peminjaman</option>
                   <option value="dipinjam">Dipinjam</option>
@@ -123,7 +123,7 @@
           <!-- TABLE & FILTER PEMINJAMAN -->
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="peminjaman-admin-entries" class="form-select form-select-sm w-auto rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
@@ -137,20 +137,20 @@
                 </div>
               </div>
 
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="peminjaman-admin-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari Siswa atau Judul Buku..." onkeyup="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
                 </div>
               </div>
 
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="peminjaman-admin-filter-kelas" class="form-select rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
                   <option value="semua">Semua Kelas</option>
                 </select>
               </div>
 
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="peminjaman-admin-filter-status" class="form-select rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
                   <option value="semua">Semua Status</option>
                   <option value="dipinjam">Dipinjam (Aktif)</option>

@@ -17,7 +17,7 @@
             <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
               <!-- TOOLBAR SATU BARIS MENGIKUTI STANDAR DESAIN -->
               <div class="row g-3 mb-4 align-items-center">
-                <div class="col-md-3 col-sm-6">
+                <div class="col-12 col-sm-6 col-lg-3">
                   <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small fw-semibold">Tampilkan:</span>
                     <select id="buku-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
@@ -31,20 +31,20 @@
                   </div>
                 </div>
 
-                <div class="col-md-4 col-sm-6">
+                <div class="col-12 col-sm-6 col-lg-4">
                   <div class="input-group">
                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                     <input type="text" id="buku-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul, penulis, ISBN..." onkeyup="bukuTableCurrentPage = 1; renderBukuTable();">
                   </div>
                 </div>
 
-                <div class="col-md-3 col-sm-6">
+                <div class="col-12 col-sm-6 col-lg-3">
                   <select id="buku-filter-kategori" class="form-select rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
                     <option value="semua">Semua Kategori</option>
                   </select>
                 </div>
 
-                <div class="col-md-2 col-sm-6">
+                <div class="col-12 col-sm-6 col-lg-2">
                   <select id="buku-filter-status" class="form-select rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
                     <option value="semua">Semua Status</option>
                     <option value="tersedia">Tersedia</option>
@@ -106,7 +106,7 @@
 
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-lg-2 col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-2">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="anggota-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
@@ -119,18 +119,18 @@
                   <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-lg-4 col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-4">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="anggota-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari NIS, Nama, Kelas, Email..." onkeyup="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
                 </div>
               </div>
-              <div class="col-lg-3 col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="anggota-filter-kelas" class="form-select rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
                   <option value="semua">Semua Kelas</option>
                 </select>
               </div>
-              <div class="col-lg-3 col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="anggota-filter-status" class="form-select rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
                   <option value="semua">Semua Status</option>
                   <option value="aktif">Aktif</option>
@@ -190,7 +190,7 @@
 
           <!-- 4 STAT CARDS LAPORAN -->
           <div class="row g-3 mb-4">
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-xl-3">
               <div class="stat-card-item stat-blue">
                 <div>
                   <div class="stat-title">TOTAL PEMINJAMAN</div>
@@ -200,7 +200,7 @@
               </div>
             </div>
 
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-xl-3">
               <div class="stat-card-item stat-green">
                 <div>
                   <div class="stat-title">SUDAH DIKEMBALIKAN</div>
@@ -210,7 +210,7 @@
               </div>
             </div>
 
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-xl-3">
               <div class="stat-card-item stat-orange">
                 <div>
                   <div class="stat-title">SEDANG DIPINJAM</div>
@@ -220,7 +220,7 @@
               </div>
             </div>
 
-            <div class="col-md-3 col-sm-6">
+            <div class="col-12 col-sm-6 col-xl-3">
               <div class="stat-card-item stat-red">
                 <div>
                   <div class="stat-title">TOTAL PENGEMBALIAN TERLAMBAT</div>
@@ -234,7 +234,7 @@
           <!-- TABLE RINGKASAN SIRKULASI PER BUKU -->
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="laporan-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="laporanCurrentPage = 1; executeRenderLaporanTable();">
@@ -248,14 +248,14 @@
                 </div>
               </div>
 
-              <div class="col-md-5 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-5">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="laporan-search-query" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku atau Penulis..." onkeyup="laporanCurrentPage = 1; executeRenderLaporanTable();">
                 </div>
               </div>
 
-              <div class="col-md-4 col-sm-12">
+              <div class="col-12 col-sm-12 col-lg-4">
                 <select id="laporan-filter-kategori" class="form-select rounded-3" onchange="laporanCurrentPage = 1; executeRenderLaporanTable();">
                   <option value="semua">Semua Kategori</option>
                 </select>
@@ -310,7 +310,7 @@
 
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-4 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="petugas-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="petugasTableCurrentPage = 1; executeRenderPetugasTable();">
@@ -323,7 +323,7 @@
                   <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-md-8 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-9">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="petugas-search-query" class="form-control border-start-0 rounded-end-3" placeholder="Cari Nama Lengkap, Username, Email..." onkeyup="petugasTableCurrentPage = 1; executeRenderPetugasTable();">

@@ -625,7 +625,7 @@
           <!-- TOOLBAR FILTER -->
           <div class="bg-light p-3 border-top border-bottom">
             <div class="row g-2 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-md-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-secondary small fw-medium">Tampilkan:</span>
                   <select id="pilih-siswa-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
@@ -636,13 +636,13 @@
                   <span class="text-secondary small">entri</span>
                 </div>
               </div>
-              <div class="col-md-5 col-sm-6">
+              <div class="col-12 col-sm-6 col-md-5">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="pilih-siswa-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari nama atau NIS..." onkeyup="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
                 </div>
               </div>
-              <div class="col-md-4 col-sm-12">
+              <div class="col-12 col-sm-12 col-md-4">
                 <select id="pilih-siswa-kelas" class="form-select rounded-3" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
                   <option value="semua">Semua Kelas</option>
                 </select>
@@ -668,7 +668,7 @@
           </div>
         </div>
 
-        <div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between align-items-center border-top">
+        <div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between align-items-center border-top flex-wrap gap-2">
           <span class="text-muted small fw-medium" id="pilih-siswa-info">Menampilkan 0 dari 0 siswa</span>
           <ul class="pagination pagination-sm m-0 gap-1" id="pilih-siswa-pagination"></ul>
         </div>
@@ -697,7 +697,7 @@
           <!-- TOOLBAR FILTER -->
           <div class="bg-light p-3 border-top border-bottom">
             <div class="row g-2 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-md-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-secondary small fw-medium">Tampilkan:</span>
                   <select id="pilih-buku-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
@@ -708,13 +708,13 @@
                   <span class="text-secondary small">entri</span>
                 </div>
               </div>
-              <div class="col-md-5 col-sm-6">
+              <div class="col-12 col-sm-6 col-md-5">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="pilih-buku-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul atau ISBN..." onkeyup="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
                 </div>
               </div>
-              <div class="col-md-4 col-sm-12">
+              <div class="col-12 col-sm-12 col-md-4">
                 <select id="pilih-buku-kategori" class="form-select rounded-3" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
                   <option value="semua">Semua Kategori</option>
                 </select>

@@ -135,6 +135,7 @@
   /* GLOBAL ROUTER & SUBVIEW SWITCHER */
   function switchSubView(subviewName) {
     try {
+      closeMobileSidebar();
       document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.sidebar-subnav-item').forEach(el => el.classList.remove('active'));
 
@@ -570,9 +571,23 @@
   function toggleMobileSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
-    if (sidebar && backdrop) {
+    if (sidebar) {
+      sidebar.classList.toggle('mobile-open');
       sidebar.classList.toggle('show');
+    }
+    if (backdrop) {
       backdrop.classList.toggle('show');
+    }
+  }
+
+  function closeMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) {
+      sidebar.classList.remove('mobile-open', 'show');
+    }
+    if (backdrop) {
+      backdrop.classList.remove('show');
     }
   }
 

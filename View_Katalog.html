@@ -21,7 +21,7 @@
           <div id="katalog-toolbar-grid" class="card border-0 rounded-4 shadow-sm p-4 mb-4">
             <div class="row g-3 align-items-center">
               <!-- Limit Selector -->
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="katalog-grid-entries" class="form-select form-select-sm w-auto rounded-3" onchange="catalogGridCurrentPage = 1; renderCatalogView();">
@@ -35,7 +35,7 @@
               </div>
 
               <!-- Search Bar -->
-              <div class="col-md-4 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-4">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="katalog-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul buku, penulis, ISBN..." onkeyup="filterKatalogData('grid')">
@@ -43,14 +43,14 @@
               </div>
               
               <!-- Filter Kategori (Dinamis dari Database) -->
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="katalog-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData('grid')">
                   <option value="semua">Semua Kategori</option>
                 </select>
               </div>
 
               <!-- Filter Stok -->
-              <div class="col-md-2 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-2">
                 <select id="katalog-filter-stok" class="form-select rounded-3" onchange="filterKatalogData('grid')">
                   <option value="semua">Semua Status Stok</option>
                   <option value="tersedia">Tersedia Saja</option>
@@ -86,7 +86,7 @@
             
             <!-- TOOLBAR SATU BARIS MENGIKUTI MODEL PEMINJAMAN SAYA -->
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="katalog-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="catalogTableCurrentPage = 1; renderCatalogView();">
@@ -100,20 +100,20 @@
                 </div>
               </div>
               
-              <div class="col-md-4 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-4">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="katalog-table-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul, penulis, ISBN..." onkeyup="filterKatalogData('table')">
                 </div>
               </div>
               
-              <div class="col-md-3 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-3">
                 <select id="katalog-table-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData('table')">
                   <option value="semua">Semua Kategori</option>
                 </select>
               </div>
 
-              <div class="col-md-2 col-sm-6">
+              <div class="col-12 col-sm-6 col-lg-2">
                 <select id="katalog-table-filter-stok" class="form-select rounded-3" onchange="filterKatalogData('table')">
                   <option value="semua">Semua Stok</option>
                   <option value="tersedia">Tersedia</option>

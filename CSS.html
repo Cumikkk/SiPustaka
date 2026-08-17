@@ -699,28 +699,103 @@
      MOBILE FIRST — min-width priority
   ======================================================= */
 
-  /* --- Fluid & Global --- */
-  .stat-number { font-size: clamp(1.2rem, 4vw, 2rem) !important; }
-  .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
-  
+  /* --- Fluid & Global Responsiveness --- */
+  .stat-number { font-size: clamp(1.25rem, 3.5vw, 1.85rem) !important; }
+  .table-responsive { 
+    overflow-x: auto !important; 
+    -webkit-overflow-scrolling: touch !important; 
+    border-radius: 10px;
+  }
+  .table-responsive table {
+    min-width: 600px;
+  }
 
   /* --- Mobile Sidebar Backdrop Overlay --- */
   .sidebar-backdrop {
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(15, 23, 42, 0.55);
-    backdrop-filter: blur(3px);
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
     z-index: 1045;
     transition: opacity 0.3s ease;
   }
-  .sidebar-backdrop.show { display: block; }
+  .sidebar-backdrop.show { display: block !important; }
 
-  /* =========================================
-     BASE (< 768px) — Mobile
-  ========================================= */
+  /* ========================================================
+     1. BASE / XS (< 576px) — Mobile Smartphone
+  ======================================================== */
+  @media (max-width: 575.98px) {
+    /* Topbar compact */
+    .topbar {
+      padding: 0 12px !important;
+      height: 54px !important;
+      min-height: 54px !important;
+    }
+    .topbar-right-actions {
+      gap: 6px !important;
+      margin-right: 4px !important;
+    }
+    #user-role-title, #user-display-name { display: none !important; }
+    .icon-btn-circle {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 0.8rem !important;
+    }
+    .user-avatar-box {
+      width: 32px !important;
+      height: 32px !important;
+      font-size: 0.8rem !important;
+    }
+
+    /* Content padding mobile */
+    .content-body { padding: 12px !important; }
+
+    /* Modals & Dialogs on Mobile */
+    .modal-dialog { 
+      margin: 8px !important; 
+      max-width: calc(100% - 16px) !important; 
+    }
+    .modal-body { padding: 14px !important; }
+    .modal-footer {
+      flex-direction: column-reverse !important;
+      gap: 8px !important;
+      padding: 12px 14px 16px !important;
+    }
+    .modal-footer .btn {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 10px 14px !important;
+    }
+
+    /* Stat Cards & Banner */
+    .stat-card-item {
+      padding: 12px 14px !important;
+      border-radius: 12px !important;
+    }
+    .icon-box-stat {
+      width: 40px !important;
+      height: 40px !important;
+      font-size: 1.1rem !important;
+    }
+    .dashboard-banner-card {
+      flex-direction: column !important;
+      padding: 1.15rem !important;
+      gap: 0.85rem !important;
+    }
+    .banner-text-side { max-width: 100% !important; }
+    .banner-quote-glass { max-width: 100% !important; text-align: left !important; }
+
+    /* Touch targets */
+    .btn, .form-control, .form-select {
+      min-height: 40px;
+    }
+  }
+
+  /* ========================================================
+     2. MOBILE GENERAL (< 768px) — Sidebar Offcanvas
+  ======================================================== */
   @media (max-width: 767.98px) {
-
     /* Sidebar becomes off-canvas drawer */
     .sidebar {
       position: fixed;
@@ -731,102 +806,42 @@
       z-index: 1050;
       transform: translateX(-260px);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.15);
       overflow-y: auto;
     }
     .sidebar.mobile-open {
-      transform: translateX(0);
+      transform: translateX(0) !important;
     }
 
-    /* Main wrapper fills full width on mobile */
+    /* Main wrapper full width */
     .main-wrapper {
       margin-left: 0 !important;
       width: 100% !important;
     }
 
-    /* Hamburger toggle: visible on mobile */
-    #sidebar-mobile-toggle { display: inline-flex !important; align-items: center; justify-content: center; padding: 6px 10px !important; }
-
-    /* Topbar: compact on mobile */
-    .topbar {
-      padding: 0 16px !important;
-      height: 56px !important;
-      min-height: 56px !important;
+    /* Hamburger toggle: visible */
+    #sidebar-mobile-toggle { 
+      display: inline-flex !important; 
+      align-items: center; 
+      justify-content: center; 
+      padding: 6px 10px !important; 
     }
-    .topbar-right-actions {
-      gap: 8px !important;
-      margin-right: 12px !important;
-      display: flex !important;
-      align-items: center !important;
-    }
-    #user-role-title, #user-display-name { display: none !important; }
-    .icon-btn-circle {
-      width: 34px !important;
-      height: 34px !important;
-      font-size: 0.85rem !important;
-      flex-shrink: 0 !important;
-    }
-    .user-avatar-box {
-      width: 34px !important;
-      height: 34px !important;
-      font-size: 0.85rem !important;
-      flex-shrink: 0 !important;
-      margin-right: 4px !important;
-    }
-
-    /* Content padding: compact */
-    .content-body { padding: 14px !important; }
-
-    /* Modal: edge-to-edge on tiny screens */
-    .modal-dialog { margin: 8px !important; max-width: calc(100% - 16px) !important; }
-    .modal-body { padding: 14px !important; }
-
-    /* Login screen: stacked vertically */
-    .login-card-container { flex-direction: column !important; height: auto !important; min-height: 100vh; }
-    .login-hero-side { min-height: 180px !important; padding: 20px !important; flex: none !important; }
-    .login-form-side { padding: 24px 16px !important; flex: none !important; }
-    .hero-headline { font-size: 1.4rem !important; }
-
-    /* Dashboard banner: stack vertically */
-    .dashboard-banner-card {
-      flex-direction: column !important;
-      padding: 1.25rem !important;
-      gap: 1rem !important;
-    }
-    .banner-text-side { max-width: 100% !important; }
-    .banner-quote-glass { max-width: 100% !important; text-align: left !important; }
-
-    /* OTP boxes — smaller on tiny phones */
-    .otp-digit-box {
-      width: 38px !important;
-      height: 44px !important;
-      font-size: 1.15rem !important;
-    }
-
-    /* Stat cards: slightly smaller */
-    .icon-box-stat { width: 40px !important; height: 40px !important; font-size: 1.1rem !important; }
-    .stat-card-item { padding: 12px 14px !important; }
   }
 
-  /* Extra-small phones (< 400px): hide notification & help icon */
-  @media (max-width: 399.98px) {
-    .icon-btn-circle { display: none !important; }
-    #user-display-name { max-width: 80px !important; }
-  }
-
-  /* =========================================
-     SM (>= 576px) — Large phones / phablets
-  ========================================= */
+  /* ========================================================
+     3. SM (576px - 767.98px) — Phablets & Large Phones
+  ======================================================== */
   @media (min-width: 576px) and (max-width: 767.98px) {
-    .content-body { padding: 20px !important; }
+    .content-body { padding: 18px !important; }
+    .topbar { padding: 0 18px !important; }
   }
 
-  /* =========================================
-     MD (>= 768px) — Tablet & Desktop
-     Sidebar becomes PERMANENT fixed column
-  ========================================= */
+  /* ========================================================
+     4. MD (>= 768px) — Tablet Portrait & iPad
+     Sidebar becomes fixed permanent column
+  ======================================================== */
   @media (min-width: 768px) {
-    /* Hide hamburger on desktop */
+    /* Hide hamburger */
     #sidebar-mobile-toggle { display: none !important; }
 
     /* Sidebar stays fixed on left */
@@ -841,28 +856,29 @@
       overflow-y: auto;
     }
 
-    /* Main wrapper offset by sidebar width */
+    /* Main wrapper offset by sidebar */
     .main-wrapper {
       margin-left: 250px !important;
       width: calc(100% - 250px) !important;
     }
 
-    .content-body { padding: 24px 28px !important; }
+    .content-body { padding: 22px 26px !important; }
   }
 
-  /* =========================================
-     LG (>= 992px) — Laptop
-  ========================================= */
+  /* ========================================================
+     5. LG (>= 992px) — Laptop & Tablet Landscape
+  ======================================================== */
   @media (min-width: 992px) {
-    .content-body { padding: 28px 32px !important; }
+    .content-body { padding: 26px 30px !important; }
+    #user-role-title, #user-display-name { display: inline-block !important; }
   }
 
-  /* =========================================
-     XL (>= 1200px) — Wide Desktop
-  ========================================= */
+  /* ========================================================
+     6. XL (>= 1200px) — Wide Desktop / Monitor
+  ======================================================== */
   @media (min-width: 1200px) {
     .content-body {
-      padding: 32px 40px !important;
+      padding: 30px 38px !important;
     }
   }
 
