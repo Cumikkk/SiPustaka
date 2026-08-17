@@ -35,16 +35,18 @@
 
         html += '<tr>' +
           '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
-          '<td class="border-start">' +
+          '<td class="border-start text-start">' +
             '<div class="fw-bold text-dark">' + escapeHtml(t.nama_anggota) + '</div>' +
-            '<small class="text-muted d-block fw-semibold" style="font-size:0.72rem;">' + escapeHtml(t.kelas_anggota) + '</small>' +
+            '<small class="text-muted d-block" style="font-size:0.72rem;">Kelas ' + escapeHtml(t.kelas_anggota || '-') + '</small>' +
           '</td>' +
-          '<td class="border-start">' +
-            '<div class="fw-semibold text-dark">' + escapeHtml(t.nama_buku) + '</div>' +
-            '<small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ' + escapeHtml(t.kategori_buku) + '</small>' +
+          '<td class="border-start text-start">' +
+            '<div class="fw-bold text-dark">' + escapeHtml(t.nama_buku) + '</div>' +
+            '<small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ' + escapeHtml(t.kategori_buku || '-') + '</small>' +
           '</td>' +
-          '<td class="border-start text-center font-monospace small fw-semibold text-dark" style="width: 140px;">' + escapeHtml(periode) + '</td>' +
-          '<td class="border-start text-center" style="width: 130px;">' +
+          '<td class="border-start text-center">' +
+            '<div class="text-dark small fw-semibold">' + escapeHtml(periode) + '</div>' +
+          '</td>' +
+          '<td class="pe-3 text-center border-start">' +
             '<span class="badge ' + badgeClass + ' px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">' + escapeHtml(badgeText) + '</span>' +
             '<small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">' + escapeHtml(subText) + '</small>' +
           '</td>' +
