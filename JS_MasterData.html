@@ -1,56 +1,166 @@
 <script>
-    function renderBukuTable() {
+  let bukuDataCache = [];
+  let bukuTableCurrentPage = 1;
+
+  function changeBukuTablePage(newPage) {
+    bukuTableCurrentPage = newPage;
+    renderBukuTable();
+  }
+
+  function updateBukuCategoryDropdown(data) {
+    const selectKategori = document.getElementById('buku-filter-kategori');
+    if (!selectKategori) return;
+
+    const currentVal = selectKategori.value || 'semua';
+    const categoriesSet = new Set();
+
+    (data || []).forEach(b => {
+      if (b.kategori && String(b.kategori).trim()) {
+        categoriesSet.add(String(b.kategori).trim());
+      }
+    });
+
+    const sortedCategories = Array.from(categoriesSet).sort();
+
+    let html = '<option value="semua">Semua Kategori</option>';
+    sortedCategories.forEach(cat => {
+      const isSelected = cat.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      html += '<option value="' + escapeHtml(cat.toLowerCase()) + '" ' + isSelected + '>' + escapeHtml(cat) + '</option>';
+    });
+
+    selectKategori.innerHTML = html;
+  }
+
+  function renderBukuTable(forceReload = false) {
     const tbody = document.getElementById('buku-table-body');
     if (!tbody) return;
 
-    const search = document.getElementById('buku-search-input')?.value || '';
-    const kategori = document.getElementById('buku-filter-kategori')?.value || 'semua';
-    const status = document.getElementById('buku-filter-status')?.value || 'semua';
+    if (bukuDataCache.length === 0 || forceReload) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
+      
+      google.script.run
+        .withSuccessHandler(list => {
+          bukuDataCache = list || [];
+          updateBukuCategoryDropdown(bukuDataCache);
+          executeRenderBukuTable();
+        })
+        .withFailureHandler(err => {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
+        })
+        .getBukuListFull('', 'semua', 'semua');
+    } else {
+      executeRenderBukuTable();
+    }
+  }
 
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
+  function executeRenderBukuTable() {
+    const tbody = document.getElementById('buku-table-body');
+    if (!tbody) return;
 
-    google.script.run
-      .withSuccessHandler(list => {
-        if (!list || list.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
-          return;
-        }
+    const search = document.getElementById('buku-search-input') ? document.getElementById('buku-search-input').value.trim().toLowerCase() : '';
+    const kategori = document.getElementById('buku-filter-kategori') ? document.getElementById('buku-filter-kategori').value.toLowerCase() : 'semua';
+    const status = document.getElementById('buku-filter-status') ? document.getElementById('buku-filter-status').value : 'semua';
 
-        let html = '';
-        list.forEach((b, idx) => {
-          const stok = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
-          const isTersedia = stok > 0;
-          const statusBadge = isTersedia 
-            ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5">Tersedia</span>'
-            : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5">Dipinjam</span>';
+    const filtered = (bukuDataCache || []).filter(b => {
+      const matchSearch = !search ||
+        String(b.judul_buku || '').toLowerCase().includes(search) ||
+        String(b.penulis || '').toLowerCase().includes(search) ||
+        String(b.isbn || '').toLowerCase().includes(search);
 
-          const sampulUrl = b.url_sampul || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=120&auto=format&fit=crop&q=80';
+      const matchCategory = !kategori || kategori === 'semua' ||
+        String(b.kategori || '').toLowerCase() === kategori;
 
-          html += `
-            <tr>
-              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
-              <td><img src="${escapeHtml(sampulUrl)}" class="rounded-2 border" style="width: 42px; height: 56px; object-fit: cover;"></td>
-              <td>
-                <div class="fw-bold text-dark">${escapeHtml(b.judul_buku)}</div>
-                <small class="text-muted">ISBN: ${escapeHtml(b.isbn || '-')}</small>
-              </td>
-              <td class="border-start text-secondary">${escapeHtml(b.penulis || '-')}</td>
-              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(b.kategori || 'Fiksi')}</span></td>
-              <td class="border-start fw-bold text-dark">${stok}</td>
-              <td>${statusBadge}</td>
-              <td class="pe-3 text-end border-start">
-                <button class="btn btn-sm btn-outline-primary border-0 rounded-2 me-1" title="Edit" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
-                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus" onclick="handleDeleteBuku('${escapeHtml(b.id_buku)}')"><i class="bi bi-trash-fill"></i></button>
-              </td>
-            </tr>
-          `;
-        });
-        tbody.innerHTML = html;
-      })
-      .withFailureHandler(err => {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
-      })
-      .getBukuListFull(search, kategori, status);
+      const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+      const matchStatus = !status || status === 'semua' ||
+        (status === 'tersedia' && stokNum > 0) ||
+        (status === 'tidak_tersedia' && stokNum <= 0);
+
+      return matchSearch && matchCategory && matchStatus;
+    });
+
+    const totalItems = filtered.length;
+    const infoEl = document.getElementById('buku-table-pagination-info');
+    const controlsEl = document.getElementById('buku-table-pagination-controls');
+
+    if (totalItems === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
+      if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+      if (controlsEl) controlsEl.innerHTML = '';
+      return;
+    }
+
+    const entriesSelect = document.getElementById('buku-table-entries');
+    const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 10) : 10;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    if (bukuTableCurrentPage > totalPages) bukuTableCurrentPage = totalPages;
+    if (bukuTableCurrentPage < 1) bukuTableCurrentPage = 1;
+
+    const startIndex = (bukuTableCurrentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    let html = '';
+    pageItems.forEach((b, idx) => {
+      const stok = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+      const isTersedia = stok > 0;
+      const statusBadge = isTersedia 
+        ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Tersedia</span>'
+        : '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-semibold">Stok Habis</span>';
+
+      const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+      const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+      const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
+      const ebookBadge = hasEbook ? '<span class="badge badge-ebook rounded-pill px-2 py-0.5 small ms-1" title="Tersedia E-Book">E-Book</span>' : '';
+
+      let coverHtml = '';
+      if (coverUrl) {
+        coverHtml = '<img src="' + coverUrl + '" class="rounded-2 border" style="width: 42px; height: 56px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-2 bg-primary bg-opacity-10 text-primary border d-inline-flex align-items-center justify-content-center\\\' style=\\\'width: 42px; height: 56px;\\\'><i class=\\\'bi bi-journal-bookmark fs-5\\\'></i></div>\'">';
+      } else {
+        coverHtml = '<div class="rounded-2 bg-primary bg-opacity-10 text-primary border d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 56px;"><i class="bi bi-journal-bookmark fs-5"></i></div>';
+      }
+
+      html += '<tr>' +
+        '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
+        '<td class="border-start text-center" style="width: 75px;">' + coverHtml + '</td>' +
+        '<td class="border-start">' +
+          '<div class="fw-bold text-dark d-flex align-items-center flex-wrap gap-1">' + escapeHtml(b.judul_buku) + ' ' + ebookBadge + '</div>' +
+          '<small class="text-muted">ISBN: ' + escapeHtml(b.isbn || '-') + '</small>' +
+        '</td>' +
+        '<td class="border-start text-secondary">' + escapeHtml(b.penulis || '-') + '</td>' +
+        '<td class="border-start text-center" style="width: 140px;"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(b.kategori || 'Umum') + '</span></td>' +
+        '<td class="border-start text-center fw-bold text-dark" style="width: 80px;">' + stok + '</td>' +
+        '<td class="border-start text-center" style="width: 120px;">' + statusBadge + '</td>' +
+        '<td class="pe-3 text-center border-start" style="width: 120px;">' +
+          '<div class="d-flex justify-content-center gap-1">' +
+            '<button class="btn btn-sm btn-outline-primary border rounded-2 px-2 py-1" title="Edit Buku" onclick="showFormBukuEdit(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-pencil-square"></i></button>' +
+            '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Buku" onclick="handleDeleteBuku(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-trash-fill"></i></button>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+    });
+    tbody.innerHTML = html;
+
+    // Update Pagination Info & Controls
+    if (infoEl) {
+      infoEl.innerText = 'Menampilkan ' + (startIndex + 1) + ' sampai ' + endIndex + ' dari ' + totalItems + ' entri';
+    }
+
+    if (controlsEl) {
+      let pagHtml = '';
+      const prevDisabled = bukuTableCurrentPage === 1 ? 'disabled' : '';
+      pagHtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeBukuTablePage(' + (bukuTableCurrentPage - 1) + '); return false;">Sebelumnya</a></li>';
+
+      for (let p = 1; p <= totalPages; p++) {
+        const activeClass = p === bukuTableCurrentPage ? 'active' : '';
+        pagHtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="changeBukuTablePage(' + p + '); return false;">' + p + '</a></li>';
+      }
+
+      const nextDisabled = bukuTableCurrentPage === totalPages ? 'disabled' : '';
+      pagHtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeBukuTablePage(' + (bukuTableCurrentPage + 1) + '); return false;">Selanjutnya</a></li>';
+
+      controlsEl.innerHTML = pagHtml;
+    }
   }
 
   function showFormBuku() {
@@ -64,7 +174,7 @@
   function hideFormBuku() {
     document.getElementById('buku-view-form')?.classList.add('d-none');
     document.getElementById('buku-view-list')?.classList.remove('d-none');
-    renderBukuTable();
+    renderBukuTable(true);
   }
 
   function showFormBukuEdit(idBuku) {
@@ -137,7 +247,7 @@
           .withSuccessHandler(res => {
             closeLoadingAlert();
             if (res && res.success) {
-              showSuccessAlert(res.message, () => renderBukuTable());
+              showSuccessAlert(res.message, () => renderBukuTable(true));
             } else {
               showErrorAlert(res ? res.message : 'Gagal menghapus buku.');
             }
@@ -166,7 +276,7 @@
     const search = document.getElementById('anggota-search-input') ? document.getElementById('anggota-search-input').value.trim() : '';
     const status = document.getElementById('anggota-filter-status') ? document.getElementById('anggota-filter-status').value : 'semua';
 
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data anggota...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data anggota...</td></tr>';
 
     google.script.run
       .withSuccessHandler(list => {
@@ -174,7 +284,7 @@
         const totalItems = currentAnggotaCache.length;
 
         if (!list || totalItems === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data anggota yang sesuai.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data anggota yang sesuai.</td></tr>';
           const infoEl = document.getElementById('anggota-table-pagination-info');
           if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
           const controlsEl = document.getElementById('anggota-table-pagination-controls');
@@ -196,53 +306,50 @@
         let html = '';
         pageItems.forEach((a, idx) => {
           const st = String(a.status || 'aktif').toLowerCase();
-          let statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold">Aktif</span>';
+          let statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Aktif</span>';
           if (st === 'lulus' || st === 'nonaktif') {
-            statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1.5 fw-semibold">Nonaktif</span>';
+            statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1 fw-semibold">Nonaktif</span>';
           }
 
-          html += `
-            <tr>
-              <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
-              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
-              <td class="border-start text-secondary">${escapeHtml(a.username || '-')}</td>
-              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.kelas || '-')}</span></td>
-              <td class="border-start text-secondary">${escapeHtml(a.email || '-')}</td>
-              <td>${statusBadge}</td>
-              <td class="pe-3 text-end border-start">
-                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Data Siswa" onclick="showModalEditAnggota('${escapeHtml(a.nis)}')"><i class="bi bi-pencil-square"></i></button>
-                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Siswa" onclick="handleDeleteAnggota('${escapeHtml(a.nis)}', '${escapeHtml(a.nama_lengkap)}')"><i class="bi bi-trash-fill"></i></button>
-              </td>
-            </tr>
-          `;
+          html += '<tr>' +
+            '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
+            '<td class="border-start text-center font-monospace small fw-bold text-dark" style="width: 110px;">' + escapeHtml(a.nis || '-') + '</td>' +
+            '<td class="border-start fw-bold text-dark">' + escapeHtml(a.nama_lengkap) + '</td>' +
+            '<td class="border-start text-center" style="width: 100px;"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">' + escapeHtml(a.kelas || '-') + '</span></td>' +
+            '<td class="border-start text-center text-secondary">' + escapeHtml(a.username || '-') + '</td>' +
+            '<td class="border-start text-secondary">' + escapeHtml(a.email || '-') + '</td>' +
+            '<td class="border-start text-center" style="width: 110px;">' + statusBadge + '</td>' +
+            '<td class="pe-3 text-center border-start" style="width: 120px;">' +
+              '<div class="d-flex justify-content-center gap-1">' +
+                '<button class="btn btn-sm btn-outline-warning border rounded-2 px-2 py-1" title="Edit Data Siswa" onclick="showModalEditAnggota(\'' + escapeHtml(a.nis) + '\')"><i class="bi bi-pencil-square"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Siswa" onclick="handleDeleteAnggota(\'' + escapeHtml(a.nis) + '\', \'' + escapeHtml(a.nama_lengkap) + '\')"><i class="bi bi-trash-fill"></i></button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
         });
         tbody.innerHTML = html;
 
         // Update Pagination Info & Controls
         const infoEl = document.getElementById('anggota-table-pagination-info');
         if (infoEl) {
-          infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+          infoEl.innerText = 'Menampilkan ' + (startIndex + 1) + ' sampai ' + endIndex + ' dari ' + totalItems + ' entri';
         }
 
         const controlsEl = document.getElementById('anggota-table-pagination-controls');
         if (controlsEl) {
-          if (false) {
-            controlsEl.innerHTML = '';
-          } else {
-            let pagHtml = '';
-            const prevDisabled = anggotaTableCurrentPage === 1 ? 'disabled' : '';
-            pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+          let pagHtml = '';
+          const prevDisabled = anggotaTableCurrentPage === 1 ? 'disabled' : '';
+          pagHtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(' + (anggotaTableCurrentPage - 1) + '); return false;">Sebelumnya</a></li>';
 
-            for (let p = 1; p <= totalPages; p++) {
-              const activeClass = p === anggotaTableCurrentPage ? 'active' : '';
-              pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${p}); return false;">${p}</a></li>`;
-            }
-
-            const nextDisabled = anggotaTableCurrentPage === totalPages ? 'disabled' : '';
-            pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
-
-            controlsEl.innerHTML = pagHtml;
+          for (let p = 1; p <= totalPages; p++) {
+            const activeClass = p === anggotaTableCurrentPage ? 'active' : '';
+            pagHtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(' + p + '); return false;">' + p + '</a></li>';
           }
+
+          const nextDisabled = anggotaTableCurrentPage === totalPages ? 'disabled' : '';
+          pagHtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(' + (anggotaTableCurrentPage + 1) + '); return false;">Selanjutnya</a></li>';
+
+          controlsEl.innerHTML = pagHtml;
         }
       })
       .getAnggotaListFull(search, status);
@@ -447,11 +554,8 @@
   }
 
   // ==========================================
-  // CONTROLLER 3: SIRKULASI PEMINJAMAN BUKU
+  // CONTROLLER 3: LAPORAN PERPUSTAKAAN
   // ==========================================
-
-  let pilihSiswaCurrentPage = 1;
-  let pilihBukuCurrentPage = 1;
 
   function loadLaporanData() {
     const tbody = document.getElementById('laporan-table-body');
@@ -475,16 +579,14 @@
 
         let html = '';
         data.ringkasanBuku.forEach((b, idx) => {
-          html += `
-            <tr>
-              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
-              <td class="border-start fw-bold text-dark">${escapeHtml(b.judul_buku)}</td>
-              <td class="text-center fw-semibold text-primary">${b.dipinjam}</td>
-              <td class="text-center fw-semibold text-success">${b.dikembalikan}</td>
-              <td class="text-center fw-semibold text-warning">${b.masih_dipinjam}</td>
-              <td class="text-center fw-bold text-danger">${b.terlambat}</td>
-            </tr>
-          `;
+          html += '<tr>' +
+            '<td class="ps-3 fw-bold text-secondary text-center" style="width: 50px;">' + (idx + 1) + '</td>' +
+            '<td class="border-start fw-bold text-dark">' + escapeHtml(b.judul_buku) + '</td>' +
+            '<td class="text-center fw-semibold text-primary border-start">' + b.dipinjam + '</td>' +
+            '<td class="text-center fw-semibold text-success border-start">' + b.dikembalikan + '</td>' +
+            '<td class="text-center fw-semibold text-warning border-start">' + b.masih_dipinjam + '</td>' +
+            '<td class="text-center fw-bold text-danger border-start">' + b.terlambat + '</td>' +
+          '</tr>';
         });
         tbody.innerHTML = html;
       })
@@ -494,11 +596,6 @@
   function handleUnduhLaporanPdf() {
     window.print();
   }
-
-  /* HELPER CETAK DOKUMEN & KARTA (ISOLATED 1-PAGE PRINT) */
-  
-
-  
 
   /* CONTROLLER KENAIKAN KELAS MASSAL & IMPORT CSV */
   let currentImportTarget = 'buku'; // 'buku' or 'anggota'
@@ -535,14 +632,12 @@
             }
           }
 
-          html += `
-            <div class="col-md-6 mb-2">
-              <div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">
-                <span class="fw-bold text-dark me-2">Kelas ${escapeHtml(k)} &rarr;</span>
-                <input type="text" class="form-control form-control-sm rounded-2 rule-kelas-target" style="width: 140px;" data-source="${escapeHtml(k)}" value="${escapeHtml(defaultTarget)}">
-              </div>
-            </div>
-          `;
+          html += '<div class="col-md-6 mb-2">' +
+            '<div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">' +
+              '<span class="fw-bold text-dark me-2">Kelas ' + escapeHtml(k) + ' &rarr;</span>' +
+              '<input type="text" class="form-control form-control-sm rounded-2 rule-kelas-target" style="width: 140px;" data-source="' + escapeHtml(k) + '" value="' + escapeHtml(defaultTarget) + '">' +
+            '</div>' +
+          '</div>';
         });
         html += '</div>';
         container.innerHTML = html;
@@ -637,7 +732,7 @@
                   const bsModal = bootstrap.Modal.getInstance(modalEl);
                   if (bsModal) bsModal.hide();
                 }
-                renderBukuTable();
+                renderBukuTable(true);
               });
             } else {
               showErrorAlert(res ? res.message : 'Gagal memproses import data.');
@@ -714,34 +809,33 @@
 
         let html = '';
         pageData.forEach((a, idx) => {
-          html += `
-            <tr>
-              <td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">${startIdx + idx + 1}</td>
-              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
-              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.username)}</span></td>
-              <td class="border-start text-secondary small">${escapeHtml(a.email || '-')}</td>
-              <td class="pe-3 text-end border-start">
-                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Admin" onclick="showModalEditAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-pencil-square"></i></button>
-                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Admin" onclick="handleDeleteAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-trash-fill"></i></button>
-              </td>
-            </tr>
-          `;
+          html += '<tr>' +
+            '<td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">' + (startIdx + idx + 1) + '</td>' +
+            '<td class="border-start fw-bold text-dark">' + escapeHtml(a.nama_lengkap) + '</td>' +
+            '<td class="border-start text-center"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(a.username) + '</span></td>' +
+            '<td class="border-start text-secondary small">' + escapeHtml(a.email || '-') + '</td>' +
+            '<td class="pe-3 text-center border-start">' +
+              '<div class="d-flex justify-content-center gap-1">' +
+                '<button class="btn btn-sm btn-outline-warning border rounded-2 px-2 py-1" title="Edit Admin" onclick="showModalEditAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-pencil-square"></i></button>' +
+                '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Admin" onclick="handleDeleteAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-trash-fill"></i></button>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
         });
         tbody.innerHTML = html;
 
-        if (paginationInfo) paginationInfo.innerHTML = `Menampilkan ${startIdx + 1} sampai ${endIdx} dari ${totalData} entri`;
+        if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan ' + (startIdx + 1) + ' sampai ' + endIdx + ' dari ' + totalData + ' entri';
         
         if (paginationControls) {
           let pghtml = '';
-          pghtml += `<li class="page-item ${petugasTableCurrentPage === 1 ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage--; renderPetugasTable(); return false;">Sebelumnya</a></li>`;
+          const prevDisabled = petugasTableCurrentPage === 1 ? 'disabled' : '';
+          pghtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage--; renderPetugasTable(); return false;">Sebelumnya</a></li>';
           for (let p = 1; p <= totalPages; p++) {
-            if (p === 1 || p === totalPages || (p >= petugasTableCurrentPage - 1 && p <= petugasTableCurrentPage + 1)) {
-              pghtml += `<li class="page-item ${petugasTableCurrentPage === p ? 'active' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage = ${p}; renderPetugasTable(); return false;">${p}</a></li>`;
-            } else if (p === petugasTableCurrentPage - 2 || p === petugasTableCurrentPage + 2) {
-              pghtml += `<li class="page-item disabled"><a class="page-link shadow-sm rounded-3 me-1" href="#">...</a></li>`;
-            }
+            const activeClass = p === petugasTableCurrentPage ? 'active' : '';
+            pghtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage = ' + p + '; renderPetugasTable(); return false;">' + p + '</a></li>';
           }
-          pghtml += `<li class="page-item ${petugasTableCurrentPage === totalPages ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3" href="#" onclick="petugasTableCurrentPage++; renderPetugasTable(); return false;">Selanjutnya</a></li>`;
+          const nextDisabled = petugasTableCurrentPage === totalPages ? 'disabled' : '';
+          pghtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage++; renderPetugasTable(); return false;">Selanjutnya</a></li>';
           paginationControls.innerHTML = pghtml;
         }
       })
@@ -879,7 +973,7 @@
 
     Swal.fire({
       title: 'Hapus Admin?',
-      text: `Apakah Anda yakin ingin menghapus admin "${nameStr}" dari sistem?`,
+      text: 'Apakah Anda yakin ingin menghapus admin "' + nameStr + '" dari sistem?',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#dc2626',

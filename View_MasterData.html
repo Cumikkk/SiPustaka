@@ -3,53 +3,70 @@
           
           <!-- VIEW 2A: DAFTAR BUKU (TABLE & FILTERS) -->
           <div id="buku-view-list">
-            <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
               <div>
                 <h3 class="fw-bold m-0 text-dark">Data Buku</h3>
                 <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <span class="text-dark">Data Buku</span></small>
               </div>
-              <div class="d-flex gap-2"><button class="btn btn-outline-secondary rounded-3 px-3 py-2 fw-semibold" onclick="showModalImportBuku()"><i class="bi bi-file-earmark-spreadsheet me-1.5"></i>Import CSV</button><button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" onclick="showFormBuku()"><i class="bi bi-plus-lg me-2"></i>Tambah Buku</button></div>
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalImportBuku()"><i class="bi bi-file-earmark-spreadsheet" style="margin-right: 6px;"></i>Import CSV</button>
+                <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold d-inline-flex align-items-center" onclick="showFormBuku()"><i class="bi bi-plus-lg" style="margin-right: 6px;"></i>Tambah Buku</button>
+              </div>
             </div>
 
+            <!-- CARD TABLE & FILTER BUKU ADMIN -->
             <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
-              <div class="row g-3 mb-4">
-                <div class="col-md-5">
-                  <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" id="buku-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul buku atau penulis..." onkeyup="renderBukuTable()">
+              <!-- TOOLBAR SATU BARIS MENGIKUTI STANDAR DESAIN -->
+              <div class="row g-3 mb-4 align-items-center">
+                <div class="col-md-3 col-sm-6">
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small fw-semibold">Tampilkan:</span>
+                    <select id="buku-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
+                      <option value="5">5</option>
+                      <option value="10" selected>10</option>
+                      <option value="25">25</option>
+                      <option value="50">50</option>
+                      <option value="100">100</option>
+                    </select>
+                    <span class="text-muted small fw-semibold">entri</span>
                   </div>
                 </div>
-                <div class="col-md-3">
-                  <select id="buku-filter-kategori" class="form-select rounded-3" onchange="renderBukuTable()">
+
+                <div class="col-md-4 col-sm-6">
+                  <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="buku-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul, penulis, ISBN..." onkeyup="bukuTableCurrentPage = 1; renderBukuTable();">
+                  </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+                  <select id="buku-filter-kategori" class="form-select rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
                     <option value="semua">Semua Kategori</option>
-                    <option value="fiksi">Fiksi</option>
-                    <option value="sains">Sains</option>
-                    <option value="sejarah">Sejarah</option>
-                    <option value="pengembangan diri">Pengembangan Diri</option>
-                    <option value="bisnis">Bisnis</option>
                   </select>
                 </div>
-                <div class="col-md-4">
-                  <select id="buku-filter-status" class="form-select rounded-3" onchange="renderBukuTable()">
+
+                <div class="col-md-2 col-sm-6">
+                  <select id="buku-filter-status" class="form-select rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
                     <option value="semua">Semua Status</option>
                     <option value="tersedia">Tersedia</option>
-                    <option value="tidak_tersedia">Tidak Tersedia</option>
+                    <option value="tidak_tersedia">Stok Habis</option>
                   </select>
                 </div>
               </div>
 
+              <!-- TABEL DATA BUKU DENGAN HEADER RATA TENGAH -->
               <div class="table-responsive">
-                <table class="table align-middle table-hover mb-0">
+                <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
                   <thead class="bg-light text-muted small uppercase">
                     <tr>
-                      <th class="ps-3" style="width: 50px;">NO</th>
-                      <th style="width: 80px;">SAMPUL</th>
-                      <th>JUDUL BUKU</th>
-                      <th>PENULIS</th>
-                      <th>KATEGORI</th>
-                      <th>STOK</th>
-                      <th>STATUS</th>
-                      <th class="pe-3 text-end" style="width: 120px;">AKSI</th>
+                      <th class="ps-3 text-center" style="width: 50px;">NO.</th>
+                      <th class="border-start text-center" style="width: 75px;">SAMPUL</th>
+                      <th class="border-start text-center">JUDUL BUKU</th>
+                      <th class="border-start text-center">PENULIS</th>
+                      <th class="border-start text-center" style="width: 140px;">KATEGORI</th>
+                      <th class="border-start text-center" style="width: 80px;">STOK</th>
+                      <th class="border-start text-center" style="width: 120px;">STATUS</th>
+                      <th class="pe-3 text-center border-start" style="width: 120px;">AKSI</th>
                     </tr>
                   </thead>
                   <tbody id="buku-table-body">
@@ -59,27 +76,39 @@
                   </tbody>
                 </table>
               </div>
+
+              <!-- FOOTER PAGINASI BUKU ADMIN -->
+              <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 pt-3 border-top">
+                <div class="text-muted small fw-semibold" id="buku-table-pagination-info">
+                  Menampilkan 0 sampai 0 dari 0 entri
+                </div>
+                <nav aria-label="Navigasi Halaman Buku">
+                  <ul class="pagination pagination-sm mb-0 gap-1" id="buku-table-pagination-controls">
+                  </ul>
+                </nav>
+              </div>
             </div>
           </div>
-
-          
 
         </div>
 
 
         <!-- 3. SUBVIEW: DAFTAR ANGGOTA SISWA -->
         <div id="subview-anggota" class="d-none">
-          <div class="d-flex align-items-center justify-content-between mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <div>
               <h3 class="fw-bold m-0 text-dark">Kelola Data Anggota Siswa</h3>
               <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <a href="#" onclick="toggleAnggotaDropdown(); return false;" class="text-decoration-none text-secondary">Anggota</a> &gt; <span class="text-dark">Siswa</span></small>
             </div>
-            <div class="d-flex gap-2"><button class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold" onclick="showModalKenaikanKelas()"><i class="bi bi-mortarboard-fill me-1.5"></i>Kenaikan Kelas Massal</button><button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" onclick="showModalTambahAnggota()"><i class="bi bi-person-plus-fill me-2"></i>Tambah Anggota</button></div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalKenaikanKelas()"><i class="bi bi-mortarboard-fill" style="margin-right: 6px;"></i>Kenaikan Kelas Massal</button>
+              <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalTambahAnggota()"><i class="bi bi-person-plus-fill" style="margin-right: 6px;"></i>Tambah Anggota</button>
+            </div>
           </div>
 
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-2 col-sm-6">
+              <div class="col-md-3 col-sm-6">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
                   <select id="anggota-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="anggotaTableCurrentPage = 1; renderAnggotaTable();">
@@ -92,7 +121,7 @@
                   <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-md-6 col-sm-6">
+              <div class="col-md-5 col-sm-6">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="anggota-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari NIS, Nama Siswa, Kelas, Email..." onkeyup="anggotaTableCurrentPage = 1; renderAnggotaTable();">
@@ -112,16 +141,18 @@
                 <thead class="bg-light text-muted small uppercase">
                   <tr>
                     <th class="ps-3 text-center" style="width: 50px;">NO.</th>
-                    <th class="border-start">NAMA LENGKAP</th>
-                    <th class="border-start">KELAS</th>
-                    <th class="border-start">EMAIL</th>
-                    <th class="border-start">STATUS</th>
-                    <th class="pe-3 text-end border-start">AKSI</th>
+                    <th class="border-start text-center" style="width: 110px;">NIS</th>
+                    <th class="border-start text-center">NAMA LENGKAP</th>
+                    <th class="border-start text-center" style="width: 100px;">KELAS</th>
+                    <th class="border-start text-center">USERNAME</th>
+                    <th class="border-start text-center">EMAIL</th>
+                    <th class="border-start text-center" style="width: 110px;">STATUS</th>
+                    <th class="pe-3 text-center border-start" style="width: 120px;">AKSI</th>
                   </tr>
                 </thead>
                 <tbody id="anggota-table-body">
                   <tr>
-                    <td colspan="6" class="text-center text-muted py-4">Memuat data anggota...</td>
+                    <td colspan="8" class="text-center text-muted py-4">Memuat data anggota...</td>
                   </tr>
                 </tbody>
               </table>
