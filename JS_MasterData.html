@@ -163,18 +163,20 @@
     }
   }
 
-  function showFormBuku() {
-    document.getElementById('buku-view-list')?.classList.add('d-none');
-    document.getElementById('buku-view-form')?.classList.remove('d-none');
-    document.getElementById('form-buku-title').innerText = 'Tambah Buku';
-    document.getElementById('form-buku-element').reset();
-    document.getElementById('form-buku-id').value = '';
-  }
+  /* MODAL CRUD BUKU */
+  function showModalTambahBuku() {
+    const form = document.getElementById('form-modal-buku');
+    if (form) form.reset();
 
-  function hideFormBuku() {
-    document.getElementById('buku-view-form')?.classList.add('d-none');
-    document.getElementById('buku-view-list')?.classList.remove('d-none');
-    renderBukuTable(true);
+    document.getElementById('modal-buku-id').value = '';
+    document.getElementById('modal-form-buku-title-text').innerText = 'Tambah Buku Baru';
+    document.getElementById('modal-buku-stok').value = '1';
+    
+    const modalEl = document.getElementById('modalFormBuku');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
   }
 
   function showFormBukuEdit(idBuku) {
@@ -182,38 +184,60 @@
     google.script.run
       .withSuccessHandler(list => {
         closeLoadingAlert();
-        const buku = list.find(b => String(b.id_buku) === String(idBuku));
-        if (!buku) return;
+        const buku = (list || []).find(b => String(b.id_buku) === String(idBuku));
+        if (!buku) {
+          showErrorAlert('Data buku tidak ditemukan.');
+          return;
+        }
 
-        showFormBuku();
-        document.getElementById('form-buku-title').innerText = 'Edit Data Buku';
-        document.getElementById('form-buku-id').value = buku.id_buku;
-        document.getElementById('form-buku-judul').value = buku.judul_buku || '';
-        document.getElementById('form-buku-isbn').value = buku.isbn || '';
-        document.getElementById('form-buku-penulis').value = buku.penulis || '';
-        document.getElementById('form-buku-tahun').value = buku.tahun_terbit || '';
-        document.getElementById('form-buku-penerbit').value = buku.penerbit || '';
-        document.getElementById('form-buku-stok').value = (buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 1;
-        document.getElementById('form-buku-kategori').value = buku.kategori || 'Fiksi';
-        document.getElementById('form-buku-rak').value = buku.rak_lokasi || 'A1';
-        document.getElementById('form-buku-sampul').value = buku.url_sampul || '';
+        const form = document.getElementById('form-modal-buku');
+        if (form) form.reset();
+
+        document.getElementById('modal-form-buku-title-text').innerText = 'Edit Data Buku';
+        document.getElementById('modal-buku-id').value = buku.id_buku || '';
+        document.getElementById('modal-buku-judul').value = buku.judul_buku || '';
+        document.getElementById('modal-buku-isbn').value = buku.isbn || '';
+        document.getElementById('modal-buku-penulis').value = buku.penulis || '';
+        document.getElementById('modal-buku-penerbit').value = buku.penerbit || '';
+        document.getElementById('modal-buku-tahun').value = buku.tahun_terbit || '';
+        document.getElementById('modal-buku-kategori').value = buku.kategori || 'Fiksi';
+        document.getElementById('modal-buku-stok').value = (buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 1;
+        document.getElementById('modal-buku-rak').value = buku.rak_lokasi || 'A1';
+        document.getElementById('modal-buku-sampul').value = buku.url_sampul || '';
+        document.getElementById('modal-buku-file').value = buku.url_file_buku || '';
+
+        const modalEl = document.getElementById('modalFormBuku');
+        if (modalEl && typeof bootstrap !== 'undefined') {
+          const bsModal = new bootstrap.Modal(modalEl);
+          bsModal.show();
+        }
       })
       .getBukuListFull('', 'semua', 'semua');
   }
 
-  function handleSaveBuku(e) {
+  function handleSaveModalBuku(e) {
     e.preventDefault();
+    const judul = document.getElementById('modal-buku-judul').value.trim();
+    const kategori = document.getElementById('modal-buku-kategori').value.trim();
+    const stok = document.getElementById('modal-buku-stok').value.trim();
+
+    if (!judul || !kategori || !stok) {
+      showErrorAlert('Judul Buku, Kategori, dan Stok wajib diisi!');
+      return;
+    }
+
     const bukuObj = {
-      id_buku: document.getElementById('form-buku-id').value,
-      judul_buku: document.getElementById('form-buku-judul').value,
-      isbn: document.getElementById('form-buku-isbn').value,
-      penulis: document.getElementById('form-buku-penulis').value,
-      tahun_terbit: document.getElementById('form-buku-tahun').value,
-      penerbit: document.getElementById('form-buku-penerbit').value,
-      stok_aktual: document.getElementById('form-buku-stok').value,
-      kategori: document.getElementById('form-buku-kategori').value,
-      rak_lokasi: document.getElementById('form-buku-rak').value,
-      url_sampul: document.getElementById('form-buku-sampul').value
+      id_buku: document.getElementById('modal-buku-id').value,
+      judul_buku: judul,
+      isbn: document.getElementById('modal-buku-isbn').value.trim(),
+      penulis: document.getElementById('modal-buku-penulis').value.trim(),
+      penerbit: document.getElementById('modal-buku-penerbit').value.trim(),
+      tahun_terbit: document.getElementById('modal-buku-tahun').value.trim(),
+      kategori: kategori,
+      stok_aktual: stok,
+      rak_lokasi: document.getElementById('modal-buku-rak').value.trim(),
+      url_sampul: document.getElementById('modal-buku-sampul').value.trim(),
+      url_file_buku: document.getElementById('modal-buku-file').value.trim()
     };
 
     showLoadingAlert('Menyimpan data buku...');
@@ -222,7 +246,12 @@
         closeLoadingAlert();
         if (res && res.success) {
           showSuccessAlert(res.message, () => {
-            hideFormBuku();
+            const modalEl = document.getElementById('modalFormBuku');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
+            }
+            renderBukuTable(true);
           });
         } else {
           showErrorAlert(res ? res.message : 'Gagal menyimpan buku.');
@@ -597,9 +626,7 @@
     window.print();
   }
 
-  /* CONTROLLER KENAIKAN KELAS MASSAL & IMPORT CSV */
-  let currentImportTarget = 'buku'; // 'buku' or 'anggota'
-
+  /* CONTROLLER KENAIKAN KELAS MASSAL */
   function showModalKenaikanKelas() {
     const container = document.getElementById('kenaikan-kelas-rules-container');
     if (!container) return;
@@ -645,7 +672,7 @@
       .getDaftarKelasUnik();
   }
 
-  function handleProsesKenaikanKelasSubmit() {
+  function handleKenaikanKelasSubmit() {
     const inputs = document.querySelectorAll('.rule-kelas-target');
     const mapping = {};
     inputs.forEach(input => {
@@ -679,88 +706,6 @@
         }
       })
       .processBulkKenaikanKelas(mapping);
-  }
-
-  function showModalImportBuku() {
-    currentImportTarget = 'buku';
-    document.getElementById('modal-import-title').innerText = 'Import Data Buku (CSV)';
-    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: Judul, ISBN, Penulis, Penerbit, Tahun, Kategori, Stok, URL Sampul';
-    document.getElementById('import-csv-file').value = '';
-    
-    const modalEl = document.getElementById('modalImportCsv');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-      const bsModal = new bootstrap.Modal(modalEl);
-      bsModal.show();
-    }
-  }
-
-  function showModalImportAnggota() {
-    currentImportTarget = 'anggota';
-    document.getElementById('modal-import-title').innerText = 'Import Data Anggota Siswa (CSV)';
-    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: NIS, Nama Lengkap, Kelas, Email, Password';
-    document.getElementById('import-csv-file').value = '';
-
-    const modalEl = document.getElementById('modalImportCsv');
-    if (modalEl && typeof bootstrap !== 'undefined') {
-      const bsModal = new bootstrap.Modal(modalEl);
-      bsModal.show();
-    }
-  }
-
-  function handleImportCsvSubmit() {
-    const fileInput = document.getElementById('import-csv-file');
-    if (!fileInput.files || fileInput.files.length === 0) {
-      showErrorAlert('Silakan pilih berkas CSV terlebih dahulu.');
-      return;
-    }
-
-    const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-      const csvText = e.target.result;
-      showLoadingAlert('Memproses import data CSV...');
-
-      if (currentImportTarget === 'buku') {
-        google.script.run
-          .withSuccessHandler(res => {
-            closeLoadingAlert();
-            if (res && res.success) {
-              showSuccessAlert(res.message, () => {
-                const modalEl = document.getElementById('modalImportCsv');
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                  const bsModal = bootstrap.Modal.getInstance(modalEl);
-                  if (bsModal) bsModal.hide();
-                }
-                renderBukuTable(true);
-              });
-            } else {
-              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
-            }
-          })
-          .importBukuFromCsv(csvText);
-      } else {
-        google.script.run
-          .withSuccessHandler(res => {
-            closeLoadingAlert();
-            if (res && res.success) {
-              showSuccessAlert(res.message, () => {
-                const modalEl = document.getElementById('modalImportCsv');
-                if (modalEl && typeof bootstrap !== 'undefined') {
-                  const bsModal = bootstrap.Modal.getInstance(modalEl);
-                  if (bsModal) bsModal.hide();
-                }
-                renderAnggotaTable();
-              });
-            } else {
-              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
-            }
-          })
-          .importAnggotaFromCsv(csvText);
-      }
-    };
-
-    reader.readAsText(file);
   }
 
   /* CONTROLLER KELOLA DATA ADMIN */

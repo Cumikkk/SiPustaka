@@ -66,27 +66,77 @@
     </div>
   </div>
 
-  <!-- MODAL: IMPORT CSV BUKU & ANGGOTA -->
-  <div class="modal fade" id="modalImportCsv" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content border-0 rounded-4 shadow">
-        <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title fw-bold text-dark" id="modal-import-title">Import Data CSV</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+  <!-- MODAL: FORM TAMBAH & EDIT BUKU -->
+  <div class="modal fade" id="modalFormBuku" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+        <div class="modal-header border-0 bg-primary text-white p-4">
+          <h5 class="modal-title fw-bold d-flex align-items-center" id="modal-form-buku-title">
+            <i class="bi bi-book-half text-white" style="margin-right: 8px;"></i>
+            <span id="modal-form-buku-title-text">Tambah Buku Baru</span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <div class="modal-body p-4">
-          <p class="text-muted small mb-3" id="modal-import-desc">Pilih berkas CSV (.csv) untuk di-import ke sistem perpustakaan.</p>
-          
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Upload Berkas CSV <span class="text-danger">*</span></label>
-            <input type="file" id="import-csv-file" class="form-control rounded-3" accept=".csv">
-          </div>
+        <form id="form-modal-buku" onsubmit="handleSaveModalBuku(event)">
+          <div class="modal-body p-4">
+            <input type="hidden" id="modal-buku-id" value="">
+            
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label small fw-semibold">Judul Buku <span class="text-danger">*</span></label>
+                <input type="text" id="modal-buku-judul" class="form-control rounded-3" placeholder="Contoh: Laskar Pelangi" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">ISBN</label>
+                <input type="text" id="modal-buku-isbn" class="form-control rounded-3" placeholder="Contoh: 978-979-3062-79-2">
+              </div>
 
-          <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-            <button class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-            <button class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-submit-import" onclick="handleImportCsvSubmit()"><i class="bi bi-upload me-2"></i>Proses Import</button>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Penulis / Pengarang</label>
+                <input type="text" id="modal-buku-penulis" class="form-control rounded-3" placeholder="Contoh: Andrea Hirata">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold">Penerbit</label>
+                <input type="text" id="modal-buku-penerbit" class="form-control rounded-3" placeholder="Contoh: Bentang Pustaka">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Tahun Terbit</label>
+                <input type="text" id="modal-buku-tahun" class="form-control rounded-3" placeholder="Contoh: 2022">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Kategori <span class="text-danger">*</span></label>
+                <input type="text" id="modal-buku-kategori" class="form-control rounded-3" placeholder="Contoh: Fiksi, Sains, Sejarah" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Jumlah Stok <span class="text-danger">*</span></label>
+                <input type="number" id="modal-buku-stok" class="form-control rounded-3" min="0" value="1" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold">Lokasi Rak</label>
+                <input type="text" id="modal-buku-rak" class="form-control rounded-3" placeholder="Contoh: Rak A-01">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label small fw-semibold">URL Sampul Buku (Opsional)</label>
+                <input type="url" id="modal-buku-sampul" class="form-control rounded-3" placeholder="https://... atau Link Google Drive">
+              </div>
+
+              <div class="col-12">
+                <label class="form-label small fw-semibold">URL File E-Book / Dokumen PDF (Opsional)</label>
+                <input type="url" id="modal-buku-file" class="form-control rounded-3" placeholder="Link Google Drive PDF / Dokumen Online">
+                <small class="text-muted" style="font-size:0.72rem;">Jika diisi, buku ini akan dapat dibaca langsung oleh siswa secara digital melalui E-Reader.</small>
+              </div>
+            </div>
           </div>
-        </div>
+          <div class="modal-footer border-0 p-4 pt-0">
+            <button type="button" class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-save-modal-buku">
+              <i class="bi bi-save" style="margin-right: 8px;"></i>
+              <span>Simpan Data Buku</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
