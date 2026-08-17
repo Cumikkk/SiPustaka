@@ -51,7 +51,6 @@ function getKategoriList() {
   return Array.from(setKategori);
 }
 
-
 function getBukuListFull(searchQuery, kategori, statusFilter) {
   const allBuku = getSheetData('buku');
   const allTrx = getSheetData('transaksi');
@@ -74,10 +73,57 @@ function getBukuListFull(searchQuery, kategori, statusFilter) {
   });
 }
 
+function uploadFileToDrive(base64Data, fileName, mimeType) {
+  try {
+    if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(';base64,')) {
+      return '';
+    }
+    const folderName = "SiPustaka_Uploads";
+    const folders = DriveApp.getFoldersByName(folderName);
+    let folder;
+    if (folders.hasNext()) {
+      folder = folders.next();
+    } else {
+      folder = DriveApp.createFolder(folderName);
+    }
+    
+    const splitParts = base64Data.split(';base64,');
+    const actualData = splitParts[1];
+    const detectedMime = splitParts[0].replace('data:', '') || mimeType || 'application/octet-stream';
+    const decoded = Utilities.base64Decode(actualData);
+    const blob = Utilities.newBlob(decoded, detectedMime, fileName);
+    
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return 'https://drive.google.com/uc?id=' + file.getId();
+  } catch (e) {
+    Logger.log("Drive upload error: " + e.message);
+    return '';
+  }
+}
+
 function saveBukuData(bukuObj) {
   const ss = getDb();
   const sheet = ss.getSheetByName('buku');
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
+
+  // Handle uploaded cover image file
+  if (bukuObj.sampul_base64) {
+    const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
+    const uploadedCoverUrl = uploadFileToDrive(bukuObj.sampul_base64, 'cover_' + cleanTitle + '.jpg', 'image/jpeg');
+    if (uploadedCoverUrl) {
+      bukuObj.url_sampul = uploadedCoverUrl;
+    }
+  }
+
+  // Handle uploaded ebook PDF file
+  if (bukuObj.ebook_base64) {
+    const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
+    const uploadedEbookUrl = uploadFileToDrive(bukuObj.ebook_base64, 'ebook_' + cleanTitle + '.pdf', 'application/pdf');
+    if (uploadedEbookUrl) {
+      bukuObj.url_file_buku = uploadedEbookUrl;
+    }
+  }
 
   const values = sheet.getDataRange().getValues();
   const headers = values[0].map(h => String(h).trim().toLowerCase());
@@ -165,8 +211,3 @@ function deleteBukuData(idBuku) {
   }
   return { success: false, message: 'Buku tidak ditemukan.' };
 }
-
-// ==========================================
-// API MANAJEMEN ANGGOTA & ADMIN (CRUD LENGKAP)
-// ==========================================
-

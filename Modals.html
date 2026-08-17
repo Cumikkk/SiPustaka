@@ -70,69 +70,107 @@
   <div class="modal fade" id="modalFormBuku" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-        <div class="modal-header border-0 bg-primary text-white p-4">
-          <h5 class="modal-title fw-bold d-flex align-items-center" id="modal-form-buku-title">
-            <i class="bi bi-book-half text-white" style="margin-right: 8px;"></i>
-            <span id="modal-form-buku-title-text">Tambah Buku Baru</span>
-          </h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-header border-0 bg-white px-4 pt-4 pb-2">
+          <div class="d-flex align-items-center gap-2.5">
+            <div class="p-2.5 rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+              <i class="bi bi-journal-plus fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0" id="modal-form-buku-title-text">Tambah Buku Baru</h5>
+              <small class="text-muted">Isi kelengkapan data buku dan unggah berkas sampul serta e-book.</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <form id="form-modal-buku" onsubmit="handleSaveModalBuku(event)">
-          <div class="modal-body p-4">
+          <div class="modal-body p-4 pt-2">
             <input type="hidden" id="modal-buku-id" value="">
             
             <div class="row g-3">
-              <div class="col-md-8">
-                <label class="form-label small fw-semibold">Judul Buku <span class="text-danger">*</span></label>
-                <input type="text" id="modal-buku-judul" class="form-control rounded-3" placeholder="Contoh: Laskar Pelangi" required>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">ISBN</label>
-                <input type="text" id="modal-buku-isbn" class="form-control rounded-3" placeholder="Contoh: 978-979-3062-79-2">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">Penulis / Pengarang</label>
-                <input type="text" id="modal-buku-penulis" class="form-control rounded-3" placeholder="Contoh: Andrea Hirata">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">Penerbit</label>
-                <input type="text" id="modal-buku-penerbit" class="form-control rounded-3" placeholder="Contoh: Bentang Pustaka">
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Tahun Terbit</label>
-                <input type="text" id="modal-buku-tahun" class="form-control rounded-3" placeholder="Contoh: 2022">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Kategori <span class="text-danger">*</span></label>
-                <input type="text" id="modal-buku-kategori" class="form-control rounded-3" placeholder="Contoh: Fiksi, Sains, Sejarah" required>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Jumlah Stok <span class="text-danger">*</span></label>
-                <input type="number" id="modal-buku-stok" class="form-control rounded-3" min="0" value="1" required>
-              </div>
-
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Lokasi Rak</label>
-                <input type="text" id="modal-buku-rak" class="form-control rounded-3" placeholder="Contoh: Rak A-01">
-              </div>
-              <div class="col-md-8">
-                <label class="form-label small fw-semibold">URL Sampul Buku (Opsional)</label>
-                <input type="url" id="modal-buku-sampul" class="form-control rounded-3" placeholder="https://... atau Link Google Drive">
-              </div>
-
+              <!-- INFORMASI UTAMA BUKU -->
               <div class="col-12">
-                <label class="form-label small fw-semibold">URL File E-Book / Dokumen PDF (Opsional)</label>
-                <input type="url" id="modal-buku-file" class="form-control rounded-3" placeholder="Link Google Drive PDF / Dokumen Online">
-                <small class="text-muted" style="font-size:0.72rem;">Jika diisi, buku ini akan dapat dibaca langsung oleh siswa secara digital melalui E-Reader.</small>
+                <label class="form-label small fw-semibold text-dark mb-1">Judul Buku <span class="text-danger">*</span></label>
+                <input type="text" id="modal-buku-judul" class="form-control rounded-3 py-2" placeholder="Contoh: Laskar Pelangi" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-dark mb-1">Penulis / Pengarang <span class="text-danger">*</span></label>
+                <input type="text" id="modal-buku-penulis" class="form-control rounded-3 py-2" placeholder="Contoh: Andrea Hirata" required>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-dark mb-1">Penerbit</label>
+                <input type="text" id="modal-buku-penerbit" class="form-control rounded-3 py-2" placeholder="Contoh: Bentang Pustaka">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-dark mb-1">ISBN</label>
+                <input type="text" id="modal-buku-isbn" class="form-control rounded-3 py-2" placeholder="Contoh: 978-979-3062-79-2">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-dark mb-1">Kategori <span class="text-danger">*</span></label>
+                <input type="text" id="modal-buku-kategori" class="form-control rounded-3 py-2" placeholder="Contoh: Fiksi, Sains, Sejarah" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold text-dark mb-1">Tahun Terbit</label>
+                <input type="number" id="modal-buku-tahun" class="form-control rounded-3 py-2" placeholder="Contoh: 2022">
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold text-dark mb-1">Jumlah Stok <span class="text-danger">*</span></label>
+                <input type="number" id="modal-buku-stok" class="form-control rounded-3 py-2" min="0" value="1" required>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label small fw-semibold text-dark mb-1">Lokasi Rak</label>
+                <input type="text" id="modal-buku-rak" class="form-control rounded-3 py-2" placeholder="Contoh: Rak A-01">
+              </div>
+
+              <!-- MEDIA & BERKAS DIGITAL (UPLOAD & URL) -->
+              <div class="col-12 mt-3">
+                <div class="p-3 bg-light rounded-4 border">
+                  <h6 class="fw-bold text-dark mb-3 small d-flex align-items-center">
+                    <i class="bi bi-file-earmark-arrow-up text-primary me-2 fs-6"></i>
+                    <span>BERKAS MEDIA &amp; E-BOOK DIGITAL</span>
+                  </h6>
+
+                  <div class="row g-3">
+                    <!-- SAMPUL BUKU -->
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-dark mb-1">
+                        <i class="bi bi-image text-primary me-1"></i>Sampul Buku (Gambar Cover)
+                      </label>
+                      <input type="file" id="modal-buku-sampul-file" class="form-control form-control-sm rounded-3 mb-2" accept="image/*" onchange="previewCoverImage(this)">
+                      <div class="d-flex align-items-center gap-2">
+                        <div id="modal-cover-preview-box" class="rounded-3 bg-white border d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0" style="width: 44px; height: 56px;">
+                          <i class="bi bi-image text-muted fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                          <input type="url" id="modal-buku-sampul" class="form-control form-control-sm rounded-3" placeholder="Atau paste URL cover / Drive...">
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- E-BOOK PDF -->
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-dark mb-1">
+                        <i class="bi bi-file-earmark-pdf text-danger me-1"></i>File E-Book (PDF Digital)
+                      </label>
+                      <input type="file" id="modal-buku-file-upload" class="form-control form-control-sm rounded-3 mb-2" accept="application/pdf">
+                      <input type="url" id="modal-buku-file" class="form-control form-control-sm rounded-3" placeholder="Atau link Google Drive PDF...">
+                      <small class="text-muted d-block mt-1" style="font-size:0.72rem;">Dapat dibaca langsung oleh siswa secara digital.</small>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div class="modal-footer border-0 p-4 pt-0">
-            <button type="button" class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-            <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-save-modal-buku">
-              <i class="bi bi-save" style="margin-right: 8px;"></i>
+          <div class="modal-footer border-0 px-4 pb-4 pt-1 d-flex justify-content-end gap-2">
+            <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2 fw-semibold" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary rounded-3 px-4 py-2 fw-semibold d-inline-flex align-items-center shadow-xs" id="btn-save-modal-buku">
+              <i class="bi bi-check2-circle me-2"></i>
               <span>Simpan Data Buku</span>
             </button>
           </div>

@@ -163,7 +163,22 @@
     }
   }
 
-  /* MODAL CRUD BUKU */
+  /* MODAL CRUD BUKU & FILE UPLOADS */
+  function previewCoverImage(input) {
+    const previewBox = document.getElementById('modal-cover-preview-box');
+    if (!previewBox) return;
+
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        previewBox.innerHTML = '<img src="' + e.target.result + '" style="width: 100%; height: 100%; object-fit: cover;" class="rounded-3">';
+      };
+      reader.readAsDataURL(input.files[0]);
+    } else {
+      previewBox.innerHTML = '<i class="bi bi-image text-muted fs-5"></i>';
+    }
+  }
+
   function showModalTambahBuku() {
     const form = document.getElementById('form-modal-buku');
     if (form) form.reset();
@@ -172,6 +187,11 @@
     document.getElementById('modal-form-buku-title-text').innerText = 'Tambah Buku Baru';
     document.getElementById('modal-buku-stok').value = '1';
     
+    const previewBox = document.getElementById('modal-cover-preview-box');
+    if (previewBox) {
+      previewBox.innerHTML = '<i class="bi bi-image text-muted fs-5"></i>';
+    }
+
     const modalEl = document.getElementById('modalFormBuku');
     if (modalEl && typeof bootstrap !== 'undefined') {
       const bsModal = new bootstrap.Modal(modalEl);
@@ -206,6 +226,17 @@
         document.getElementById('modal-buku-sampul').value = buku.url_sampul || '';
         document.getElementById('modal-buku-file').value = buku.url_file_buku || '';
 
+        const previewBox = document.getElementById('modal-cover-preview-box');
+        if (previewBox) {
+          const rawCover = buku.url_sampul ? String(buku.url_sampul).trim() : '';
+          const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+          if (coverUrl) {
+            previewBox.innerHTML = '<img src="' + coverUrl + '" style="width: 100%; height: 100%; object-fit: cover;" class="rounded-3">';
+          } else {
+            previewBox.innerHTML = '<i class="bi bi-image text-muted fs-5"></i>';
+          }
+        }
+
         const modalEl = document.getElementById('modalFormBuku');
         if (modalEl && typeof bootstrap !== 'undefined') {
           const bsModal = new bootstrap.Modal(modalEl);
@@ -215,49 +246,82 @@
       .getBukuListFull('', 'semua', 'semua');
   }
 
-  function handleSaveModalBuku(e) {
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      if (!file) {
+        resolve('');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = error => reject(error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleSaveModalBuku(e) {
     e.preventDefault();
     const judul = document.getElementById('modal-buku-judul').value.trim();
+    const penulis = document.getElementById('modal-buku-penulis').value.trim();
     const kategori = document.getElementById('modal-buku-kategori').value.trim();
     const stok = document.getElementById('modal-buku-stok').value.trim();
 
-    if (!judul || !kategori || !stok) {
-      showErrorAlert('Judul Buku, Kategori, dan Stok wajib diisi!');
+    if (!judul || !penulis || !kategori || !stok) {
+      showErrorAlert('Judul Buku, Penulis, Kategori, dan Stok wajib diisi!');
       return;
     }
 
-    const bukuObj = {
-      id_buku: document.getElementById('modal-buku-id').value,
-      judul_buku: judul,
-      isbn: document.getElementById('modal-buku-isbn').value.trim(),
-      penulis: document.getElementById('modal-buku-penulis').value.trim(),
-      penerbit: document.getElementById('modal-buku-penerbit').value.trim(),
-      tahun_terbit: document.getElementById('modal-buku-tahun').value.trim(),
-      kategori: kategori,
-      stok_aktual: stok,
-      rak_lokasi: document.getElementById('modal-buku-rak').value.trim(),
-      url_sampul: document.getElementById('modal-buku-sampul').value.trim(),
-      url_file_buku: document.getElementById('modal-buku-file').value.trim()
-    };
+    const coverFileInput = document.getElementById('modal-buku-sampul-file');
+    const ebookFileInput = document.getElementById('modal-buku-file-upload');
 
-    showLoadingAlert('Menyimpan data buku...');
-    google.script.run
-      .withSuccessHandler(res => {
-        closeLoadingAlert();
-        if (res && res.success) {
-          showSuccessAlert(res.message, () => {
-            const modalEl = document.getElementById('modalFormBuku');
-            if (modalEl && typeof bootstrap !== 'undefined') {
-              const bsModal = bootstrap.Modal.getInstance(modalEl);
-              if (bsModal) bsModal.hide();
-            }
-            renderBukuTable(true);
-          });
-        } else {
-          showErrorAlert(res ? res.message : 'Gagal menyimpan buku.');
-        }
-      })
-      .saveBukuData(bukuObj);
+    showLoadingAlert('Memproses dan mengunggah berkas buku...');
+
+    try {
+      const coverBase64 = (coverFileInput && coverFileInput.files[0]) ? await readFileAsDataURL(coverFileInput.files[0]) : '';
+      const ebookBase64 = (ebookFileInput && ebookFileInput.files[0]) ? await readFileAsDataURL(ebookFileInput.files[0]) : '';
+
+      const bukuObj = {
+        id_buku: document.getElementById('modal-buku-id').value,
+        judul_buku: judul,
+        isbn: document.getElementById('modal-buku-isbn').value.trim(),
+        penulis: penulis,
+        penerbit: document.getElementById('modal-buku-penerbit').value.trim(),
+        tahun_terbit: document.getElementById('modal-buku-tahun').value.trim(),
+        kategori: kategori,
+        stok_aktual: stok,
+        rak_lokasi: document.getElementById('modal-buku-rak').value.trim(),
+        url_sampul: document.getElementById('modal-buku-sampul').value.trim(),
+        url_file_buku: document.getElementById('modal-buku-file').value.trim(),
+        sampul_base64: coverBase64,
+        ebook_base64: ebookBase64
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          closeLoadingAlert();
+          if (res && res.success) {
+            showSuccessAlert(res.message, () => {
+              const modalEl = document.getElementById('modalFormBuku');
+              if (modalEl && typeof bootstrap !== 'undefined') {
+                const bsModal = bootstrap.Modal.getInstance(modalEl);
+                if (bsModal) bsModal.hide();
+              }
+              renderBukuTable(true);
+            });
+          } else {
+            showErrorAlert(res ? res.message : 'Gagal menyimpan buku.');
+          }
+        })
+        .withFailureHandler(err => {
+          closeLoadingAlert();
+          showErrorAlert('Terjadi kesalahan saat menyimpan: ' + (err.message || err));
+        })
+        .saveBukuData(bukuObj);
+
+    } catch (err) {
+      closeLoadingAlert();
+      showErrorAlert('Gagal membaca berkas: ' + err.message);
+    }
   }
 
   function handleDeleteBuku(idBuku) {

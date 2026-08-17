@@ -175,7 +175,7 @@
         if (targetEl) targetEl.classList.remove('d-none');
         
         if (subviewName === 'buku') {
-          hideFormBuku();
+          renderBukuTable(true);
         } else if (subviewName === 'anggota') {
           renderAnggotaTable();
         } else if (subviewName === 'peminjaman') {
