@@ -1038,13 +1038,6 @@
       '<div style="font-size: 10px; color: #64748b;">NIP / ID: Administrator</div>' +
     '</div>' +
   '</div>' +
-
-  '<script>' +
-    'window.onload = function() {' +
-      'window.focus();' +
-      'window.print();' +
-    '};' +
-  '</script>' +
 '</body>' +
 '</html>';
 
@@ -1053,6 +1046,14 @@
       printWin.document.open();
       printWin.document.write(printHtml);
       printWin.document.close();
+      setTimeout(() => {
+        try {
+          printWin.focus();
+          printWin.print();
+        } catch (e) {
+          console.warn("Print error:", e);
+        }
+      }, 350);
     } else {
       const frame = document.createElement('iframe');
       frame.style.position = 'fixed';
@@ -1067,8 +1068,12 @@
       frameDoc.write(printHtml);
       frameDoc.close();
       setTimeout(() => {
-        frame.contentWindow.focus();
-        frame.contentWindow.print();
+        try {
+          frame.contentWindow.focus();
+          frame.contentWindow.print();
+        } catch (e) {
+          console.warn("Print frame error:", e);
+        }
         setTimeout(() => document.body.removeChild(frame), 1500);
       }, 500);
     }
