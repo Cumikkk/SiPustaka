@@ -10,6 +10,15 @@ const SPREADSHEET_ID = '1BJVNzX9wWw3rHnHlN8GkR3-KK_6kfjqBXOldbU3_TEg';
 const UPLOAD_FOLDER_ID = '1XIJJx-OVC7JPZ4eOWUaT_fDJXMQJhOi5';
 
 /**
+ * FUNGSI OTORISASI GOOGLE DRIVE
+ * Jalankan fungsi ini satu kali di Google Apps Script Editor untuk mengizinkan akses Drive
+ */
+function authorizeDriveApp() {
+  const folder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
+  Logger.log("Drive berhasil diotorisasi. Target folder: " + folder.getName());
+}
+
+/**
  * Endpoint Utama Web App
  */
 function doGet(e) {
