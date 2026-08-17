@@ -33,24 +33,22 @@
         const subText = t.statusBadge ? t.statusBadge.subText : (t.subText || '');
         const periode = t.periode_pinjam || (t.tgl_pinjam_indo + ' - ' + t.tgl_jatuh_tempo_indo);
 
-        html += `
-          <tr>
-            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
-            <td class="border-start">
-              <div class="fw-bold text-dark">${escapeHtml(t.nama_anggota)}</div>
-              <small class="text-muted d-block fw-semibold" style="font-size:0.72rem;">${escapeHtml(t.kelas_anggota)}</small>
-            </td>
-            <td class="border-start">
-              <div class="fw-semibold text-dark">${escapeHtml(t.nama_buku)}</div>
-              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(t.kategori_buku)}</small>
-            </td>
-            <td class="small fw-semibold text-dark border-start">${escapeHtml(periode)}</td>
-            <td class="pe-3 text-end border-start">
-              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
-              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
-            </td>
-          </tr>
-        `;
+        html += '<tr>' +
+          '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
+          '<td class="border-start">' +
+            '<div class="fw-bold text-dark">' + escapeHtml(t.nama_anggota) + '</div>' +
+            '<small class="text-muted d-block fw-semibold" style="font-size:0.72rem;">' + escapeHtml(t.kelas_anggota) + '</small>' +
+          '</td>' +
+          '<td class="border-start">' +
+            '<div class="fw-semibold text-dark">' + escapeHtml(t.nama_buku) + '</div>' +
+            '<small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ' + escapeHtml(t.kategori_buku) + '</small>' +
+          '</td>' +
+          '<td class="border-start text-center font-monospace small fw-semibold text-dark" style="width: 140px;">' + escapeHtml(periode) + '</td>' +
+          '<td class="border-start text-center" style="width: 130px;">' +
+            '<span class="badge ' + badgeClass + ' px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">' + escapeHtml(badgeText) + '</span>' +
+            '<small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">' + escapeHtml(subText) + '</small>' +
+          '</td>' +
+        '</tr>';
       });
       tbody.innerHTML = html;
     }
@@ -60,7 +58,7 @@
       if (totalLoans === 0) {
         infoEl.innerText = 'Menampilkan 0 dari 0 peminjaman aktif';
       } else {
-        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} peminjaman aktif`;
+        infoEl.innerText = 'Menampilkan ' + (startIndex + 1) + ' - ' + endIndex + ' dari ' + totalLoans + ' peminjaman aktif';
       }
     }
 
@@ -122,18 +120,16 @@
           labels.push(item.label);
           dataValues.push(item.count);
           backgroundColors.push(item.color);
-          legendHtml += `
-            <div class="legend-item-box">
-              <span class="legend-dot" style="background:${item.color};"></span>
-              ${escapeHtml(item.label)}: <b>${item.count} Buku</b> (${item.percentage}%)
-            </div>
-          `;
+          legendHtml += '<div class="legend-item-box">' +
+            '<span class="legend-dot" style="background:' + item.color + ';"></span>' +
+            escapeHtml(item.label) + ': <b>' + item.count + ' Buku</b> (' + item.percentage + '%)' +
+          '</div>';
         });
       } else {
         labels = ['Memuat...'];
         dataValues = [100];
         backgroundColors = ['#e2e8f0'];
-        legendHtml = `<div class="legend-item-box"><span class="legend-dot" style="background:#cbd5e1;"></span> Memuat kategori buku...</div>`;
+        legendHtml = '<div class="legend-item-box"><span class="legend-dot" style="background:#cbd5e1;"></span> Memuat kategori buku...</div>';
       }
 
       if (legendGrid) legendGrid.innerHTML = legendHtml;
@@ -162,7 +158,7 @@
           animation: { duration: 600 },
           plugins: {
             legend: { display: false },
-            tooltip: { enabled: kategoriStats && kategoriStats.length > 0 }
+            tooltip: { enabled: Boolean(kategoriStats && kategoriStats.length > 0) }
           }
         }
       });
@@ -209,22 +205,20 @@
         const badgeClass = l.badgeClass || 'bg-primary text-white';
         const badgeText = l.badgeText || 'Dipinjam';
         const subText = l.subText || '';
-        html += `
-          <tr>
-            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
-            <td class="border-start text-start">
-              <div class="fw-bold text-dark">${escapeHtml(l.judul_buku)}</div>
-              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(l.kategori_buku)}</small>
-            </td>
-            <td class="border-start text-center">
-              <div class="text-dark small fw-semibold">${escapeHtml(l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo))}</div>
-            </td>
-            <td class="pe-3 text-center border-start">
-              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
-              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
-            </td>
-          </tr>
-        `;
+        html += '<tr>' +
+          '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
+          '<td class="border-start text-start">' +
+            '<div class="fw-bold text-dark">' + escapeHtml(l.judul_buku) + '</div>' +
+            '<small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ' + escapeHtml(l.kategori_buku) + '</small>' +
+          '</td>' +
+          '<td class="border-start text-center">' +
+            '<div class="text-dark small fw-semibold">' + escapeHtml(l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo)) + '</div>' +
+          '</td>' +
+          '<td class="pe-3 text-center border-start">' +
+            '<span class="badge ' + badgeClass + ' px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">' + escapeHtml(badgeText) + '</span>' +
+            '<small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">' + escapeHtml(subText) + '</small>' +
+          '</td>' +
+        '</tr>';
       });
       tbody.innerHTML = html;
     }
@@ -234,7 +228,7 @@
       if (totalLoans === 0) {
         infoEl.innerText = 'Menampilkan 0 dari 0 pinjaman aktif';
       } else {
-        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} pinjaman aktif`;
+        infoEl.innerText = 'Menampilkan ' + (startIndex + 1) + ' - ' + endIndex + ' dari ' + totalLoans + ' pinjaman aktif';
       }
     }
 
@@ -248,7 +242,7 @@
     try {
       const greeting = document.getElementById('siswa-banner-greeting');
       if (greeting && currentUser && currentUser.userData) {
-        greeting.innerText = `Semangat Membaca & Rajin Belajar, ${(currentUser.userData.nama_lengkap || '').split(' ')[0]}!`;
+        greeting.innerText = 'Semangat Membaca & Rajin Belajar, ' + (currentUser.userData.nama_lengkap || '').split(' ')[0] + '!';
       }
 
       initDonutChartDynamic(null, 'chartRingkasanKoleksiSiswa', 'chart-legend-grid-siswa', true);

@@ -246,11 +246,16 @@
       roleEl.innerText = isSiswa ? ('Siswa • Kelas ' + (ud.kelas || '-')) : 'Administrator Sistem';
     }
 
+    const nisBox = document.getElementById('profil-field-nis-box');
     const nisLabel = document.getElementById('profil-field-nis-label');
-    if (nisLabel) nisLabel.innerText = isSiswa ? 'NIS:' : 'ID Admin:';
-
     const nisEl = document.getElementById('profil-card-nis');
-    if (nisEl) nisEl.innerText = isSiswa ? (ud.nis || '-') : (ud.id_admin || 'ADM-01');
+    if (isSiswa) {
+      if (nisBox) nisBox.classList.remove('d-none');
+      if (nisLabel) nisLabel.innerText = 'NIS:';
+      if (nisEl) nisEl.innerText = ud.nis || '-';
+    } else {
+      if (nisBox) nisBox.classList.add('d-none');
+    }
 
     const kelasBox = document.getElementById('profil-field-kelas-box');
     const kelasCardEl = document.getElementById('profil-card-kelas');
