@@ -75,8 +75,8 @@ function getBukuListFull(searchQuery, kategori, statusFilter) {
 
 function uploadFileToDrive(base64Data, fileName, mimeType) {
   try {
-    if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(';base64,')) {
-      return '';
+    if (!base64Data || typeof base64Data !== 'string') {
+      return { success: false, error: 'Data berkas kosong atau tidak valid.' };
     }
     
     let targetFolder = null;
@@ -98,18 +98,41 @@ function uploadFileToDrive(base64Data, fileName, mimeType) {
       }
     }
     
-    const splitParts = base64Data.split(';base64,');
-    const actualData = splitParts[1];
-    const detectedMime = splitParts[0].replace('data:', '') || mimeType || 'application/octet-stream';
+    let actualData = base64Data;
+    let detectedMime = mimeType || 'application/octet-stream';
+
+    if (base64Data.indexOf(';base64,') !== -1) {
+      const splitParts = base64Data.split(';base64,');
+      actualData = splitParts[1];
+      if (splitParts[0].indexOf('data:') !== -1) {
+        detectedMime = splitParts[0].replace('data:', '') || detectedMime;
+      }
+    }
+
     const decoded = Utilities.base64Decode(actualData);
     const blob = Utilities.newBlob(decoded, detectedMime, fileName);
     
     const file = targetFolder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return 'https://drive.google.com/uc?id=' + file.getId();
+    try {
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) {
+      Logger.log("Sharing permission warning: " + shareErr.message);
+    }
+    
+    const fileId = file.getId();
+    let directUrl = 'https://drive.google.com/uc?id=' + fileId;
+    if (detectedMime.indexOf('pdf') !== -1) {
+      directUrl = 'https://drive.google.com/file/d/' + fileId + '/view?usp=sharing';
+    }
+
+    return { 
+      success: true, 
+      url: directUrl, 
+      fileId: fileId 
+    };
   } catch (e) {
     Logger.log("Drive upload error: " + e.message);
-    return '';
+    return { success: false, error: e.message };
   }
 }
 
@@ -118,23 +141,28 @@ function saveBukuData(bukuObj) {
   const sheet = ss.getSheetByName('buku');
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
 
-  // Handle uploaded cover image file
+  // 1. Handle uploaded cover image file
   if (bukuObj.sampul_base64) {
     const origName = bukuObj.sampul_filename || 'cover.jpg';
     const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
     const ext = origName.includes('.') ? origName.substring(origName.lastIndexOf('.')) : '.jpg';
-    const uploadedCoverUrl = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg');
-    if (uploadedCoverUrl) {
-      bukuObj.url_sampul = uploadedCoverUrl;
+    const uploadRes = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg');
+    if (uploadRes && uploadRes.success) {
+      bukuObj.url_sampul = uploadRes.url;
+    } else if (uploadRes && !uploadRes.success) {
+      return { success: false, message: 'Gagal mengunggah sampul buku: ' + uploadRes.error };
     }
   }
 
-  // Handle uploaded ebook PDF file
+  // 2. Handle uploaded ebook PDF file
   if (bukuObj.ebook_base64) {
+    const origName = bukuObj.ebook_filename || 'ebook.pdf';
     const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
-    const uploadedEbookUrl = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf');
-    if (uploadedEbookUrl) {
-      bukuObj.url_file_buku = uploadedEbookUrl;
+    const uploadRes = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf');
+    if (uploadRes && uploadRes.success) {
+      bukuObj.url_file_buku = uploadRes.url;
+    } else if (uploadRes && !uploadRes.success) {
+      return { success: false, message: 'Gagal mengunggah berkas E-Book: ' + uploadRes.error };
     }
   }
 
@@ -192,7 +220,7 @@ function saveBukuData(bukuObj) {
 
     sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
     applyColumnAlignments('buku', nextRow, 1);
-    return { success: true, message: 'Buku baru berhasil ditambahkan!' };
+    return { success: true, message: 'Buku baru berhasil ditambahkan dan berkas tersimpan!' };
   } else {
     if (isbnIdx !== -1) sheet.getRange(rowToUpdate, isbnIdx + 1).setValue(bukuObj.isbn || '');
     if (judulIdx !== -1) sheet.getRange(rowToUpdate, judulIdx + 1).setValue(bukuObj.judul_buku || '');
@@ -203,7 +231,7 @@ function saveBukuData(bukuObj) {
     if (stokIdx !== -1) sheet.getRange(rowToUpdate, stokIdx + 1).setValue(stokVal);
     if (urlIdx !== -1 && bukuObj.url_sampul !== undefined) sheet.getRange(rowToUpdate, urlIdx + 1).setValue(bukuObj.url_sampul);
     if (urlFileIdx !== -1 && bukuObj.url_file_buku !== undefined) sheet.getRange(rowToUpdate, urlFileIdx + 1).setValue(bukuObj.url_file_buku);
-    return { success: true, message: 'Data buku berhasil diperbarui!' };
+    return { success: true, message: 'Data buku berhasil diperbarui dan berkas tersimpan!' };
   }
 }
 
