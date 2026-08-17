@@ -106,9 +106,6 @@
     const dropName = document.getElementById('topbar-dropdown-name');
     if (dropName) dropName.innerText = res.userData.nama_lengkap || 'User';
 
-    const dropEmail = document.getElementById('topbar-dropdown-email');
-    if (dropEmail) dropEmail.innerText = res.userData.email || 'user@email.com';
-
     const avatarBox = document.getElementById('user-avatar-box');
     if (avatarBox) {
       const userName = res.userData.nama_lengkap || 'Admin';
@@ -252,10 +249,16 @@
     if (inputNama) inputNama.value = ud.nama_lengkap || '';
 
     const inputUser = document.getElementById('profil-input-username');
-    if (inputUser) inputUser.value = ud.username || '';
+    if (inputUser) {
+      const cleanUser = (ud.username === '-' || !ud.username) ? '' : ud.username;
+      inputUser.value = cleanUser;
+    }
 
     const inputEmail = document.getElementById('profil-input-email');
-    if (inputEmail) inputEmail.value = ud.email || '';
+    if (inputEmail) {
+      const cleanEmail = (ud.email === '-' || !ud.email) ? '' : ud.email;
+      inputEmail.value = cleanEmail;
+    }
 
     const kelasContainer = document.getElementById('profil-input-kelas-container');
     const inputKelas = document.getElementById('profil-input-kelas');
@@ -277,14 +280,14 @@
     if (e) e.preventDefault();
     if (!currentUser || !currentUser.userData) return;
 
-    const namaLengkap = document.getElementById('profil-input-nama') ? document.getElementById('profil-input-nama').value.trim() : '';
+    const namaLengkap = (currentUser && currentUser.userData && currentUser.userData.nama_lengkap) || '';
     const username = document.getElementById('profil-input-username') ? document.getElementById('profil-input-username').value.trim() : '';
     const email = document.getElementById('profil-input-email') ? document.getElementById('profil-input-email').value.trim() : '';
     const oldPass = document.getElementById('profil-input-old-pass') ? document.getElementById('profil-input-old-pass').value.trim() : '';
     const newPass = document.getElementById('profil-input-new-pass') ? document.getElementById('profil-input-new-pass').value.trim() : '';
 
-    if (!namaLengkap || !username || !email) {
-      showErrorAlert('Nama lengkap, username, dan email wajib diisi!');
+    if (!username || !email) {
+      showErrorAlert('Username dan email wajib diisi!');
       return;
     }
 
