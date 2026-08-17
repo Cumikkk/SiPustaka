@@ -96,7 +96,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
         <div class="modal-header border-0 bg-primary text-white p-4">
-          <h5 class="modal-title fw-bold" id="detail-modal-title"><i class="bi bi-book-half me-2"></i>Detail Buku</h5>
+          <h5 class="modal-title fw-bold d-flex align-items-center" id="detail-modal-title"><i class="bi bi-book-half text-white" style="margin-right: 8px;"></i>Detail Buku</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body p-4 p-md-5 bg-white">
@@ -109,10 +109,7 @@
                   <div class="fw-bold fs-6 leading-tight" id="detail-fallback-title">Judul Buku</div>
                 </div>
               </div>
-              <span id="detail-badge-stok" class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2">Tersedia -</span>
-              <div id="detail-badge-ebook-container" class="d-none">
-                <span class="badge border rounded-pill px-3 py-2 fs-7 w-100 d-flex align-items-center justify-content-center shadow-xs" style="background-color: #eef2ff; color: #4338ca; border-color: #c7d2fe; font-weight: 600;">E-Book Tersedia</span>
-              </div>
+              <span id="detail-badge-stok" class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100">Tersedia -</span>
             </div>
 
             <div class="col-md-8">
@@ -126,47 +123,47 @@
               <div class="row g-3 mb-4">
                 <div class="col-6">
                   <div class="p-3 bg-light rounded-3 border h-100">
-                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-person-fill text-primary me-1.5"></i>PENULIS</small>
+                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-person-fill text-primary" style="margin-right: 8px;"></i>PENULIS</small>
                     <span class="fw-bold text-dark" id="detail-penulis">-</span>
                   </div>
                 </div>
                 <div class="col-6">
                   <div class="p-3 bg-light rounded-3 border h-100">
-                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-building-fill text-primary me-1.5"></i>PENERBIT</small>
+                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-building-fill text-primary" style="margin-right: 8px;"></i>PENERBIT</small>
                     <span class="fw-bold text-dark" id="detail-penerbit">-</span>
                   </div>
                 </div>
                 <div class="col-6">
                   <div class="p-3 bg-light rounded-3 border h-100">
-                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-calendar-event-fill text-primary me-1.5"></i>TAHUN TERBIT</small>
+                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-calendar-event-fill text-primary" style="margin-right: 8px;"></i>TAHUN TERBIT</small>
                     <span class="fw-bold text-dark" id="detail-tahun">-</span>
                   </div>
                 </div>
                 <div class="col-6">
                   <div class="p-3 bg-light rounded-3 border h-100">
-                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-tag-fill text-primary me-1.5"></i>KATEGORI</small>
+                    <small class="text-muted d-block fw-semibold mb-1" style="font-size:0.72rem;"><i class="bi bi-tag-fill text-primary" style="margin-right: 8px;"></i>KATEGORI</small>
                     <span class="fw-bold text-dark" id="detail-kategori">Umum</span>
                   </div>
                 </div>
               </div>
 
-              <!-- E-BOOK ACTION SECTION -->
+              <!-- BUKU DIGITAL ACTION SECTION -->
               <div id="detail-ebook-section" class="p-3 rounded-3 mb-4 d-none" style="background: linear-gradient(135deg, #f0f7ff 0%, #e6f0fa 100%); border: 1px dashed #b9d5f7;">
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                   <div>
                     <div class="d-flex align-items-center gap-2 mb-1">
-                      <i class="bi bi-journal-text text-primary fs-5"></i>
-                      <span class="fw-bold text-primary fs-6">Buku Digital (E-Book)</span>
+                      <i class="bi bi-journal-text text-primary fs-5" style="margin-right: 4px;"></i>
+                      <span class="fw-bold text-primary fs-6">Buku Digital</span>
                     </div>
-                    <small class="text-secondary d-block">Dapat langsung dibaca di web atau diunduh ke perangkat.</small>
+                    <small class="text-secondary d-block">Baca langsung di web atau unduh file PDF.</small>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <a href="#" id="detail-btn-unduh-ebook" target="_blank" class="btn btn-sm btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center gap-2">
-                      <i class="bi bi-download"></i>
-                      <span>Unduh E-Book</span>
+                    <a href="#" id="detail-btn-unduh-ebook" target="_blank" class="btn btn-sm btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center">
+                      <i class="bi bi-download" style="margin-right: 8px;"></i>
+                      <span>Unduh PDF</span>
                     </a>
-                    <button type="button" id="detail-btn-baca-ebook" class="btn btn-sm btn-primary rounded-3 px-3.5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center gap-2">
-                      <i class="bi bi-book-half"></i>
+                    <button type="button" id="detail-btn-baca-ebook" class="btn btn-sm btn-primary rounded-3 px-3.5 py-2 fw-semibold shadow-sm d-inline-flex align-items-center">
+                      <i class="bi bi-book-half" style="margin-right: 8px;"></i>
                       <span>Baca Online</span>
                     </button>
                   </div>
@@ -175,7 +172,7 @@
 
               <div class="d-flex align-items-center justify-content-end gap-2 pt-3 border-top" id="detail-modal-actions">
                 <button type="button" class="btn btn-outline-secondary rounded-3 px-4 fw-semibold" data-bs-dismiss="modal">Tutup</button>
-                <button type="button" class="btn btn-primary rounded-3 px-4 fw-semibold d-none d-inline-flex align-items-center gap-2" id="detail-btn-pinjam"><i class="bi bi-journal-plus"></i><span>Pinjam Buku Ini</span></button>
+                <button type="button" class="btn btn-primary rounded-3 px-4 fw-semibold d-none d-inline-flex align-items-center gap-2" id="detail-btn-pinjam"><i class="bi bi-journal-plus" style="margin-right: 8px;"></i><span>Pinjam Buku Ini</span></button>
               </div>
             </div>
           </div>

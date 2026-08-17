@@ -6,34 +6,38 @@
               <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <span class="text-dark">Koleksi Buku</span></small>
             </div>
             
-            <!-- View Mode Switcher -->
+            <!-- View Mode Switcher with Proper Icon Spacing -->
             <div class="btn-group rounded-3 shadow-sm p-1 bg-white border" role="group">
-              <button type="button" class="btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center gap-2 active" id="katalog-btn-grid" onclick="setKatalogViewMode('grid')"><i class="bi bi-grid-fill"></i><span>Grid</span></button>
-              <button type="button" class="btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center gap-2" id="katalog-btn-list" onclick="setKatalogViewMode('list')"><i class="bi bi-list-task"></i><span>Tabel</span></button>
+              <button type="button" class="btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center active" id="katalog-btn-grid" onclick="setKatalogViewMode('grid')">
+                <i class="bi bi-grid-fill" style="margin-right: 8px;"></i><span>Grid</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center" id="katalog-btn-list" onclick="setKatalogViewMode('list')">
+                <i class="bi bi-list-task" style="margin-right: 8px;"></i><span>Tabel</span>
+              </button>
             </div>
           </div>
 
-          <!-- TOOLBAR SEARCH & FILTER BAR -->
-          <div class="card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4">
+          <!-- TOOLBAR SEARCH & FILTER BAR (KHUSUS MODE GRID - TERPISAH) -->
+          <div id="katalog-toolbar-grid" class="card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4">
             <div class="row g-3">
               <!-- Search Bar -->
               <div class="col-md-6 col-lg-6">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
-                  <input type="text" id="katalog-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku, Penulis, ISBN..." onkeyup="filterKatalogData()">
+                  <input type="text" id="katalog-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku, Penulis, ISBN..." onkeyup="filterKatalogData('grid')">
                 </div>
               </div>
               
               <!-- Filter Kategori (Dinamis dari Database) -->
               <div class="col-md-3 col-lg-3">
-                <select id="katalog-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData()">
+                <select id="katalog-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData('grid')">
                   <option value="semua">Semua Kategori</option>
                 </select>
               </div>
 
               <!-- Filter Stok -->
               <div class="col-md-3 col-lg-3">
-                <select id="katalog-filter-stok" class="form-select rounded-3" onchange="filterKatalogData()">
+                <select id="katalog-filter-stok" class="form-select rounded-3" onchange="filterKatalogData('grid')">
                   <option value="semua">Semua Status Stok</option>
                   <option value="tersedia">Tersedia - Saja</option>
                   <option value="habis">Stok Habis</option>
@@ -50,8 +54,37 @@
             </div>
           </div>
 
-          <!-- KATALOG LIST TABLE CONTAINER (HIDDEN BY DEFAULT) -->
+          <!-- KATALOG LIST TABLE CONTAINER (SATU CARD UTUH TERINTEGRASI PENCARIAN + TABEL) -->
           <div id="katalog-list-container" class="card border-0 rounded-4 shadow-sm p-4 d-none">
+            
+            <!-- FILTER & PENCARIAN TERINTEGRASI PADA CARD TABEL -->
+            <div class="row g-3 mb-4">
+              <!-- Search Bar Tabel -->
+              <div class="col-md-6 col-lg-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" id="katalog-table-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku, Penulis, ISBN..." onkeyup="filterKatalogData('table')">
+                </div>
+              </div>
+              
+              <!-- Filter Kategori Tabel -->
+              <div class="col-md-3 col-lg-3">
+                <select id="katalog-table-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData('table')">
+                  <option value="semua">Semua Kategori</option>
+                </select>
+              </div>
+
+              <!-- Filter Stok Tabel -->
+              <div class="col-md-3 col-lg-3">
+                <select id="katalog-table-filter-stok" class="form-select rounded-3" onchange="filterKatalogData('table')">
+                  <option value="semua">Semua Status Stok</option>
+                  <option value="tersedia">Tersedia - Saja</option>
+                  <option value="habis">Stok Habis</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- TAMPILKAN ENTRI -->
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
               <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small fw-semibold">Tampilkan:</span>
@@ -66,6 +99,7 @@
               </div>
             </div>
 
+            <!-- TABEL DATA BUKU -->
             <div class="table-responsive">
               <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
                 <thead class="bg-light text-muted small uppercase">
@@ -98,4 +132,3 @@
             </div>
           </div>
         </div>
-

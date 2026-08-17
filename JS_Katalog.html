@@ -30,10 +30,10 @@
   }
 
   function updateKatalogCategoryDropdown(data) {
-    const selectKategori = document.getElementById('katalog-filter-kategori');
-    if (!selectKategori) return;
+    const selectKategoriGrid = document.getElementById('katalog-filter-kategori');
+    const selectKategoriTable = document.getElementById('katalog-table-filter-kategori');
 
-    const currentVal = selectKategori.value || 'semua';
+    const currentVal = (selectKategoriGrid && selectKategoriGrid.value) || (selectKategoriTable && selectKategoriTable.value) || 'semua';
     const categoriesSet = new Set();
 
     (data || []).forEach(b => {
@@ -50,24 +50,45 @@
       html += `<option value="${escapeHtml(cat.toLowerCase())}" ${isSelected}>${escapeHtml(cat)}</option>`;
     });
 
-    selectKategori.innerHTML = html;
+    if (selectKategoriGrid) selectKategoriGrid.innerHTML = html;
+    if (selectKategoriTable) selectKategoriTable.innerHTML = html;
   }
 
   function setKatalogViewMode(mode) {
     currentCatalogViewMode = mode;
     const btnGrid = document.getElementById('katalog-btn-grid');
     const btnList = document.getElementById('katalog-btn-list');
+    const gridToolbar = document.getElementById('katalog-toolbar-grid');
     const gridContainer = document.getElementById('katalog-grid-container');
     const listContainer = document.getElementById('katalog-list-container');
 
+    const searchGrid = document.getElementById('katalog-search-input');
+    const searchTable = document.getElementById('katalog-table-search-input');
+    const katGrid = document.getElementById('katalog-filter-kategori');
+    const katTable = document.getElementById('katalog-table-filter-kategori');
+    const stokGrid = document.getElementById('katalog-filter-stok');
+    const stokTable = document.getElementById('katalog-table-filter-stok');
+
     if (mode === 'grid') {
-      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
-      if (btnList) { btnList.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
+      // Sinkronkan value dari tabel ke grid
+      if (searchGrid && searchTable) searchGrid.value = searchTable.value;
+      if (katGrid && katTable) katGrid.value = katTable.value;
+      if (stokGrid && stokTable) stokGrid.value = stokTable.value;
+
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center active'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center'; }
+      if (gridToolbar) gridToolbar.classList.remove('d-none');
       if (gridContainer) gridContainer.classList.remove('d-none');
       if (listContainer) listContainer.classList.add('d-none');
     } else {
-      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
-      if (btnList) { btnList.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
+      // Sinkronkan value dari grid ke tabel
+      if (searchGrid && searchTable) searchTable.value = searchGrid.value;
+      if (katGrid && katTable) katTable.value = katGrid.value;
+      if (stokGrid && stokTable) stokTable.value = stokGrid.value;
+
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center active'; }
+      if (gridToolbar) gridToolbar.classList.add('d-none');
       if (gridContainer) gridContainer.classList.add('d-none');
       if (listContainer) listContainer.classList.remove('d-none');
     }
@@ -75,11 +96,26 @@
     renderCatalogView();
   }
 
-  function filterKatalogData() {
-    const selectKategori = document.getElementById('katalog-filter-kategori');
-    if (selectKategori) {
-      activeCatalogCategory = selectKategori.value.toLowerCase();
+  function filterKatalogData(source) {
+    const searchGrid = document.getElementById('katalog-search-input');
+    const searchTable = document.getElementById('katalog-table-search-input');
+    const katGrid = document.getElementById('katalog-filter-kategori');
+    const katTable = document.getElementById('katalog-table-filter-kategori');
+    const stokGrid = document.getElementById('katalog-filter-stok');
+    const stokTable = document.getElementById('katalog-table-filter-stok');
+
+    if (source === 'table') {
+      if (searchGrid && searchTable) searchGrid.value = searchTable.value;
+      if (katGrid && katTable) katGrid.value = katTable.value;
+      if (stokGrid && stokTable) stokGrid.value = stokTable.value;
+      if (katTable) activeCatalogCategory = katTable.value.toLowerCase();
+    } else {
+      if (searchGrid && searchTable) searchTable.value = searchGrid.value;
+      if (katGrid && katTable) katTable.value = katGrid.value;
+      if (stokGrid && stokTable) stokTable.value = stokGrid.value;
+      if (katGrid) activeCatalogCategory = katGrid.value.toLowerCase();
     }
+
     catalogTableCurrentPage = 1;
     renderCatalogView();
   }
@@ -93,8 +129,20 @@
     const gridContainer = document.getElementById('katalog-grid-container');
     const listBody = document.getElementById('katalog-list-table-body');
 
-    const search = document.getElementById('katalog-search-input') ? document.getElementById('katalog-search-input').value.trim().toLowerCase() : '';
-    const stokFilter = document.getElementById('katalog-filter-stok') ? document.getElementById('katalog-filter-stok').value : 'semua';
+    const searchInput = (currentCatalogViewMode === 'list') 
+      ? document.getElementById('katalog-table-search-input') 
+      : document.getElementById('katalog-search-input');
+    const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    const stokSelect = (currentCatalogViewMode === 'list') 
+      ? document.getElementById('katalog-table-filter-stok') 
+      : document.getElementById('katalog-filter-stok');
+    const stokFilter = stokSelect ? stokSelect.value : 'semua';
+
+    const katSelect = (currentCatalogViewMode === 'list') 
+      ? document.getElementById('katalog-table-filter-kategori') 
+      : document.getElementById('katalog-filter-kategori');
+    if (katSelect) activeCatalogCategory = katSelect.value.toLowerCase();
 
     const filtered = catalogDataCache.filter(b => {
       const matchSearch = !search ||
@@ -116,7 +164,7 @@
     if (filtered.length === 0) {
       const emptyHtml = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-journal-x display-4 d-block text-secondary mb-2 opacity-50"></i><div class="fw-semibold">Tidak ada koleksi buku yang sesuai dengan pencarian Anda.</div><small class="text-muted">Coba ubah kata kunci pencarian atau filter kategori.</small></div>';
       if (gridContainer) gridContainer.innerHTML = emptyHtml;
-      if (listBody) listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada koleksi buku yang sesuai.</td></tr>';
+      if (listBody) listBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada koleksi buku yang sesuai.</td></tr>';
       
       const infoEl = document.getElementById('katalog-table-pagination-info');
       if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
@@ -164,7 +212,7 @@
                              <button class="btn btn-sm btn-primary w-100 rounded-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i><span>Edit</span></button>
                            </div>`;
         } else {
-          actionBtnHtml = `<button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold py-1.5 d-inline-flex align-items-center justify-content-center gap-1.5" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+          actionBtnHtml = `<button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold py-1.5 d-inline-flex align-items-center justify-content-center" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle" style="margin-right: 8px;"></i><span>Lihat Detail Buku</span></button>`;
         }
 
         gridHtml += `
@@ -194,7 +242,8 @@
       });
       if (gridContainer) gridContainer.innerHTML = gridHtml;
     } else {
-      const totalItems = filtered.length;      const entriesSelect = document.getElementById('katalog-table-entries');
+      const totalItems = filtered.length;
+      const entriesSelect = document.getElementById('katalog-table-entries');
       const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 5) : 5;
       const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
@@ -229,7 +278,7 @@
                          <button class="btn btn-sm btn-outline-warning border-0" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
                        </div>`;
         } else {
-          actionBtn = `<button class="btn btn-sm btn-outline-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+          actionBtn = `<button class="btn btn-sm btn-outline-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center shadow-xs" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle" style="margin-right: 8px;"></i><span>Lihat Detail Buku</span></button>`;
         }
 
         listHtml += `
@@ -310,10 +359,10 @@
     const badgeStok = document.getElementById('detail-badge-stok');
     if (badgeStok) {
       if (stokNum > 0) {
-        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100';
         badgeStok.innerText = `Tersedia ${stokNum}`;
       } else {
-        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100';
         badgeStok.innerText = 'Stok Habis';
       }
     }
@@ -389,7 +438,7 @@
     const downloadUrl = getDriveDownloadUrl(urlFileBuku);
     
     const judulEl = document.getElementById('baca-buku-judul');
-    if (judulEl) judulEl.innerText = judulBuku || 'Membaca E-Book';
+    if (judulEl) judulEl.innerText = judulBuku || 'Membaca Buku Digital';
     
     const btnUnduh = document.getElementById('baca-buku-btn-unduh');
     if (btnUnduh) {
