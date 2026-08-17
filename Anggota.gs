@@ -4,19 +4,23 @@
  * ====================================================================
  */
 
-function getAnggotaListFull(searchQuery, statusFilter) {
-  const allAnggota = getSheetData('anggota');
-  return allAnggota.filter(a => {
+function getAnggotaListFull(searchQuery, statusFilter, kelasFilter) {
+  const allAnggota = getSheetData('siswa');
+  return (allAnggota || []).filter(a => {
     const matchesSearch = !searchQuery ||
       String(a.nama_lengkap || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(a.username || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       String(a.nis || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(a.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+      String(a.email || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(a.kelas || '').toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = !statusFilter || statusFilter === 'semua' ||
       String(a.status || '').toLowerCase() === statusFilter.toLowerCase();
 
-    return matchesSearch && matchesStatus;
+    const matchesKelas = !kelasFilter || kelasFilter === 'semua' ||
+      String(a.kelas || '').trim().toLowerCase() === kelasFilter.trim().toLowerCase();
+
+    return matchesSearch && matchesStatus && matchesKelas;
   });
 }
 
@@ -66,6 +70,43 @@ function prosesKenaikanKelasMassal(ruleMapping) {
   return { 
     success: true, 
     message: `Berhasil memproses kenaikan kelas untuk ${updatedCount} siswa!` 
+  };
+}
+
+function hapusSemuaSiswaLulus() {
+  const ss = getDb();
+  const sheet = getFlexibleSheet(ss, 'siswa');
+  if (!sheet) return { success: false, message: 'Sheet siswa tidak ditemukan.' };
+
+  const values = sheet.getDataRange().getValues();
+  if (values.length <= 1) {
+    return { success: false, message: 'Data siswa masih kosong.' };
+  }
+
+  const headers = values[0].map(h => String(h).trim().toLowerCase());
+  const kelasIdx = headers.indexOf('kelas');
+  const statusIdx = headers.indexOf('status');
+
+  let deletedCount = 0;
+  for (let i = values.length - 1; i >= 1; i--) {
+    const rowStatus = statusIdx !== -1 ? String(values[i][statusIdx] || '').trim().toLowerCase() : '';
+    const rowKelas = kelasIdx !== -1 ? String(values[i][kelasIdx] || '').trim().toUpperCase() : '';
+
+    const isLulus = rowStatus === 'lulus' || rowStatus === 'nonaktif' || rowKelas === 'LULUS' || rowKelas === 'ALUMNI';
+    if (isLulus) {
+      sheet.deleteRow(i + 1);
+      deletedCount++;
+    }
+  }
+
+  if (deletedCount === 0) {
+    return { success: true, count: 0, message: 'Tidak ada data siswa berstatus lulus/nonaktif untuk dihapus.' };
+  }
+
+  return {
+    success: true,
+    count: deletedCount,
+    message: `Berhasil menghapus ${deletedCount} data siswa yang sudah lulus/nonaktif!`
   };
 }
 
@@ -130,27 +171,23 @@ function deleteAnggotaData(nis) {
 
   const values = sheet.getDataRange().getValues();
   const headers = values[0].map(h => String(h).trim().toLowerCase());
-  const nisIdx = headers.indexOf('nis');
-  
-  const searchIdx = nisIdx !== -1 ? nisIdx : 0;
-  
+  const searchIdx = headers.indexOf('nis') !== -1 ? headers.indexOf('nis') : 0;
+
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][searchIdx]).trim() === String(nis).trim()) {
       sheet.deleteRow(i + 1);
-      return { success: true, message: 'Data Siswa berhasil dihapus.' };
+      return { success: true, message: 'Data siswa berhasil dihapus.' };
     }
   }
-  return { success: false, message: 'Data Siswa tidak ditemukan.' };
+  return { success: false, message: 'Siswa tidak ditemukan.' };
 }
 
+// ==========================================
+// CONTROLLER KHUSUS PETUGAS / ADMIN
+// ==========================================
+
 function getAdminListFull() {
-  const allAdmin = getSheetData('admin');
-  return allAdmin.map(a => ({
-    id_admin: a.id_admin || '',
-    nama_lengkap: a.nama_lengkap || '',
-    email: a.email || '',
-    username: a.username || ''
-  }));
+  return getSheetData('admin');
 }
 
 function saveAdminData(adminObj) {
@@ -159,47 +196,47 @@ function saveAdminData(adminObj) {
   if (!sheet) return { success: false, message: 'Sheet admin tidak ditemukan.' };
 
   const values = sheet.getDataRange().getValues();
-  const userClean = String(adminObj.username || '').trim().toLowerCase();
+  const headers = values[0].map(h => String(h).trim().toLowerCase());
+
+  const idAdminIdx = headers.indexOf('id_admin');
+  const userIdx = headers.indexOf('username');
+  const passIdx = headers.indexOf('password');
+  const namaIdx = headers.indexOf('nama_lengkap');
+  const emailIdx = headers.indexOf('email');
 
   let rowToUpdate = -1;
+  let isEdit = false;
+
   if (adminObj.id_admin) {
+    const searchIdx = idAdminIdx !== -1 ? idAdminIdx : 0;
     for (let i = 1; i < values.length; i++) {
-      if (String(values[i][0]).trim() === String(adminObj.id_admin).trim()) {
+      if (String(values[i][searchIdx]).trim() === String(adminObj.id_admin).trim()) {
         rowToUpdate = i + 1;
+        isEdit = true;
         break;
       }
     }
   }
 
-  if (rowToUpdate === -1) {
-    const exists = values.slice(1).some(r => String(r[3]).trim().toLowerCase() === userClean);
-    if (exists) {
-      return { success: false, message: 'Username sudah digunakan oleh petugas lain!' };
-    }
+  if (!isEdit) {
     const nextRow = Math.max(sheet.getLastRow() + 1, 2);
-    const newId = 'adm-' + String(nextRow - 1).padStart(2, '0');
-    const rowData = [
-      newId,
-      adminObj.nama_lengkap || '',
-      adminObj.email || '',
-      adminObj.username || '',
-      adminObj.password || '123'
-    ];
+    const newId = 'adm-' + String(nextRow - 1).padStart(3, '0');
+    const rowData = headers.map(h => {
+      if (h === 'id_admin') return newId;
+      if (h === 'username') return "'" + (adminObj.username || '');
+      if (h === 'password') return "'" + (adminObj.password || 'admin123');
+      if (h === 'nama_lengkap') return adminObj.nama_lengkap || '';
+      if (h === 'email') return adminObj.email || '';
+      return '';
+    });
     sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
     applyColumnAlignments('admin', nextRow, 1);
     return { success: true, message: 'Petugas Admin baru berhasil ditambahkan!' };
   } else {
-    for (let i = 1; i < values.length; i++) {
-      if (i + 1 !== rowToUpdate && String(values[i][3]).trim().toLowerCase() === userClean) {
-        return { success: false, message: 'Username sudah digunakan oleh petugas lain!' };
-      }
-    }
-    sheet.getRange(rowToUpdate, 2).setValue(adminObj.nama_lengkap || '');
-    sheet.getRange(rowToUpdate, 3).setValue(adminObj.email || '');
-    sheet.getRange(rowToUpdate, 4).setValue(adminObj.username || '');
-    if (adminObj.password && String(adminObj.password).trim() !== '') {
-      sheet.getRange(rowToUpdate, 5).setValue(String(adminObj.password).trim());
-    }
+    if (userIdx !== -1) sheet.getRange(rowToUpdate, userIdx + 1).setValue("'" + (adminObj.username || ''));
+    if (namaIdx !== -1) sheet.getRange(rowToUpdate, namaIdx + 1).setValue(adminObj.nama_lengkap || '');
+    if (emailIdx !== -1) sheet.getRange(rowToUpdate, emailIdx + 1).setValue(adminObj.email || '');
+    if (passIdx !== -1 && adminObj.password) sheet.getRange(rowToUpdate, passIdx + 1).setValue("'" + adminObj.password);
     return { success: true, message: 'Data Petugas Admin berhasil diperbarui!' };
   }
 }
@@ -210,19 +247,11 @@ function deleteAdminData(idAdmin) {
   if (!sheet) return { success: false, message: 'Sheet admin tidak ditemukan.' };
 
   const values = sheet.getDataRange().getValues();
-  if (values.length <= 2) {
-    return { success: false, message: 'Minimal harus ada 1 Petugas Admin dalam sistem!' };
-  }
-
   for (let i = 1; i < values.length; i++) {
     if (String(values[i][0]).trim() === String(idAdmin).trim()) {
       sheet.deleteRow(i + 1);
-      return { success: true, message: 'Petugas Admin berhasil dihapus.' };
+      return { success: true, message: 'Data admin berhasil dihapus.' };
     }
   }
-  return { success: false, message: 'Petugas Admin tidak ditemukan.' };
+  return { success: false, message: 'Admin tidak ditemukan.' };
 }
-// ==========================================
-// HELPER PERATAAN KOLOM PERSISI (EXACT ALIGNMENT TABLE)
-// ==========================================
-

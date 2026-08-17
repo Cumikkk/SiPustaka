@@ -97,7 +97,8 @@
               <h3 class="fw-bold m-0 text-dark">Kelola Data Anggota Siswa</h3>
               <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <a href="#" onclick="toggleAnggotaDropdown(); return false;" class="text-decoration-none text-secondary">Anggota</a> &gt; <span class="text-dark">Siswa</span></small>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-danger rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center" onclick="handleHapusSemuaSiswaLulus()"><i class="bi bi-trash3-fill" style="margin-right: 6px;"></i>Hapus Siswa Lulus</button>
               <button class="btn btn-outline-primary rounded-3 px-3 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalKenaikanKelas()"><i class="bi bi-mortarboard-fill" style="margin-right: 6px;"></i>Kenaikan Kelas Massal</button>
               <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalTambahAnggota()"><i class="bi bi-person-plus-fill" style="margin-right: 6px;"></i>Tambah Anggota</button>
             </div>
@@ -105,12 +106,12 @@
 
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-3 col-sm-6">
+              <div class="col-lg-2 col-md-3 col-sm-6">
                 <div class="d-flex align-items-center gap-2">
                   <span class="text-muted small fw-semibold">Tampilkan:</span>
-                  <select id="anggota-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="anggotaTableCurrentPage = 1; renderAnggotaTable();">
-                    <option value="5">5</option>
-                    <option value="10" selected>10</option>
+                  <select id="anggota-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
@@ -118,17 +119,22 @@
                   <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-md-5 col-sm-6">
+              <div class="col-lg-4 col-md-3 col-sm-6">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
-                  <input type="text" id="anggota-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari NIS, Nama Siswa, Kelas, Email..." onkeyup="anggotaTableCurrentPage = 1; renderAnggotaTable();">
+                  <input type="text" id="anggota-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari NIS, Nama, Kelas, Email..." onkeyup="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
                 </div>
               </div>
-              <div class="col-md-4 col-sm-12">
-                <select id="anggota-filter-status" class="form-select rounded-3" onchange="anggotaTableCurrentPage = 1; renderAnggotaTable();">
+              <div class="col-lg-3 col-md-3 col-sm-6">
+                <select id="anggota-filter-kelas" class="form-select rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
+                  <option value="semua">Semua Kelas</option>
+                </select>
+              </div>
+              <div class="col-lg-3 col-md-3 col-sm-6">
+                <select id="anggota-filter-status" class="form-select rounded-3" onchange="anggotaTableCurrentPage = 1; executeRenderAnggotaTable();">
                   <option value="semua">Semua Status</option>
                   <option value="aktif">Aktif</option>
-                  <option value="nonaktif">Nonaktif</option>
+                  <option value="nonaktif">Nonaktif / Lulus</option>
                 </select>
               </div>
             </div>
