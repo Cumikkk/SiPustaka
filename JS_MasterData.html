@@ -767,40 +767,159 @@
   // CONTROLLER 3: LAPORAN PERPUSTAKAAN
   // ==========================================
 
+  let laporanDataCache = [];
+  let laporanCurrentPage = 1;
+
+  function changeLaporanPage(p) {
+    laporanCurrentPage = p;
+    executeRenderLaporanTable();
+  }
+
+  function updateLaporanKategoriDropdown(data) {
+    const sel = document.getElementById('laporan-filter-kategori');
+    if (!sel) return;
+
+    const currentVal = sel.value || 'semua';
+    const katSet = new Set();
+    (data || []).forEach(b => {
+      if (b.kategori && String(b.kategori).trim() !== '' && b.kategori !== '-') {
+        katSet.add(String(b.kategori).trim());
+      }
+    });
+
+    let html = '<option value="semua">Semua Kategori</option>';
+    Array.from(katSet).sort().forEach(k => {
+      const cap = k.charAt(0).toUpperCase() + k.slice(1);
+      const isSelected = k.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      html += '<option value="' + escapeHtml(k.toLowerCase()) + '" ' + isSelected + '>' + escapeHtml(cap) + '</option>';
+    });
+
+    sel.innerHTML = html;
+  }
+
   function loadLaporanData() {
     const tbody = document.getElementById('laporan-table-body');
     if (!tbody) return;
 
-    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat laporan...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat laporan perpustakaan...</td></tr>';
 
     google.script.run
       .withSuccessHandler(data => {
         if (!data) return;
 
-        document.getElementById('lap-total-pinjam').innerText = data.totalPeminjaman || 0;
-        document.getElementById('lap-total-kembali').innerText = data.totalDikembalikan || 0;
-        document.getElementById('lap-masih-dipinjam').innerText = data.masihDipinjam || 0;
-        document.getElementById('lap-terlambat').innerText = data.terlambat || 0;
+        const elPinjam = document.getElementById('lap-total-pinjam');
+        if (elPinjam) elPinjam.innerText = Number(data.totalPeminjaman || 0).toLocaleString('id-ID');
 
-        if (!data.ringkasanBuku || data.ringkasanBuku.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data sirkulasi.</td></tr>';
-          return;
-        }
+        const elKembali = document.getElementById('lap-total-kembali');
+        if (elKembali) elKembali.innerText = Number(data.totalDikembalikan || 0).toLocaleString('id-ID');
 
-        let html = '';
-        data.ringkasanBuku.forEach((b, idx) => {
-          html += '<tr>' +
-            '<td class="ps-3 fw-bold text-secondary text-center" style="width: 50px;">' + (idx + 1) + '</td>' +
-            '<td class="border-start fw-bold text-dark">' + escapeHtml(b.judul_buku) + '</td>' +
-            '<td class="text-center fw-semibold text-primary border-start">' + b.dipinjam + '</td>' +
-            '<td class="text-center fw-semibold text-success border-start">' + b.dikembalikan + '</td>' +
-            '<td class="text-center fw-semibold text-warning border-start">' + b.masih_dipinjam + '</td>' +
-            '<td class="text-center fw-bold text-danger border-start">' + b.terlambat + '</td>' +
-          '</tr>';
-        });
-        tbody.innerHTML = html;
+        const elSedang = document.getElementById('lap-masih-dipinjam');
+        if (elSedang) elSedang.innerText = Number(data.masihDipinjam || 0).toLocaleString('id-ID');
+
+        const elTerlambat = document.getElementById('lap-terlambat');
+        if (elTerlambat) elTerlambat.innerText = Number(data.terlambat || 0).toLocaleString('id-ID');
+
+        laporanDataCache = data.ringkasanBuku || [];
+        updateLaporanKategoriDropdown(laporanDataCache);
+        laporanCurrentPage = 1;
+        executeRenderLaporanTable();
+      })
+      .withFailureHandler(err => {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Gagal memuat laporan: ' + escapeHtml(err.message || err) + '</td></tr>';
       })
       .getLaporanRingkasanFull();
+  }
+
+  function executeRenderLaporanTable() {
+    const tbody = document.getElementById('laporan-table-body');
+    if (!tbody) return;
+
+    const query = (document.getElementById('laporan-search-query')?.value || '').trim().toLowerCase();
+    const filterKat = (document.getElementById('laporan-filter-kategori')?.value || 'semua').toLowerCase();
+    const entriesSel = document.getElementById('laporan-table-entries');
+    const pageSize = entriesSel ? (parseInt(entriesSel.value, 10) || 5) : 5;
+
+    const filtered = (laporanDataCache || []).filter(b => {
+      const matchQ = !query ||
+        String(b.judul_buku || '').toLowerCase().includes(query) ||
+        String(b.penulis || '').toLowerCase().includes(query);
+
+      const bKat = String(b.kategori || '').trim().toLowerCase();
+      const matchKat = !filterKat || filterKat === 'semua' || bKat === filterKat;
+
+      return matchQ && matchKat;
+    });
+
+    const totalItems = filtered.length;
+    const infoEl = document.getElementById('laporan-pagination-info');
+    const controlsEl = document.getElementById('laporan-pagination-controls');
+
+    if (totalItems === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Tidak ada data sirkulasi buku yang cocok.</td></tr>';
+      if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+      if (controlsEl) controlsEl.innerHTML = '';
+      return;
+    }
+
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    if (laporanCurrentPage > totalPages) laporanCurrentPage = totalPages;
+    if (laporanCurrentPage < 1) laporanCurrentPage = 1;
+
+    const startIndex = (laporanCurrentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    let html = '';
+    pageItems.forEach((b, idx) => {
+      const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+      const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+      const imgThumb = coverUrl
+        ? '<img src="' + coverUrl + '" class="rounded-2 shadow-2xs flex-shrink-0" style="width: 40px; height: 52px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center flex-shrink-0\\\' style=\\\'width: 40px; height: 52px;\\\'><i class=\\\'bi bi-journal-bookmark-fill fs-5\\\'></i></div>\'"> '
+        : '<div class="rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-2xs flex-shrink-0" style="width: 40px; height: 52px;"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>';
+
+      const rawKat = b.kategori ? String(b.kategori).trim() : 'Umum';
+      const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
+      const penulisVal = (b.penulis && b.penulis !== '-') ? escapeHtml(b.penulis) : '';
+      const penulisHtml = penulisVal ? ('<span class="text-muted" style="font-size:0.75rem;">Penulis: ' + penulisVal + '</span> &bull; ') : '';
+
+      html += '<tr>' +
+        '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
+        '<td class="border-start text-center" style="width: 75px;">' + imgThumb + '</td>' +
+        '<td class="border-start text-start">' +
+          '<div class="fw-bold text-dark text-truncate mb-1" style="max-width: 280px; font-size: 0.95rem;">' + escapeHtml(b.judul_buku) + '</div>' +
+          '<div class="d-flex align-items-center flex-wrap gap-1">' +
+            penulisHtml +
+            '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">' + escapeHtml(katStr) + '</span>' +
+          '</div>' +
+        '</td>' +
+        '<td class="text-center border-start font-monospace fw-bold text-primary fs-6" style="width: 130px;">' + Number(b.dipinjam || 0).toLocaleString('id-ID') + '</td>' +
+        '<td class="text-center border-start font-monospace fw-bold text-success fs-6" style="width: 130px;">' + Number(b.dikembalikan || 0).toLocaleString('id-ID') + '</td>' +
+        '<td class="text-center border-start font-monospace fw-bold text-warning fs-6" style="width: 140px;">' + Number(b.masih_dipinjam || 0).toLocaleString('id-ID') + '</td>' +
+        '<td class="pe-3 text-center border-start font-monospace fw-bold text-danger fs-6" style="width: 120px;">' + Number(b.terlambat || 0).toLocaleString('id-ID') + '</td>' +
+      '</tr>';
+    });
+
+    tbody.innerHTML = html;
+
+    if (infoEl) {
+      infoEl.innerText = 'Menampilkan ' + (startIndex + 1) + ' sampai ' + endIndex + ' dari ' + totalItems + ' entri';
+    }
+
+    if (controlsEl) {
+      let pagHtml = '';
+      const prevDisabled = laporanCurrentPage === 1 ? 'disabled' : '';
+      pagHtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeLaporanPage(' + (laporanCurrentPage - 1) + '); return false;">Sebelumnya</a></li>';
+
+      for (let p = 1; p <= totalPages; p++) {
+        const activeClass = p === laporanCurrentPage ? 'active' : '';
+        pagHtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="changeLaporanPage(' + p + '); return false;">' + p + '</a></li>';
+      }
+
+      const nextDisabled = laporanCurrentPage === totalPages ? 'disabled' : '';
+      pagHtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="changeLaporanPage(' + (laporanCurrentPage + 1) + '); return false;">Selanjutnya</a></li>';
+
+      controlsEl.innerHTML = pagHtml;
+    }
   }
 
   function handleUnduhLaporanPdf() {

@@ -390,6 +390,7 @@ function getAllTransaksiPeminjamanListFull() {
       kelas: aInfo.kelas || '-',
       id_buku: idBuku,
       judul_buku: bInfo.judul_buku || t.judul_buku || '-',
+      penulis: bInfo.penulis || t.penulis || '-',
       kategori: bInfo.kategori || '-',
       url_sampul: bInfo.url_sampul || '',
       tgl_pinjam: t.tgl_pinjam || '',

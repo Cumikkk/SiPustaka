@@ -177,17 +177,20 @@
 
         <!-- 6. SUBVIEW: LAPORAN PERPUSTAKAAN -->
         <div id="subview-laporan" class="d-none">
-          <div class="d-flex align-items-center justify-content-between mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <div>
-              <h3 class="fw-bold m-0 text-dark">Laporan &amp; Analytic Overview</h3>
+              <h3 class="fw-bold m-0 text-dark">Laporan &amp; Analitik Perpustakaan</h3>
               <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <span class="text-dark">Laporan Perpustakaan</span></small>
             </div>
-            <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" onclick="handleUnduhLaporanPdf()"><i class="bi bi-download me-2"></i>Unduh Laporan (PDF)</button>
+            <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-semibold d-inline-flex align-items-center shadow-xs" onclick="handleUnduhLaporanPdf()">
+              <i class="bi bi-printer me-2"></i>
+              <span>Cetak / Ekspor Laporan</span>
+            </button>
           </div>
 
           <!-- 4 STAT CARDS LAPORAN -->
           <div class="row g-3 mb-4">
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
               <div class="stat-card-item stat-blue">
                 <div>
                   <div class="stat-title">TOTAL PEMINJAMAN</div>
@@ -197,27 +200,27 @@
               </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
               <div class="stat-card-item stat-green">
                 <div>
-                  <div class="stat-title">DIKEMBALIKAN</div>
+                  <div class="stat-title">SUDAH DIKEMBALIKAN</div>
                   <div class="stat-number" id="lap-total-kembali">0</div>
                 </div>
                 <div class="icon-box-stat"><i class="bi bi-check-circle-fill"></i></div>
               </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
               <div class="stat-card-item stat-orange">
                 <div>
-                  <div class="stat-title">MASIH DIPINJAM</div>
+                  <div class="stat-title">SEDANG DIPINJAM</div>
                   <div class="stat-number" id="lap-masih-dipinjam">0</div>
                 </div>
                 <div class="icon-box-stat"><i class="bi bi-file-earmark-text-fill"></i></div>
               </div>
             </div>
 
-            <div class="col-md-3">
+            <div class="col-md-3 col-sm-6">
               <div class="stat-card-item stat-red">
                 <div>
                   <div class="stat-title">TOTAL PENGEMBALIAN TERLAMBAT</div>
@@ -228,27 +231,67 @@
             </div>
           </div>
 
-          <!-- TABLE RINGKASAN PEMINJAMAN -->
+          <!-- TABLE RINGKASAN SIRKULASI PER BUKU -->
           <div class="card border-0 rounded-4 shadow-sm p-4">
-            <h5 class="fw-bold text-dark mb-3">Ringkasan Peminjaman</h5>
+            <div class="row g-3 mb-4 align-items-center">
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small fw-semibold">Tampilkan:</span>
+                  <select id="laporan-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="laporanCurrentPage = 1; executeRenderLaporanTable();">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span class="text-muted small fw-semibold">entri</span>
+                </div>
+              </div>
+
+              <div class="col-md-5 col-sm-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" id="laporan-search-query" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku atau Penulis..." onkeyup="laporanCurrentPage = 1; executeRenderLaporanTable();">
+                </div>
+              </div>
+
+              <div class="col-md-4 col-sm-12">
+                <select id="laporan-filter-kategori" class="form-select rounded-3" onchange="laporanCurrentPage = 1; executeRenderLaporanTable();">
+                  <option value="semua">Semua Kategori</option>
+                </select>
+              </div>
+            </div>
+
             <div class="table-responsive">
-              <table class="table align-middle table-hover mb-0">
+              <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
                 <thead class="bg-light text-muted small uppercase">
                   <tr>
-                    <th class="ps-3">NO</th>
-                    <th>BUKU</th>
-                    <th class="text-center">DIPINJAM</th>
-                    <th class="text-center">DIKEMBALIKAN</th>
-                    <th class="text-center">MASIH DIPINJAM</th>
-                    <th class="text-center text-danger">TERLAMBAT</th>
+                    <th class="py-3 ps-3 text-center" style="width: 50px;">NO.</th>
+                    <th class="py-3 border-start text-center" style="width: 75px;">SAMPUL</th>
+                    <th class="py-3 border-start text-center">INFO BUKU (JUDUL &amp; PENULIS)</th>
+                    <th class="py-3 border-start text-center" style="width: 130px;">TOTAL PINJAM</th>
+                    <th class="py-3 border-start text-center" style="width: 130px;">DIKEMBALIKAN</th>
+                    <th class="py-3 border-start text-center" style="width: 140px;">SEDANG DIPINJAM</th>
+                    <th class="py-3 pe-3 text-center border-start" style="width: 120px;">TERLAMBAT</th>
                   </tr>
                 </thead>
                 <tbody id="laporan-table-body">
                   <tr>
-                    <td colspan="6" class="text-center text-muted py-4">Memuat data laporan...</td>
+                    <td colspan="7" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat laporan perpustakaan...</td>
                   </tr>
                 </tbody>
               </table>
+            </div>
+
+            <!-- FOOTER PAGINASI -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-3 border-top">
+              <div class="text-muted small fw-semibold" id="laporan-pagination-info">
+                Menampilkan 0 sampai 0 dari 0 entri
+              </div>
+              <nav aria-label="Navigasi halaman">
+                <ul class="pagination pagination-sm m-0 gap-1" id="laporan-pagination-controls">
+                </ul>
+              </nav>
             </div>
           </div>
         </div>

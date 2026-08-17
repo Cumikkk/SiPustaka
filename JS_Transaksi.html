@@ -491,6 +491,8 @@
 
       const rawKat = t.kategori ? String(t.kategori).trim() : 'Umum';
       const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
+      const penulisVal = (t.penulis && t.penulis !== '-') ? escapeHtml(t.penulis) : '';
+      const penulisHtml = penulisVal ? ('<span class="text-muted" style="font-size:0.75rem;">Penulis: ' + penulisVal + '</span> &bull; ') : '';
 
       const periodeStr = (t.tgl_pinjam && t.tgl_jatuh_tempo)
         ? (formatTglNoYear(t.tgl_pinjam) + ' - ' + formatTglNoYear(t.tgl_jatuh_tempo))
@@ -507,7 +509,10 @@
             imgThumb +
             '<div class="overflow-hidden">' +
               '<div class="fw-bold text-dark text-truncate mb-1" style="max-width: 260px; font-size: 0.95rem;">' + escapeHtml(t.judul_buku) + '</div>' +
-              '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-0.5" style="font-size:0.68rem;">' + escapeHtml(katStr) + '</span>' +
+              '<div class="d-flex align-items-center flex-wrap gap-1">' +
+                penulisHtml +
+                '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">' + escapeHtml(katStr) + '</span>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</td>' +

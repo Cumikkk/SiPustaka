@@ -369,11 +369,34 @@ function getStudentDashboardData(nis) {
 function getLaporanRingkasanFull() {
   const ss = getDb();
   
-  // Baca data transaksi
+  // Baca data transaksi & buku
   const sheetTrx = ss.getSheetByName('transaksi');
-  let trxData = [];
-  if (sheetTrx) {
-    trxData = sheetTrx.getDataRange().getValues();
+  const sheetBuku = ss.getSheetByName('buku');
+  
+  const trxData = sheetTrx ? sheetTrx.getDataRange().getValues() : [];
+  const bukuData = sheetBuku ? sheetBuku.getDataRange().getValues() : [];
+  
+  const mapBuku = {};
+  if (bukuData.length > 1) {
+    const bHeaders = bukuData[0].map(h => String(h).trim().toLowerCase());
+    const bIdIdx = bHeaders.indexOf('id_buku');
+    const bJudulIdx = bHeaders.indexOf('judul_buku');
+    const bPenulisIdx = bHeaders.indexOf('penulis');
+    const bKatIdx = bHeaders.indexOf('kategori');
+    const bSampulIdx = bHeaders.indexOf('url_sampul');
+    
+    for (let i = 1; i < bukuData.length; i++) {
+      const row = bukuData[i];
+      const id = String(row[bIdIdx] || '').trim();
+      if (id) {
+        mapBuku[id] = {
+          judul: String(row[bJudulIdx] || '-'),
+          penulis: bPenulisIdx !== -1 ? String(row[bPenulisIdx] || '-') : '-',
+          kategori: bKatIdx !== -1 ? String(row[bKatIdx] || 'Umum') : 'Umum',
+          url_sampul: bSampulIdx !== -1 ? String(row[bSampulIdx] || '') : ''
+        };
+      }
+    }
   }
   
   let totalPeminjaman = 0;
@@ -381,39 +404,53 @@ function getLaporanRingkasanFull() {
   let masihDipinjam = 0;
   let terlambat = 0;
   
-  const bukuStats = {}; // id_buku -> { id_buku, judul, total_dipinjam, dikembalikan, sedang_dipinjam }
+  const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  const bukuStats = {};
   
   if (trxData.length > 1) {
     const headers = trxData[0].map(h => String(h).trim().toLowerCase());
     const idBukuIdx = headers.indexOf('id_buku');
     const judulIdx = headers.indexOf('judul_buku');
     const statusIdx = headers.indexOf('status');
+    const tempoIdx = headers.indexOf('tgl_jatuh_tempo');
     
     if (idBukuIdx !== -1 && statusIdx !== -1) {
       for (let i = 1; i < trxData.length; i++) {
         const row = trxData[i];
-        const status = String(row[statusIdx] || '').toLowerCase();
-        const idBuku = String(row[idBukuIdx] || '');
-        const judul = judulIdx !== -1 ? String(row[judulIdx] || '') : 'Buku Tidak Diketahui';
-        
+        const idBuku = String(row[idBukuIdx] || '').trim();
         if (!idBuku) continue;
         
+        const rawStatus = String(row[statusIdx] || '').toLowerCase().trim();
+        const tglTempo = tempoIdx !== -1 ? String(row[tempoIdx] || '').trim() : '';
+        const isLate = rawStatus === 'dipinjam' && tglTempo && tglTempo < todayStr;
+        
         totalPeminjaman++;
-        if (status === 'dikembalikan') totalDikembalikan++;
-        else if (status === 'dipinjam') masihDipinjam++;
-        else if (status === 'terlambat') {
+        if (rawStatus === 'dikembalikan') totalDikembalikan++;
+        else if (rawStatus === 'dipinjam' && !isLate) masihDipinjam++;
+        else if (isLate || rawStatus === 'terlambat') {
           masihDipinjam++;
           terlambat++;
         }
         
         if (!bukuStats[idBuku]) {
-          bukuStats[idBuku] = { id_buku: idBuku, judul_buku: judul, dipinjam: 0, dikembalikan: 0, masih_dipinjam: 0, terlambat: 0 };
+          const bMeta = mapBuku[idBuku] || {};
+          bukuStats[idBuku] = {
+            id_buku: idBuku,
+            judul_buku: bMeta.judul || (judulIdx !== -1 ? String(row[judulIdx] || '-') : '-'),
+            penulis: bMeta.penulis || '-',
+            kategori: bMeta.kategori || 'Umum',
+            url_sampul: bMeta.url_sampul || '',
+            dipinjam: 0,
+            dikembalikan: 0,
+            masih_dipinjam: 0,
+            terlambat: 0
+          };
         }
         
         bukuStats[idBuku].dipinjam++;
-        if (status === 'dikembalikan') bukuStats[idBuku].dikembalikan++;
-        else if (status === 'dipinjam') bukuStats[idBuku].masih_dipinjam++;
-        else if (status === 'terlambat') {
+        if (rawStatus === 'dikembalikan') bukuStats[idBuku].dikembalikan++;
+        else if (rawStatus === 'dipinjam' && !isLate) bukuStats[idBuku].masih_dipinjam++;
+        else if (isLate || rawStatus === 'terlambat') {
           bukuStats[idBuku].masih_dipinjam++;
           bukuStats[idBuku].terlambat++;
         }
