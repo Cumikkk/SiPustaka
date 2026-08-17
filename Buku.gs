@@ -73,30 +73,53 @@ function getBukuListFull(searchQuery, kategori, statusFilter) {
   });
 }
 
-function uploadFileToDrive(base64Data, fileName, mimeType) {
+function getOrCreateSubFolder(parentFolder, subfolderName) {
+  if (!parentFolder || !subfolderName) return parentFolder;
+  
+  const folders = parentFolder.getFoldersByName(subfolderName);
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+  
+  // Case-insensitive fallback check
+  const allFolders = parentFolder.getFolders();
+  while (allFolders.hasNext()) {
+    const f = allFolders.next();
+    if (f.getName().trim().toLowerCase() === subfolderName.toLowerCase()) {
+      return f;
+    }
+  }
+  
+  return parentFolder.createFolder(subfolderName);
+}
+
+function uploadFileToDrive(base64Data, fileName, mimeType, subfolderName) {
   try {
     if (!base64Data || typeof base64Data !== 'string') {
       return { success: false, error: 'Data berkas kosong atau tidak valid.' };
     }
     
-    let targetFolder = null;
+    let parentFolder = null;
     if (typeof UPLOAD_FOLDER_ID !== 'undefined' && UPLOAD_FOLDER_ID) {
       try {
-        targetFolder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
+        parentFolder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
       } catch (fErr) {
-        Logger.log("Folder ID error: " + fErr.message);
+        Logger.log("Parent Folder ID error: " + fErr.message);
       }
     }
     
-    if (!targetFolder) {
+    if (!parentFolder) {
       const folderName = "SiPustaka_Uploads";
       const folders = DriveApp.getFoldersByName(folderName);
       if (folders.hasNext()) {
-        targetFolder = folders.next();
+        parentFolder = folders.next();
       } else {
-        targetFolder = DriveApp.createFolder(folderName);
+        parentFolder = DriveApp.createFolder(folderName);
       }
     }
+
+    // Arahkan berkas ke dalam sub-folder spesifik ('sampul' atau 'buku')
+    const targetFolder = subfolderName ? getOrCreateSubFolder(parentFolder, subfolderName) : parentFolder;
     
     let actualData = base64Data;
     let detectedMime = mimeType || 'application/octet-stream';
@@ -141,12 +164,12 @@ function saveBukuData(bukuObj) {
   const sheet = ss.getSheetByName('buku');
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
 
-  // 1. Handle uploaded cover image file
+  // 1. Handle uploaded cover image file -> masuk ke sub-folder 'sampul'
   if (bukuObj.sampul_base64) {
     const origName = bukuObj.sampul_filename || 'cover.jpg';
     const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
     const ext = origName.includes('.') ? origName.substring(origName.lastIndexOf('.')) : '.jpg';
-    const uploadRes = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg');
+    const uploadRes = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg', 'sampul');
     if (uploadRes && uploadRes.success) {
       bukuObj.url_sampul = uploadRes.url;
     } else if (uploadRes && !uploadRes.success) {
@@ -154,11 +177,11 @@ function saveBukuData(bukuObj) {
     }
   }
 
-  // 2. Handle uploaded ebook PDF file
+  // 2. Handle uploaded ebook PDF file -> masuk ke sub-folder 'buku'
   if (bukuObj.ebook_base64) {
     const origName = bukuObj.ebook_filename || 'ebook.pdf';
     const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
-    const uploadRes = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf');
+    const uploadRes = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf', 'buku');
     if (uploadRes && uploadRes.success) {
       bukuObj.url_file_buku = uploadRes.url;
     } else if (uploadRes && !uploadRes.success) {
