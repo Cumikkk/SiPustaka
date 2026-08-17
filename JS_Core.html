@@ -119,7 +119,7 @@
 
     if (res.role === 'admin') {
       if (roleBadge) roleBadge.innerText = 'Panel Administrasi';
-      if (roleTitle) roleTitle.innerText = 'Petugas / Administrator';
+      if (roleTitle) roleTitle.innerText = 'Administrator';
       document.querySelectorAll('.role-admin-only').forEach(el => el.classList.remove('d-none'));
       document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.add('d-none'));
     } else {

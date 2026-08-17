@@ -588,8 +588,16 @@
 
     const passReq = document.getElementById('modal-anggota-pass-req');
     const passHint = document.getElementById('modal-anggota-pass-hint');
-    if (passReq) passReq.style.display = 'inline';
-    if (passHint) passHint.style.display = 'none';
+    const passInput = document.getElementById('modal-anggota-password');
+    if (passReq) {
+      passReq.style.display = 'inline';
+      passReq.classList.remove('d-none');
+    }
+    if (passHint) {
+      passHint.style.display = 'none';
+      passHint.classList.add('d-none');
+    }
+    if (passInput) passInput.required = true;
 
     const modalEl = document.getElementById('modalFormAnggota');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -622,8 +630,16 @@
 
     const passReq = document.getElementById('modal-anggota-pass-req');
     const passHint = document.getElementById('modal-anggota-pass-hint');
-    if (passReq) passReq.style.display = 'none';
-    if (passHint) passHint.style.display = 'block';
+    const passInput = document.getElementById('modal-anggota-password');
+    if (passReq) {
+      passReq.style.display = 'none';
+      passReq.classList.add('d-none');
+    }
+    if (passHint) {
+      passHint.style.display = 'block';
+      passHint.classList.remove('d-none');
+    }
+    if (passInput) passInput.required = false;
 
     const modalEl = document.getElementById('modalFormAnggota');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -791,12 +807,14 @@
     window.print();
   }
 
-  /* CONTROLLER KENAIKAN KELAS MASSAL */
+  /* CONTROLLER KENAIKAN KELAS MASSAL (READ-ONLY FLOW PREVIEW) */
+  let currentKenaikanMappingCache = {};
+
   function showModalKenaikanKelas() {
     const container = document.getElementById('kenaikan-kelas-rules-container');
     if (!container) return;
 
-    container.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>Memuat daftar kelas...</div>';
+    container.innerHTML = '<div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat alur kenaikan kelas...</div>';
 
     const modalEl = document.getElementById('modalKenaikanKelas');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -807,27 +825,52 @@
     google.script.run
       .withSuccessHandler(daftarKelas => {
         if (!daftarKelas || daftarKelas.length === 0) {
-          container.innerHTML = '<div class="alert alert-warning">Tidak ada kelas aktif ditemukan pada data anggota.</div>';
+          container.innerHTML = '<div class="alert alert-warning mb-0"><i class="bi bi-exclamation-circle me-2"></i>Tidak ada data siswa aktif yang terdaftar dalam kelas.</div>';
+          currentKenaikanMappingCache = {};
           return;
         }
 
-        let html = '<div class="row g-2">';
+        currentKenaikanMappingCache = {};
+        let html = '<div class="row g-3">';
         daftarKelas.forEach(k => {
-          let defaultTarget = k;
+          let targetKelas = k;
+          let targetDisplay = 'Naik Kelas';
+          let isLulus = false;
+
           const match = k.match(/(\d+)/);
           if (match) {
             const num = parseInt(match[1], 10);
             if (num < 6) {
-              defaultTarget = k.replace(String(num), String(num + 1));
+              targetKelas = k.replace(String(num), String(num + 1));
+              targetDisplay = 'Naik ke Kelas ' + targetKelas;
             } else {
-              defaultTarget = 'LULUS';
+              targetKelas = 'LULUS';
+              targetDisplay = 'LULUS (Alumni)';
+              isLulus = true;
             }
+          } else {
+            targetKelas = 'LULUS';
+            targetDisplay = 'LULUS (Alumni)';
+            isLulus = true;
           }
 
-          html += '<div class="col-md-6 mb-2">' +
-            '<div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">' +
-              '<span class="fw-bold text-dark me-2">Kelas ' + escapeHtml(k) + ' &rarr;</span>' +
-              '<input type="text" class="form-control form-control-sm rounded-2 rule-kelas-target" style="width: 140px;" data-source="' + escapeHtml(k) + '" value="' + escapeHtml(defaultTarget) + '">' +
+          currentKenaikanMappingCache[k] = targetKelas;
+
+          const badgeStyle = isLulus 
+            ? 'background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca;' 
+            : 'background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
+          
+          const icon = isLulus ? '<i class="bi bi-mortarboard-fill me-1.5"></i>' : '<i class="bi bi-arrow-up-circle-fill me-1.5"></i>';
+
+          html += '<div class="col-md-6">' +
+            '<div class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between shadow-2xs">' +
+              '<div class="d-flex align-items-center gap-2">' +
+                '<span class="badge bg-light text-dark border px-2.5 py-1.5 fw-bold font-monospace">Kelas ' + escapeHtml(k) + '</span>' +
+                '<i class="bi bi-arrow-right text-muted"></i>' +
+              '</div>' +
+              '<span class="badge rounded-pill px-3 py-1.5 fw-bold" style="' + badgeStyle + '">' +
+                icon + escapeHtml(targetDisplay) +
+              '</span>' +
             '</div>' +
           '</div>';
         });
@@ -838,39 +881,45 @@
   }
 
   function handleKenaikanKelasSubmit() {
-    const inputs = document.querySelectorAll('.rule-kelas-target');
-    const mapping = {};
-    inputs.forEach(input => {
-      const source = input.getAttribute('data-source');
-      const target = input.value.trim();
-      if (source && target) {
-        mapping[source] = target;
-      }
-    });
-
-    if (Object.keys(mapping).length === 0) {
-      showErrorAlert('Tidak ada aturan kenaikan kelas yang diset.');
+    if (!currentKenaikanMappingCache || Object.keys(currentKenaikanMappingCache).length === 0) {
+      showErrorAlert('Tidak ada data kelas aktif untuk diproses.');
       return;
     }
 
-    showLoadingAlert('Memproses kenaikan kelas massal...');
-    google.script.run
-      .withSuccessHandler(res => {
-        closeLoadingAlert();
-        if (res && res.success) {
-          showSuccessAlert(res.message, () => {
-            const modalEl = document.getElementById('modalKenaikanKelas');
-            if (modalEl && typeof bootstrap !== 'undefined') {
-              const bsModal = bootstrap.Modal.getInstance(modalEl);
-              if (bsModal) bsModal.hide();
+    Swal.fire({
+      title: 'Proses Kenaikan Kelas?',
+      text: 'Seluruh siswa aktif akan dinaikkan 1 tingkat kelas dan siswa kelas 6 akan otomatis diubah menjadi LULUS (Nonaktif). Apakah Anda yakin?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#0052cc',
+      confirmButtonText: 'Ya, Jalankan Kenaikan Kelas',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Memproses kenaikan kelas massal...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => {
+                const modalEl = document.getElementById('modalKenaikanKelas');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                  const bsModal = bootstrap.Modal.getInstance(modalEl);
+                  if (bsModal) bsModal.hide();
+                }
+                renderAnggotaTable(true);
+              });
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal memproses kenaikan kelas.');
             }
-            renderAnggotaTable(true);
-          });
-        } else {
-          showErrorAlert(res ? res.message : 'Gagal memproses kenaikan kelas.');
-        }
-      })
-      .processBulkKenaikanKelas(mapping);
+          })
+          .withFailureHandler(err => {
+            closeLoadingAlert();
+            showErrorAlert('Terjadi kesalahan: ' + (err.message || err));
+          })
+          .prosesKenaikanKelasMassal(currentKenaikanMappingCache);
+      }
+    });
   }
 
   // ==========================================
@@ -988,8 +1037,16 @@
 
     const passReq = document.getElementById('modal-admin-pass-req');
     const passHint = document.getElementById('modal-admin-pass-hint');
-    if (passReq) passReq.style.display = 'inline';
-    if (passHint) passHint.style.display = 'none';
+    const passInput = document.getElementById('modal-admin-password');
+    if (passReq) {
+      passReq.style.display = 'inline';
+      passReq.classList.remove('d-none');
+    }
+    if (passHint) {
+      passHint.style.display = 'none';
+      passHint.classList.add('d-none');
+    }
+    if (passInput) passInput.required = true;
 
     const modalEl = document.getElementById('modalFormAdmin');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -1017,8 +1074,16 @@
 
     const passReq = document.getElementById('modal-admin-pass-req');
     const passHint = document.getElementById('modal-admin-pass-hint');
-    if (passReq) passReq.style.display = 'none';
-    if (passHint) passHint.style.display = 'block';
+    const passInput = document.getElementById('modal-admin-password');
+    if (passReq) {
+      passReq.style.display = 'none';
+      passReq.classList.add('d-none');
+    }
+    if (passHint) {
+      passHint.style.display = 'block';
+      passHint.classList.remove('d-none');
+    }
+    if (passInput) passInput.required = false;
 
     const modalEl = document.getElementById('modalFormAdmin');
     if (modalEl && typeof bootstrap !== 'undefined') {

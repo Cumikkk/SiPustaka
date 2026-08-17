@@ -45,22 +45,42 @@
   <!-- MODAL: KENAIKAN KELAS MASSAL SISWA -->
   <div class="modal fade" id="modalKenaikanKelas" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-0 rounded-4 shadow">
-        <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-mortarboard-fill text-primary me-2"></i>Kenaikan Kelas Massal Siswa</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+        <div class="modal-header border-0 bg-white px-4 pt-4 pb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2.5 rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+              <i class="bi bi-mortarboard-fill fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0.5">Kenaikan Kelas Massal Siswa</h5>
+              <p class="text-muted small mb-0">Otomatisasi pemindahan jenjang kelas seluruh siswa aktif pada tahun ajaran baru.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <div class="modal-body p-4">
-          <p class="text-muted small mb-3">Tentukan aturan tujuan kenaikan kelas untuk seluruh siswa aktif di bawah ini. Siswa kelas tertinggi dapat diatur ke status <b>LULUS</b>.</p>
-          
-          <div id="kenaikan-kelas-rules-container" class="mb-4">
-            <div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>Memuat daftar kelas...</div>
+
+        <div class="modal-body px-4 py-3">
+          <!-- INFO BANNER -->
+          <div class="p-3.5 rounded-3 mb-3 d-flex align-items-start gap-3" style="background-color: #f0f7ff; border: 1px solid #bae0fd;">
+            <i class="bi bi-info-circle-fill text-primary fs-5 mt-0.5 flex-shrink-0"></i>
+            <div class="small text-secondary">
+              <strong class="text-dark d-block mb-1">Pratinjau Alur Kenaikan Kelas:</strong>
+              Sistem akan memindahkan seluruh siswa aktif ke tingkat kelas di atasnya secara otomatis. Siswa di tingkat akhir (Kelas 6) akan secara otomatis dialihkan ke status <b>LULUS (Nonaktif/Alumni)</b>.
+            </div>
           </div>
 
-          <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-            <button class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-            <button class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-submit-kenaikan" onclick="handleKenaikanKelasSubmit()"><i class="bi bi-check2-circle me-2"></i>Proses Kenaikan Kelas</button>
+          <!-- READ ONLY PREVIEW LIST -->
+          <div id="kenaikan-kelas-rules-container">
+            <div class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat alur kenaikan kelas...</div>
           </div>
+        </div>
+
+        <div class="modal-footer border-0 px-4 pb-4 pt-2 d-flex justify-content-end gap-2.5">
+          <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 fw-semibold" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary rounded-3 px-4 py-2.5 fw-semibold d-inline-flex align-items-center shadow-xs" id="btn-submit-kenaikan" onclick="handleKenaikanKelasSubmit()">
+            <i class="bi bi-check2-circle me-2"></i>
+            <span>Proses Kenaikan Kelas</span>
+          </button>
         </div>
       </div>
     </div>
@@ -88,85 +108,78 @@
             <input type="hidden" id="modal-buku-id" value="">
             
             <div class="row g-3">
-              <!-- INFORMASI UTAMA BUKU -->
-              <div class="col-12">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Judul Buku <span class="text-danger fw-bold">*</span></label>
-                <input type="text" id="modal-buku-judul" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Laskar Pelangi" required>
-              </div>
+              <!-- KOLOM KIRI: DATA UTAMA -->
+              <div class="col-md-7">
+                <div class="mb-3">
+                  <label class="form-label small fw-semibold text-dark mb-1.5">Judul Buku <span class="text-danger fw-bold">*</span></label>
+                  <input type="text" id="modal-buku-judul" class="form-control rounded-3 py-2 px-3" placeholder="Masukkan judul buku..." required>
+                </div>
 
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Penulis / Pengarang <span class="text-danger fw-bold">*</span></label>
-                <input type="text" id="modal-buku-penulis" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Andrea Hirata" required>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Penerbit <span class="text-muted fw-normal small">(Opsional)</span></label>
-                <input type="text" id="modal-buku-penerbit" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Bentang Pustaka">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">ISBN <span class="text-muted fw-normal small">(Opsional)</span></label>
-                <input type="text" id="modal-buku-isbn" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: 978-979-3062-79-2">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Kategori <span class="text-danger fw-bold">*</span></label>
-                <input type="text" id="modal-buku-kategori" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Fiksi, Sains, Sejarah" required>
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Tahun Terbit <span class="text-muted fw-normal small">(Opsional)</span></label>
-                <input type="number" id="modal-buku-tahun" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: 2022">
-              </div>
-
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Jumlah Stok <span class="text-danger fw-bold">*</span></label>
-                <input type="number" id="modal-buku-stok" class="form-control rounded-3 py-2 px-3" min="0" value="1" required>
-              </div>
-
-              <!-- MEDIA & BERKAS DIGITAL (UPLOAD & URL) -->
-              <div class="col-12 mt-3">
-                <div class="p-3 bg-light rounded-4 border">
-                  <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="d-flex align-items-center">
-                      <i class="bi bi-cloud-arrow-up text-primary fs-5" style="margin-right: 8px;"></i>
-                      <span class="fw-bold text-dark small text-uppercase">Berkas Media &amp; E-Book Digital</span>
-                    </div>
-                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1 small fw-normal">Opsional</span>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Penulis <span class="text-danger fw-bold">*</span></label>
+                    <input type="text" id="modal-buku-penulis" class="form-control rounded-3 py-2 px-3" placeholder="Nama penulis..." required>
                   </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Penerbit <span class="text-muted fw-normal small">(Opsional)</span></label>
+                    <input type="text" id="modal-buku-penerbit" class="form-control rounded-3 py-2 px-3" placeholder="Nama penerbit...">
+                  </div>
+                </div>
 
-                  <div class="row g-3">
-                    <!-- SAMPUL BUKU -->
-                    <div class="col-md-6">
-                      <div class="p-3 bg-white rounded-3 border h-100">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                          <label class="form-label small fw-semibold text-dark mb-0 d-flex align-items-center">
-                            <i class="bi bi-image text-primary" style="margin-right: 8px;"></i>Sampul Buku (Gambar Cover)
-                          </label>
-                          <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size:0.68rem;">JPG / PNG</span>
+                <div class="row g-3 mb-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Kategori <span class="text-danger fw-bold">*</span></label>
+                    <input type="text" id="modal-buku-kategori" class="form-control rounded-3 py-2 px-3" placeholder="Fiksi, Sains, dll" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Nomor ISBN <span class="text-muted fw-normal small">(Opsional)</span></label>
+                    <input type="text" id="modal-buku-isbn" class="form-control rounded-3 py-2 px-3 font-monospace" placeholder="978-...">
+                  </div>
+                </div>
+
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Tahun Terbit <span class="text-muted fw-normal small">(Opsional)</span></label>
+                    <input type="number" id="modal-buku-tahun" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: 2024" min="1900" max="2099">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Jumlah Stok <span class="text-danger fw-bold">*</span></label>
+                    <input type="number" id="modal-buku-stok" class="form-control rounded-3 py-2 px-3" value="1" min="0" required>
+                  </div>
+                </div>
+              </div>
+
+              <!-- KOLOM KANAN: MEDIA FILE & UPLOAD DRIVE -->
+              <div class="col-md-5">
+                <div class="p-3 bg-light rounded-4 border border-light-subtle h-100 d-flex flex-column justify-content-between">
+                  <div>
+                    <h6 class="fw-bold text-dark small text-uppercase mb-3 d-flex align-items-center">
+                      <i class="bi bi-cloud-arrow-up-fill text-primary" style="margin-right: 8px;"></i>Berkas Digital Buku
+                    </h6>
+
+                    <!-- 1. COVER / SAMPUL BUKU -->
+                    <div class="p-3 bg-white rounded-3 border mb-3 shadow-2xs">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <label class="form-label small fw-semibold text-dark mb-0 d-flex align-items-center">
+                          <i class="bi bi-image text-primary" style="margin-right: 8px;"></i>Sampul Buku <span class="text-muted fw-normal ms-1 small">(Opsional)</span>
+                        </label>
+                        <div id="modal-cover-preview-box" class="rounded-2 border bg-light d-flex align-items-center justify-content-center overflow-hidden" style="width: 32px; height: 42px;">
+                          <i class="bi bi-image text-muted fs-6"></i>
                         </div>
-                        <input type="file" id="modal-buku-sampul-file" class="form-control form-control-sm rounded-3" style="margin-bottom: 14px;" accept="image/*" onchange="previewCoverImage(this)">
-                        <div class="d-flex align-items-center gap-2">
-                          <div id="modal-cover-preview-box" class="rounded-3 bg-white border d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0" style="width: 42px; height: 42px;">
-                            <i class="bi bi-image text-muted fs-5"></i>
-                          </div>
-                          <div class="flex-grow-1">
-                            <input type="url" id="modal-buku-sampul" class="form-control form-control-sm rounded-3" placeholder="Atau paste URL cover / Drive...">
-                          </div>
-                        </div>
+                      </div>
+                      <input type="file" id="modal-buku-sampul-file" class="form-control form-control-sm rounded-3" accept="image/jpeg,image/png,image/webp" onchange="previewCoverImage(this)" style="margin-bottom: 14px;">
+                      <div class="border-top pt-2">
+                        <input type="url" id="modal-buku-sampul" class="form-control form-control-sm rounded-3" placeholder="Atau tempel URL gambar...">
                       </div>
                     </div>
 
-                    <!-- E-BOOK PDF -->
-                    <div class="col-md-6">
-                      <div class="p-3 bg-white rounded-3 border h-100">
-                        <div class="d-flex align-items-center justify-content-between mb-2">
-                          <label class="form-label small fw-semibold text-dark mb-0 d-flex align-items-center">
-                            <i class="bi bi-file-earmark-pdf text-danger" style="margin-right: 8px;"></i>File E-Book (PDF Digital)
-                          </label>
-                          <span class="badge bg-light text-secondary border rounded-pill px-2 py-0.5" style="font-size:0.68rem;">Max 15MB</span>
-                        </div>
-                        <input type="file" id="modal-buku-file-upload" class="form-control form-control-sm rounded-3" style="margin-bottom: 14px;" accept="application/pdf">
+                    <!-- 2. E-BOOK / PDF FILE -->
+                    <div class="p-3 bg-white rounded-3 border shadow-2xs">
+                      <label class="form-label small fw-semibold text-dark mb-2 d-flex align-items-center">
+                        <i class="bi bi-file-earmark-pdf-fill text-danger" style="margin-right: 8px;"></i>File E-Book (PDF) <span class="text-muted fw-normal ms-1 small">(Opsional)</span>
+                      </label>
+                      <input type="file" id="modal-buku-file-upload" class="form-control form-control-sm rounded-3" accept="application/pdf" style="margin-bottom: 14px;">
+                      <div class="border-top pt-2">
                         <input type="url" id="modal-buku-file" class="form-control form-control-sm rounded-3" placeholder="Atau link Google Drive PDF...">
                         <small class="text-muted d-flex align-items-center" style="font-size:0.72rem; margin-top: 8px;">
                           <i class="bi bi-info-circle" style="margin-right: 6px;"></i>Dapat dibaca langsung oleh siswa secara digital.
@@ -219,7 +232,7 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Nama Lengkap Siswa <span class="text-danger fw-bold">*</span></label>
+                <label class="form-label small fw-semibold text-dark mb-1.5">Nama Lengkap <span class="text-danger fw-bold">*</span></label>
                 <input type="text" id="modal-anggota-nama" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Ahmad Syahputra" required>
               </div>
 
@@ -229,7 +242,7 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Email Siswa <span class="text-muted fw-normal small">(Opsional)</span></label>
+                <label class="form-label small fw-semibold text-dark mb-1.5">Email <span class="text-muted fw-normal small">(Opsional)</span></label>
                 <input type="email" id="modal-anggota-email" class="form-control rounded-3 py-2 px-3" placeholder="siswa@gmail.com" autocomplete="new-password">
               </div>
 
@@ -243,7 +256,7 @@
                   Kata Sandi <span id="modal-anggota-pass-req" class="text-danger fw-bold">*</span>
                 </label>
                 <input type="password" id="modal-anggota-password" class="form-control rounded-3 py-2 px-3" placeholder="••••••••" autocomplete="new-password">
-                <small class="text-muted d-block mt-1" id="modal-anggota-pass-hint" style="font-size:0.72rem; display:none;">Kosongkan jika tidak ingin mengubah kata sandi.</small>
+                <small class="text-muted mt-1 d-none" id="modal-anggota-pass-hint" style="font-size:0.72rem;">Kosongkan jika tidak ingin mengubah kata sandi.</small>
               </div>
 
               <div class="col-12">
@@ -291,7 +304,7 @@
             
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Nama Lengkap Petugas <span class="text-danger fw-bold">*</span></label>
+                <label class="form-label small fw-semibold text-dark mb-1.5">Nama Lengkap <span class="text-danger fw-bold">*</span></label>
                 <input type="text" id="modal-admin-nama" class="form-control rounded-3 py-2 px-3" placeholder="Contoh: Ahmad Syahputra, S.IP" required>
               </div>
 
@@ -301,7 +314,7 @@
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small fw-semibold text-dark mb-1.5">Email Petugas <span class="text-danger fw-bold">*</span></label>
+                <label class="form-label small fw-semibold text-dark mb-1.5">Email <span class="text-danger fw-bold">*</span></label>
                 <input type="email" id="modal-admin-email" class="form-control rounded-3 py-2 px-3" placeholder="admin@gmail.com" required autocomplete="new-password">
               </div>
 
@@ -310,7 +323,7 @@
                   Kata Sandi <span id="modal-admin-pass-req" class="text-danger fw-bold">*</span>
                 </label>
                 <input type="password" id="modal-admin-password" class="form-control rounded-3 py-2 px-3" placeholder="••••••••" autocomplete="new-password">
-                <small class="text-muted d-block mt-1" id="modal-admin-pass-hint" style="font-size:0.72rem; display:none;">Kosongkan jika tidak ingin mengubah kata sandi.</small>
+                <small class="text-muted mt-1 d-none" id="modal-admin-pass-hint" style="font-size:0.72rem;">Kosongkan jika tidak ingin mengubah kata sandi.</small>
               </div>
             </div>
           </div>
