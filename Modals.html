@@ -604,116 +604,70 @@
     </div>
   </div>
 
-  <!-- MODAL: FORM TAMBAH / EDIT BUKU -->
-  <div class="modal fade" id="modalFormBuku" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content border-0 rounded-4 shadow">
-        <div class="modal-header border-0 pb-0">
-          <h5 class="modal-title fw-bold text-dark" id="modal-form-buku-title"><i class="bi bi-book-half text-primary me-2"></i>Tambah Buku Baru</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-4">
-          <form id="form-buku-modal" onsubmit="handleSaveBukuSubmit(event)">
-            <input type="hidden" id="modal-buku-id">
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">Judul Buku <span class="text-danger">*</span></label>
-                <input type="text" id="modal-buku-judul" class="form-control rounded-3" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">ISBN</label>
-                <input type="text" id="modal-buku-isbn" class="form-control rounded-3">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">Penulis</label>
-                <input type="text" id="modal-buku-penulis" class="form-control rounded-3">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">Penerbit</label>
-                <input type="text" id="modal-buku-penerbit" class="form-control rounded-3">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Tahun Terbit</label>
-                <input type="number" id="modal-buku-tahun" class="form-control rounded-3" min="1900" max="2099">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Kategori</label>
-                <input type="text" id="modal-buku-kategori" class="form-control rounded-3" placeholder="Sains, Dongeng, dll">
-              </div>
-              <div class="col-md-4">
-                <label class="form-label small fw-semibold">Stok Buku <span class="text-danger">*</span></label>
-                <input type="number" id="modal-buku-stok" class="form-control rounded-3" min="0" required>
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">URL / ID File Sampul Google Drive</label>
-                <input type="text" id="modal-buku-sampul" class="form-control rounded-3" placeholder="Contoh: https://drive.google.com/file/d/...">
-              </div>
-              <div class="col-md-6">
-                <label class="form-label small fw-semibold">URL / ID File Buku Digital (E-Book)</label>
-                <input type="text" id="modal-buku-file" class="form-control rounded-3" placeholder="Contoh: https://drive.google.com/file/d/...">
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2 pt-4 border-top mt-4">
-              <button type="button" class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" data-bs-dismiss="modal">Batal</button>
-              <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-save-buku-modal"><i class="bi bi-save me-2"></i>Simpan Buku</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL: PILIH SISWA UNTUK PEMINJAMAN -->
   <div class="modal fade" id="modalPilihSiswa" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-        <div class="modal-header border-bottom bg-light px-4 py-3">
-          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-person-fill me-2 text-primary"></i>Pilih Anggota Siswa</h5>
+        <div class="modal-header border-0 bg-white px-4 pt-4 pb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2.5 rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+              <i class="bi bi-person-fill fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0.5">Pilih Anggota Siswa</h5>
+              <p class="text-muted small mb-0">Cari dan pilih siswa aktif untuk transaksi peminjaman buku.</p>
+            </div>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body p-0">
-          <div class="bg-white p-3 border-bottom sticky-top">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div class="d-flex align-items-center text-secondary small fw-medium">
-                <span class="me-2">Tampilkan:</span>
-                <select id="pilih-siswa-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                </select>
-                <span class="ms-2">entri</span>
+          <!-- TOOLBAR FILTER -->
+          <div class="bg-light p-3 border-top border-bottom">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-secondary small fw-medium">Tampilkan:</span>
+                  <select id="pilih-siswa-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                  </select>
+                  <span class="text-secondary small">entri</span>
+                </div>
               </div>
-              <div class="flex-grow-1" style="max-width: 400px;">
+              <div class="col-md-5 col-sm-6">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="pilih-siswa-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari nama atau NIS..." onkeyup="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
                 </div>
               </div>
-              <div style="min-width: 150px;">
-                <select id="pilih-siswa-kelas" class="form-select border rounded-3" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
+              <div class="col-md-4 col-sm-12">
+                <select id="pilih-siswa-kelas" class="form-select rounded-3" onchange="pilihSiswaCurrentPage = 1; renderTablePilihSiswa()">
                   <option value="semua">Semua Kelas</option>
                 </select>
               </div>
             </div>
           </div>
-          <div class="table-responsive" style="max-height: 50vh;">
+
+          <div class="table-responsive" style="max-height: 52vh;">
             <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
-              <thead class="bg-light text-muted small text-uppercase sticky-top border-bottom" style="top: 0; z-index: 1; border-color: #e2e8f0;">
+              <thead class="bg-white text-muted small text-uppercase sticky-top border-bottom" style="top: 0; z-index: 2; border-color: #e2e8f0;">
                 <tr>
-                  <th class="py-3 ps-3 text-center" style="width: 60px;">NO.</th>
+                  <th class="py-3 ps-3 text-center" style="width: 50px;">NO.</th>
                   <th class="py-3 border-start">NAMA LENGKAP</th>
-                  <th class="py-3 border-start">NIS</th>
-                  <th class="py-3 border-start">KELAS</th>
-                  <th class="py-3 text-end pe-3 border-start">AKSI</th>
+                  <th class="py-3 border-start text-center" style="width: 120px;">NIS</th>
+                  <th class="py-3 border-start text-center" style="width: 110px;">KELAS</th>
+                  <th class="py-3 pe-3 text-center border-start" style="width: 110px;">AKSI</th>
                 </tr>
               </thead>
               <tbody id="pilih-siswa-tbody">
-                <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</td></tr>
+                <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data siswa...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
+
         <div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between align-items-center border-top">
           <span class="text-muted small fw-medium" id="pilih-siswa-info">Menampilkan 0 dari 0 siswa</span>
           <ul class="pagination pagination-sm m-0 gap-1" id="pilih-siswa-pagination"></ul>
@@ -726,52 +680,66 @@
   <div class="modal fade" id="modalPilihBuku" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
-        <div class="modal-header border-bottom bg-light px-4 py-3">
-          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-journal-bookmark-fill me-2 text-primary"></i>Pilih Buku</h5>
+        <div class="modal-header border-0 bg-white px-4 pt-4 pb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2.5 rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+              <i class="bi bi-journal-bookmark-fill fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0.5">Pilih Buku</h5>
+              <p class="text-muted small mb-0">Pilih buku yang tersedia untuk transaksi peminjaman.</p>
+            </div>
+          </div>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+
         <div class="modal-body p-0">
-          <div class="bg-white p-3 border-bottom sticky-top">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div class="d-flex align-items-center text-secondary small fw-medium">
-                <span class="me-2">Tampilkan:</span>
-                <select id="pilih-buku-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
-                  <option value="5">5</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                </select>
-                <span class="ms-2">entri</span>
+          <!-- TOOLBAR FILTER -->
+          <div class="bg-light p-3 border-top border-bottom">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-secondary small fw-medium">Tampilkan:</span>
+                  <select id="pilih-buku-entries" class="form-select form-select-sm border rounded-2 d-inline-block w-auto text-dark" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                  </select>
+                  <span class="text-secondary small">entri</span>
+                </div>
               </div>
-              <div class="flex-grow-1" style="max-width: 400px;">
+              <div class="col-md-5 col-sm-6">
                 <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
                   <input type="text" id="pilih-buku-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul atau ISBN..." onkeyup="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
                 </div>
               </div>
-              <div style="min-width: 200px;">
-                <select id="pilih-buku-kategori" class="form-select border rounded-3" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
+              <div class="col-md-4 col-sm-12">
+                <select id="pilih-buku-kategori" class="form-select rounded-3" onchange="pilihBukuCurrentPage = 1; renderTablePilihBuku()">
                   <option value="semua">Semua Kategori</option>
                 </select>
               </div>
             </div>
           </div>
-          <div class="table-responsive" style="max-height: 50vh;">
+
+          <div class="table-responsive" style="max-height: 52vh;">
             <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
-              <thead class="bg-light text-muted small text-uppercase sticky-top border-bottom" style="top: 0; z-index: 1; border-color: #e2e8f0;">
+              <thead class="bg-white text-muted small text-uppercase sticky-top border-bottom" style="top: 0; z-index: 2; border-color: #e2e8f0;">
                 <tr>
-                  <th class="py-3 ps-3 text-center" style="width: 60px;">NO.</th>
-                  <th class="py-3 border-start">SAMPUL</th>
+                  <th class="py-3 ps-3 text-center" style="width: 50px;">NO.</th>
+                  <th class="py-3 border-start text-center" style="width: 75px;">SAMPUL</th>
                   <th class="py-3 border-start">INFO BUKU</th>
-                  <th class="py-3 border-start">STOK</th>
-                  <th class="py-3 text-end pe-3 border-start">AKSI</th>
+                  <th class="py-3 border-start text-center" style="width: 130px;">STOK</th>
+                  <th class="py-3 pe-3 text-center border-start" style="width: 110px;">AKSI</th>
                 </tr>
               </thead>
               <tbody id="pilih-buku-tbody">
-                <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data...</td></tr>
+                <tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
+
         <div class="modal-footer bg-white px-4 py-3 d-flex justify-content-between align-items-center border-top">
           <span class="text-muted small fw-medium" id="pilih-buku-info">Menampilkan 0 dari 0 buku</span>
           <ul class="pagination pagination-sm m-0 gap-1" id="pilih-buku-pagination"></ul>

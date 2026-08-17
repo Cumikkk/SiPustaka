@@ -144,7 +144,7 @@
       const allSubviews = [
         'subview-dashboard', 'subview-dashboard-siswa', 'subview-katalog',
         'subview-buku', 'subview-anggota', 'subview-peminjaman',
-        'subview-pengembalian', 'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa',
+        'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa',
         'subview-profil'
       ];
       allSubviews.forEach(id => {
@@ -186,8 +186,6 @@
           renderPetugasTable(true);
         } else if (subviewName === 'peminjaman-siswa') {
           loadStudentPeminjamanPageData();
-        } else if (subviewName === 'pengembalian') {
-          renderPengembalianTable();
         }
       }
     } catch (err) {

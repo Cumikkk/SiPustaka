@@ -50,8 +50,13 @@
     const kelasSet = new Set();
     list.forEach(a => { if(a.kelas && String(a.kelas).trim() !== '') kelasSet.add(String(a.kelas).trim()); });
     let html = '<option value="semua">Semua Kelas</option>';
-    Array.from(kelasSet).sort().forEach(k => {
-      html += '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>';
+    Array.from(kelasSet).sort((a, b) => {
+      const numA = parseInt(a, 10);
+      const numB = parseInt(b, 10);
+      if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+      return String(a).localeCompare(String(b));
+    }).forEach(k => {
+      html += '<option value="' + escapeHtml(k) + '">Kelas ' + escapeHtml(k) + '</option>';
     });
     sel.innerHTML = html;
     sel.value = currentVal || 'semua';
@@ -65,7 +70,8 @@
     list.forEach(b => { if(b.kategori && String(b.kategori).trim() !== '') katSet.add(String(b.kategori).trim()); });
     let html = '<option value="semua">Semua Kategori</option>';
     Array.from(katSet).sort().forEach(k => {
-      html += '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>';
+      const cap = k.charAt(0).toUpperCase() + k.slice(1);
+      html += '<option value="' + escapeHtml(k) + '">' + escapeHtml(cap) + '</option>';
     });
     sel.innerHTML = html;
     sel.value = currentVal || 'semua';
@@ -87,7 +93,7 @@
     
     let filtered = (window.allAnggotaForPinjam || []).filter(a => {
       const matchQ = String(a.nama_lengkap||'').toLowerCase().includes(q) || String(a.nis||'').toLowerCase().includes(q);
-      const matchK = k === 'semua' || (a.kelas && String(a.kelas).trim() === k);
+      const matchK = k === 'semua' || (a.kelas && String(a.kelas).trim().toLowerCase() === k.toLowerCase());
       return matchQ && matchK;
     });
 
@@ -106,10 +112,10 @@
         html += '<tr>' +
           '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (start + idx + 1) + '</td>' +
           '<td class="border-start fw-bold text-dark">' + escapeHtml(a.nama_lengkap) + '</td>' +
-          '<td class="border-start text-secondary font-monospace">' + escapeHtml(a.nis) + '</td>' +
-          '<td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(a.kelas || '-') + '</span></td>' +
-          '<td class="pe-3 text-end border-start">' +
-            '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" onclick="selectAnggotaForPinjam(\'' + escapeHtml(a.nis) + '\', \'' + escapeHtml(a.nama_lengkap) + '\', \'' + escapeHtml(a.kelas) + '\')">Pilih</button>' +
+          '<td class="border-start text-center font-monospace fw-bold text-dark" style="width: 120px;">' + escapeHtml(a.nis) + '</td>' +
+          '<td class="border-start text-center" style="width: 110px;"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">Kelas ' + escapeHtml(a.kelas || '-') + '</span></td>' +
+          '<td class="pe-3 text-center border-start" style="width: 110px;">' +
+            '<button type="button" class="btn btn-sm btn-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center shadow-xs" onclick="selectAnggotaForPinjam(\'' + escapeHtml(a.nis) + '\', \'' + escapeHtml(a.nama_lengkap) + '\', \'' + escapeHtml(a.kelas) + '\')"><i class="bi bi-check2" style="margin-right: 4px;"></i><span>Pilih</span></button>' +
           '</td>' +
         '</tr>';
       });
@@ -119,7 +125,7 @@
     let endCount = start + pageData.length;
     if (filtered.length === 0) { endCount = 0; }
     const infoEl = document.getElementById('pilih-siswa-info');
-    if (infoEl) infoEl.innerText = 'Menampilkan ' + (filtered.length === 0 ? 0 : start + 1) + ' sampai ' + endCount + ' dari ' + filtered.length + ' entri';
+    if (infoEl) infoEl.innerText = 'Menampilkan ' + (filtered.length === 0 ? 0 : start + 1) + ' sampai ' + endCount + ' dari ' + filtered.length + ' siswa';
     
     let pagHtml = '';
     const prevDisabled = pilihSiswaCurrentPage === 1 ? 'disabled' : '';
@@ -148,8 +154,8 @@
     const pageSize = entriesSel ? (parseInt(entriesSel.value, 10) || 5) : 5;
     
     let filtered = (window.allBukuForPinjam || []).filter(b => {
-      const matchQ = String(b.judul_buku||'').toLowerCase().includes(q) || String(b.id_buku||'').toLowerCase().includes(q);
-      const matchK = k === 'semua' || (b.kategori && String(b.kategori).trim() === k);
+      const matchQ = String(b.judul_buku||'').toLowerCase().includes(q) || String(b.id_buku||'').toLowerCase().includes(q) || String(b.isbn||'').toLowerCase().includes(q);
+      const matchK = k === 'semua' || (b.kategori && String(b.kategori).trim().toLowerCase() === k.toLowerCase());
       return ((b.stok_buku > 0 || b.stok_aktual > 0)) && matchQ && matchK;
     });
 
@@ -165,21 +171,27 @@
       html = '<tr><td colspan="5" class="text-center text-muted py-4">Buku tidak ditemukan atau stok habis.</td></tr>';
     } else {
       pageData.forEach((b, idx) => {
-        const coverUrl = b.url_sampul || '';
-        const stokDisplay = b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual;
-        const cover = coverUrl ? '<img src="' + escapeHtml(coverUrl) + '" class="w-100 h-100 object-fit-cover rounded-2" onerror="this.outerHTML=\'<i class=\\\'bi bi-book text-muted fs-3\\\'></i>\'">' : '<i class="bi bi-book text-muted fs-3"></i>';
+        const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+        const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+        const stokDisplay = Number(b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0;
+        
+        const coverThumb = coverUrl 
+          ? '<img src="' + coverUrl + '" class="rounded-2 shadow-2xs" style="width: 38px; height: 50px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center\\\' style=\\\'width: 38px; height: 50px;\\\'><i class=\\\'bi bi-journal-bookmark-fill fs-6\\\'></i></div>\'"> '
+          : '<div class="rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-2xs" style="width: 38px; height: 50px;"><i class="bi bi-journal-bookmark-fill fs-6"></i></div>';
+
+        const rawKat = b.kategori ? String(b.kategori).trim() : 'Umum';
+        const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
+
         html += '<tr>' +
           '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (start + idx + 1) + '</td>' +
-          '<td>' +
-            '<div class="bg-light border d-flex align-items-center justify-content-center overflow-hidden rounded-2" style="width: 40px; height: 55px;">' + cover + '</div>' +
+          '<td class="border-start text-center" style="width: 75px;">' + coverThumb + '</td>' +
+          '<td class="border-start text-start">' +
+            '<div class="fw-bold text-dark text-truncate mb-0.5" style="max-width: 250px;">' + escapeHtml(b.judul_buku) + '</div>' +
+            '<small class="text-muted d-block" style="font-size:0.75rem;">Penulis: ' + escapeHtml(b.penulis || '-') + ' &bull; <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">' + escapeHtml(katStr) + '</span></small>' +
           '</td>' +
-          '<td>' +
-            '<div class="fw-bold text-dark text-truncate" style="max-width: 250px;">' + escapeHtml(b.judul_buku) + '</div>' +
-            '<small class="text-muted">' + escapeHtml(b.kategori || 'Tanpa Kategori') + '</small>' +
-          '</td>' +
-          '<td class="border-start"><strong class="text-primary">' + stokDisplay + '</strong></td>' +
-          '<td class="pe-3 text-end border-start">' +
-            '<button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" onclick="selectBukuPinjam(\'' + escapeHtml(b.id_buku) + '\', \'' + escapeHtml(b.judul_buku) + '\', \'' + stokDisplay + '\', \'' + escapeHtml(coverUrl) + '\', \'' + escapeHtml(b.penulis || '-') + '\')">Pilih</button>' +
+          '<td class="border-start text-center" style="width: 130px;"><span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-semibold">Tersedia ' + stokDisplay + '</span></td>' +
+          '<td class="pe-3 text-center border-start" style="width: 110px;">' +
+            '<button type="button" class="btn btn-sm btn-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center shadow-xs" onclick="selectBukuPinjam(\'' + escapeHtml(b.id_buku) + '\', \'' + escapeHtml(b.judul_buku) + '\', \'' + stokDisplay + '\', \'' + escapeHtml(coverUrl) + '\', \'' + escapeHtml(b.penulis || '-') + '\')"><i class="bi bi-check2" style="margin-right: 4px;"></i><span>Pilih</span></button>' +
           '</td>' +
         '</tr>';
       });
@@ -189,7 +201,7 @@
     let endCount = start + pageData.length;
     if (filtered.length === 0) { endCount = 0; }
     const infoEl = document.getElementById('pilih-buku-info');
-    if (infoEl) infoEl.innerText = 'Menampilkan ' + (filtered.length === 0 ? 0 : start + 1) + ' sampai ' + endCount + ' dari ' + filtered.length + ' entri';
+    if (infoEl) infoEl.innerText = 'Menampilkan ' + (filtered.length === 0 ? 0 : start + 1) + ' sampai ' + endCount + ' dari ' + filtered.length + ' buku';
     
     let pagHtml = '';
     const prevDisabled = pilihBukuCurrentPage === 1 ? 'disabled' : '';
@@ -231,9 +243,9 @@
     const coverEl = document.getElementById('selected-buku-icon');
     if (coverEl) {
       if (sampul && sampul !== 'undefined' && sampul.trim() !== '') {
-        coverEl.innerHTML = '<img src="' + sampul + '" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML=\'<i class=\\\'bi bi-book fs-4 text-white\\\'></i>\'">';
+        coverEl.innerHTML = '<img src="' + sampul + '" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML=\'<i class=\\\'bi bi-journal-bookmark-fill fs-5 text-white\\\'></i>\'">';
       } else {
-        coverEl.innerHTML = '<i class="bi bi-book fs-4 text-white"></i>';
+        coverEl.innerHTML = '<i class="bi bi-journal-bookmark-fill fs-5 text-white"></i>';
       }
     }
     
@@ -337,6 +349,17 @@
 
   let peminjamanAdminDataCache = [];
   let peminjamanAdminCurrentPage = 1;
+
+  function formatTglIndo(ymd) {
+    if (!ymd || ymd === '-') return '-';
+    const pts = String(ymd).split('-');
+    if (pts.length === 3) {
+      const bulan = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const bIdx = parseInt(pts[1], 10);
+      return (parseInt(pts[2], 10) || pts[2]) + ' ' + (bulan[bIdx] || pts[1]) + ' ' + pts[0];
+    }
+    return ymd;
+  }
 
   function changePeminjamanAdminPage(newPage) {
     peminjamanAdminCurrentPage = newPage;
@@ -457,33 +480,37 @@
         statusBadge = '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1.5 fw-semibold">Terlambat</span>';
       }
 
-      const coverUrl = t.url_sampul ? getDirectImageUrl(t.url_sampul) : '';
+      const rawCover = t.url_sampul ? String(t.url_sampul).trim() : '';
+      const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
       const imgThumb = coverUrl 
         ? '<img src="' + coverUrl + '" class="rounded-2 shadow-2xs" style="width: 38px; height: 50px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center\\\' style=\\\'width: 38px; height: 50px;\\\'><i class=\\\'bi bi-journal-bookmark-fill fs-6\\\'></i></div>\'"> '
-        : '<div class="rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width: 38px; height: 50px;"><i class="bi bi-journal-bookmark-fill fs-6"></i></div>';
+        : '<div class="rounded-2 bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-2xs" style="width: 38px; height: 50px;"><i class="bi bi-journal-bookmark-fill fs-6"></i></div>';
 
       const aksiHtml = isReturned
-        ? '<span class="text-success small fw-semibold"><i class="bi bi-check2-all me-1"></i>Selesai</span>'
-        : '<button type="button" class="btn btn-sm btn-outline-success border rounded-2 px-2.5 py-1 fw-semibold" title="Proses Pengembalian" onclick="handleQuickReturn(\'' + escapeHtml(t.id_transaksi) + '\', \'' + escapeHtml(t.judul_buku) + '\')"><i class="bi bi-arrow-down-left-square me-1"></i>Kembali</button>';
+        ? '<span class="text-success small fw-semibold d-inline-flex align-items-center"><i class="bi bi-check2-all" style="margin-right: 4px;"></i><span>Selesai</span></span>'
+        : '<button type="button" class="btn btn-sm btn-outline-success border rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center shadow-xs" title="Proses Pengembalian" onclick="handleQuickReturn(\'' + escapeHtml(t.id_transaksi) + '\', \'' + escapeHtml(t.judul_buku) + '\')"><i class="bi bi-arrow-down-left-square" style="margin-right: 6px;"></i><span>Kembali</span></button>';
+
+      const rawKat = t.kategori ? String(t.kategori).trim() : 'Umum';
+      const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
 
       html += '<tr>' +
         '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
         '<td class="border-start text-center font-monospace small fw-bold text-dark" style="width: 140px;"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(t.id_transaksi) + '</span></td>' +
         '<td class="border-start text-start">' +
-          '<div class="fw-bold text-dark">' + escapeHtml(t.nama_anggota) + '</div>' +
-          '<small class="text-muted d-block">NIS: ' + escapeHtml(t.nis) + ' &bull; <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="font-size:0.68rem;">Kelas ' + escapeHtml(t.kelas || '-') + '</span></small>' +
+          '<div class="fw-bold text-dark mb-0.5">' + escapeHtml(t.nama_anggota) + '</div>' +
+          '<small class="text-muted d-block">NIS: ' + escapeHtml(t.nis) + ' &bull; <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2 py-0.5" style="margin-left: 4px; font-size:0.68rem;">Kelas ' + escapeHtml(t.kelas || '-') + '</span></small>' +
         '</td>' +
         '<td class="border-start text-start">' +
           '<div class="d-flex align-items-center gap-2.5">' +
             imgThumb +
             '<div class="overflow-hidden">' +
-              '<div class="fw-bold text-dark text-truncate" style="max-width: 220px;">' + escapeHtml(t.judul_buku) + '</div>' +
-              '<small class="text-muted d-block" style="font-size:0.75rem;">Kategori: ' + escapeHtml(t.kategori || '-') + '</small>' +
+              '<div class="fw-bold text-dark text-truncate mb-0.5" style="max-width: 220px;">' + escapeHtml(t.judul_buku) + '</div>' +
+              '<small class="text-muted d-block" style="font-size:0.75rem;">Kategori: <span class="text-secondary fw-medium">' + escapeHtml(katStr) + '</span></small>' +
             '</div>' +
           '</div>' +
         '</td>' +
-        '<td class="border-start text-center small text-secondary" style="width: 120px;">' + escapeHtml(t.tgl_pinjam || '-') + '</td>' +
-        '<td class="border-start text-center small text-secondary" style="width: 120px;">' + escapeHtml(t.tgl_jatuh_tempo || '-') + '</td>' +
+        '<td class="border-start text-center small text-secondary fw-medium" style="width: 120px;">' + escapeHtml(formatTglIndo(t.tgl_pinjam)) + '</td>' +
+        '<td class="border-start text-center small text-secondary fw-medium" style="width: 120px;">' + escapeHtml(formatTglIndo(t.tgl_jatuh_tempo)) + '</td>' +
         '<td class="border-start text-center" style="width: 140px;">' + statusBadge + '</td>' +
         '<td class="pe-3 text-center border-start" style="width: 120px;">' + aksiHtml + '</td>' +
       '</tr>';
@@ -542,180 +569,6 @@
           .processPengembalianBuku(idTrx);
       }
     });
-  }
-
-  /* ====================================================================
-   * CONTROLLER: SIRKULASI PENGEMBALIAN BUKU
-   * ==================================================================== */
-
-  let kembaliTableData = [];
-  let kembaliTableCurrentPage = 1;
-
-  function renderPengembalianTable() {
-    const query = (document.getElementById('kembali-search-query')?.value || '').trim().toLowerCase();
-    const tbody = document.getElementById('kembali-list-body');
-    const paginationControls = document.getElementById('kembali-pagination-controls');
-    const paginationInfo = document.getElementById('kembali-pagination-info');
-    const entries = parseInt(document.getElementById('kembali-table-entries')?.value || '10', 10);
-    const statusFilterEl = document.querySelector('input[name="kembaliStatusFilter"]:checked');
-    const statusFilter = statusFilterEl ? statusFilterEl.value : 'semua';
-    
-    if (tbody) tbody.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data peminjaman...</div>';
-    
-    google.script.run
-      .withSuccessHandler(data => {
-        let listData = data || [];
-        const todayStr = new Date().toISOString().split('T')[0];
-        
-        listData = listData.filter(t => {
-          const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
-          if (statusFilter === 'terlambat' && !isTerlambat) return false;
-          if (statusFilter === 'dipinjam' && isTerlambat) return false;
-          return true;
-        });
-
-        kembaliTableData = listData;
-
-        if (listData.length === 0) {
-          if (tbody) tbody.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Tidak ada data peminjaman yang cocok.</div>';
-          if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan 0 sampai 0 dari 0 entri';
-          if (paginationControls) paginationControls.innerHTML = '';
-          return;
-        }
-
-        const totalData = listData.length;
-        const totalPages = Math.ceil(totalData / entries);
-        if (kembaliTableCurrentPage > totalPages) kembaliTableCurrentPage = totalPages;
-        if (kembaliTableCurrentPage < 1) kembaliTableCurrentPage = 1;
-
-        const startIdx = (kembaliTableCurrentPage - 1) * entries;
-        const endIdx = Math.min(startIdx + entries, totalData);
-        const pageData = listData.slice(startIdx, endIdx);
-
-        let html = '';
-        pageData.forEach((t, i) => {
-          const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
-          let subStatus = '';
-          if (isTerlambat) {
-             const overDays = Math.ceil((new Date() - new Date(t.tgl_jatuh_tempo)) / (1000 * 60 * 60 * 24));
-             subStatus = 'Terlambat ' + overDays + ' Hari';
-          } else {
-             const sisa = Math.ceil((new Date(t.tgl_jatuh_tempo) - new Date()) / (1000 * 60 * 60 * 24));
-             subStatus = sisa === 0 ? 'Hari Ini' : 'Sisa ' + sisa + ' Hari';
-          }
-
-          html += '<button class="list-group-item list-group-item-action p-3 mb-2 rounded-3 border kembali-list-item" id="kembali-item-' + t.id_transaksi + '" onclick="selectPengembalian(\'' + escapeHtml(t.id_transaksi) + '\')">' +
-            '<div class="d-flex justify-content-between align-items-center">' +
-              '<div class="d-flex align-items-center gap-3 overflow-hidden">' +
-                '<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 40px; height: 40px; font-size: 1.1rem;">' +
-                  (t.nama_anggota || 'S').charAt(0).toUpperCase() +
-                '</div>' +
-                '<div class="overflow-hidden">' +
-                  '<div class="fw-bold text-dark text-truncate mb-1">' + escapeHtml(t.nama_anggota) + '</div>' +
-                  '<div class="text-muted small text-truncate">' +
-                    escapeHtml(t.judul_buku) + ' &bull; <span class="' + (isTerlambat ? 'text-danger fw-bold' : 'text-success') + '">' + subStatus + '</span>' +
-                  '</div>' +
-                '</div>' +
-              '</div>' +
-              '<i class="bi bi-chevron-right text-muted ms-2 flex-shrink-0"></i>' +
-            '</div>' +
-          '</button>';
-        });
-        if (tbody) tbody.innerHTML = html;
-
-        if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan ' + (startIdx + 1) + ' sampai ' + endIdx + ' dari ' + totalData + ' entri';
-        
-        if (paginationControls) {
-          let pghtml = '';
-          const prevDisabled = kembaliTableCurrentPage === 1 ? 'disabled' : '';
-          pghtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage--; renderPengembalianTable(); return false;">Sebelumnya</a></li>';
-          for (let p = 1; p <= totalPages; p++) {
-            if (p === 1 || p === totalPages || (p >= kembaliTableCurrentPage - 1 && p <= kembaliTableCurrentPage + 1)) {
-              const activeClass = kembaliTableCurrentPage === p ? 'active' : '';
-              pghtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage = ' + p + '; renderPengembalianTable(); return false;">' + p + '</a></li>';
-            } else if (p === kembaliTableCurrentPage - 2 || p === kembaliTableCurrentPage + 2) {
-              pghtml += '<li class="page-item disabled"><a class="page-link rounded-2" href="#">...</a></li>';
-            }
-          }
-          const nextDisabled = kembaliTableCurrentPage === totalPages ? 'disabled' : '';
-          pghtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage++; renderPengembalianTable(); return false;">Selanjutnya</a></li>';
-          paginationControls.innerHTML = pghtml;
-        }
-      })
-      .getTransaksiPeminjamanAktif(query);
-  }
-
-  function selectPengembalian(idTransaksi) {
-    const t = kembaliTableData.find(x => x.id_transaksi === idTransaksi);
-    if (!t) return;
-    
-    // Update Detail Info
-    document.getElementById('kembali-avatar').innerText = (t.nama_anggota || 'S').charAt(0).toUpperCase();
-    document.getElementById('kembali-nama-anggota').innerText = t.nama_anggota;
-    document.getElementById('kembali-sub-anggota').innerText = 'NIS: ' + t.nis + ' • Kelas ' + (t.kelas || '-');
-    document.getElementById('kembali-judul-buku').innerText = t.judul_buku;
-    document.getElementById('kembali-penulis-buku').innerText = 'ID Buku: ' + t.id_buku + (t.kategori ? (' • Kategori: ' + t.kategori) : '');
-
-    // Update Cover
-    const coverUrl = t.url_sampul ? escapeHtml(t.url_sampul) : '';
-    const coverHtml = coverUrl ? '<img src="' + coverUrl + '" class="w-100 h-100 object-fit-cover">' : '<i class="bi bi-book text-muted" style="font-size: 3rem;"></i>';
-    document.getElementById('kembali-cover-container').innerHTML = coverHtml;
-
-    // Update Dates
-    let tglPinjamIndo = t.tgl_pinjam;
-    let tglTempoIndo = t.tgl_jatuh_tempo;
-    try {
-      tglPinjamIndo = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(t.tgl_pinjam));
-      tglTempoIndo = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(t.tgl_jatuh_tempo));
-    } catch(e) {}
-    document.getElementById('kembali-tgl-pinjam').innerText = tglPinjamIndo || '-';
-    document.getElementById('kembali-tgl-tempo').innerText = tglTempoIndo || '-';
-    
-    // Handle Terlambat Alert
-    const todayStr = new Date().toISOString().split('T')[0];
-    const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
-    const alertContainer = document.getElementById('kembali-alert-container');
-    if (isTerlambat) {
-       const overDays = Math.ceil((new Date() - new Date(t.tgl_jatuh_tempo)) / (1000 * 60 * 60 * 24));
-       document.getElementById('kembali-alert-title').innerText = 'TERLAMBAT ' + overDays + ' HARI';
-       alertContainer.classList.remove('d-none');
-    } else {
-       alertContainer.classList.add('d-none');
-    }
-    
-    document.getElementById('kembali-id-transaksi').value = t.id_transaksi;
-
-    // Switch State
-    document.getElementById('kembali-detail-empty').classList.add('d-none');
-    document.getElementById('kembali-detail-form').classList.remove('d-none');
-
-    // Highlight selected item
-    const allItems = document.querySelectorAll('.kembali-list-item');
-    allItems.forEach(item => item.classList.remove('active', 'border-primary', 'shadow-sm'));
-    const clickedItem = document.getElementById('kembali-item-' + idTransaksi);
-    if (clickedItem) clickedItem.classList.add('active', 'border-primary', 'shadow-sm');
-  }
-
-  function handleProsesPengembalianSubmit() {
-    const idTransaksi = document.getElementById('kembali-id-transaksi').value;
-    if (!idTransaksi) return;
-
-    showLoadingAlert('Memproses pengembalian buku...');
-    google.script.run
-      .withSuccessHandler(res => {
-        closeLoadingAlert();
-        if (res && res.success) {
-          showSuccessAlert(res.message, () => {
-            document.getElementById('kembali-detail-empty').classList.remove('d-none');
-            document.getElementById('kembali-detail-form').classList.add('d-none');
-            renderPengembalianTable();
-            loadAdminDashboard();
-          });
-        } else {
-          showErrorAlert(res ? res.message : 'Gagal memproses pengembalian.');
-        }
-      })
-      .processPengembalianBuku(idTransaksi);
   }
 
   /* ====================================================================
