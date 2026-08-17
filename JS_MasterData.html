@@ -222,7 +222,6 @@
         document.getElementById('modal-buku-tahun').value = buku.tahun_terbit || '';
         document.getElementById('modal-buku-kategori').value = buku.kategori || 'Fiksi';
         document.getElementById('modal-buku-stok').value = (buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 1;
-        document.getElementById('modal-buku-rak').value = buku.rak_lokasi || 'A1';
         document.getElementById('modal-buku-sampul').value = buku.url_sampul || '';
         document.getElementById('modal-buku-file').value = buku.url_file_buku || '';
 
@@ -274,11 +273,14 @@
     const coverFileInput = document.getElementById('modal-buku-sampul-file');
     const ebookFileInput = document.getElementById('modal-buku-file-upload');
 
-    showLoadingAlert('Memproses dan mengunggah berkas buku...');
+    showLoadingAlert('Memproses dan mengunggah berkas ke Google Drive...');
 
     try {
-      const coverBase64 = (coverFileInput && coverFileInput.files[0]) ? await readFileAsDataURL(coverFileInput.files[0]) : '';
-      const ebookBase64 = (ebookFileInput && ebookFileInput.files[0]) ? await readFileAsDataURL(ebookFileInput.files[0]) : '';
+      const coverBase64 = (coverFileInput && coverFileInput.files && coverFileInput.files[0]) ? await readFileAsDataURL(coverFileInput.files[0]) : '';
+      const ebookBase64 = (ebookFileInput && ebookFileInput.files && ebookFileInput.files[0]) ? await readFileAsDataURL(ebookFileInput.files[0]) : '';
+
+      const coverName = (coverFileInput && coverFileInput.files && coverFileInput.files[0]) ? coverFileInput.files[0].name : '';
+      const ebookName = (ebookFileInput && ebookFileInput.files && ebookFileInput.files[0]) ? ebookFileInput.files[0].name : '';
 
       const bukuObj = {
         id_buku: document.getElementById('modal-buku-id').value,
@@ -289,11 +291,12 @@
         tahun_terbit: document.getElementById('modal-buku-tahun').value.trim(),
         kategori: kategori,
         stok_aktual: stok,
-        rak_lokasi: document.getElementById('modal-buku-rak').value.trim(),
         url_sampul: document.getElementById('modal-buku-sampul').value.trim(),
         url_file_buku: document.getElementById('modal-buku-file').value.trim(),
         sampul_base64: coverBase64,
-        ebook_base64: ebookBase64
+        sampul_filename: coverName,
+        ebook_base64: ebookBase64,
+        ebook_filename: ebookName
       };
 
       google.script.run

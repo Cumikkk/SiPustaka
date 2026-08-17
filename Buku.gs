@@ -78,13 +78,24 @@ function uploadFileToDrive(base64Data, fileName, mimeType) {
     if (!base64Data || typeof base64Data !== 'string' || !base64Data.includes(';base64,')) {
       return '';
     }
-    const folderName = "SiPustaka_Uploads";
-    const folders = DriveApp.getFoldersByName(folderName);
-    let folder;
-    if (folders.hasNext()) {
-      folder = folders.next();
-    } else {
-      folder = DriveApp.createFolder(folderName);
+    
+    let targetFolder = null;
+    if (typeof UPLOAD_FOLDER_ID !== 'undefined' && UPLOAD_FOLDER_ID) {
+      try {
+        targetFolder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
+      } catch (fErr) {
+        Logger.log("Folder ID error: " + fErr.message);
+      }
+    }
+    
+    if (!targetFolder) {
+      const folderName = "SiPustaka_Uploads";
+      const folders = DriveApp.getFoldersByName(folderName);
+      if (folders.hasNext()) {
+        targetFolder = folders.next();
+      } else {
+        targetFolder = DriveApp.createFolder(folderName);
+      }
     }
     
     const splitParts = base64Data.split(';base64,');
@@ -93,7 +104,7 @@ function uploadFileToDrive(base64Data, fileName, mimeType) {
     const decoded = Utilities.base64Decode(actualData);
     const blob = Utilities.newBlob(decoded, detectedMime, fileName);
     
-    const file = folder.createFile(blob);
+    const file = targetFolder.createFile(blob);
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
     return 'https://drive.google.com/uc?id=' + file.getId();
   } catch (e) {
@@ -109,8 +120,10 @@ function saveBukuData(bukuObj) {
 
   // Handle uploaded cover image file
   if (bukuObj.sampul_base64) {
+    const origName = bukuObj.sampul_filename || 'cover.jpg';
     const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
-    const uploadedCoverUrl = uploadFileToDrive(bukuObj.sampul_base64, 'cover_' + cleanTitle + '.jpg', 'image/jpeg');
+    const ext = origName.includes('.') ? origName.substring(origName.lastIndexOf('.')) : '.jpg';
+    const uploadedCoverUrl = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg');
     if (uploadedCoverUrl) {
       bukuObj.url_sampul = uploadedCoverUrl;
     }
@@ -119,7 +132,7 @@ function saveBukuData(bukuObj) {
   // Handle uploaded ebook PDF file
   if (bukuObj.ebook_base64) {
     const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
-    const uploadedEbookUrl = uploadFileToDrive(bukuObj.ebook_base64, 'ebook_' + cleanTitle + '.pdf', 'application/pdf');
+    const uploadedEbookUrl = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf');
     if (uploadedEbookUrl) {
       bukuObj.url_file_buku = uploadedEbookUrl;
     }
@@ -135,7 +148,6 @@ function saveBukuData(bukuObj) {
   const penerbitIdx = headers.indexOf('penerbit');
   const tahunIdx = headers.indexOf('tahun_terbit');
   const kategoriIdx = headers.indexOf('kategori');
-  const rakIdx = headers.indexOf('rak_lokasi');
   
   let stokIdx = headers.indexOf('stok_buku');
   if (stokIdx === -1) stokIdx = headers.indexOf('stok_aktual');
@@ -175,7 +187,6 @@ function saveBukuData(bukuObj) {
       if (h === 'stok_buku' || h === 'stok_aktual') return stokVal;
       if (h === 'url_sampul') return bukuObj.url_sampul || '';
       if (h === 'url_file_buku') return bukuObj.url_file_buku || '';
-      if (h === 'rak_lokasi') return bukuObj.rak_lokasi || 'Utama';
       return '';
     });
 
@@ -189,7 +200,6 @@ function saveBukuData(bukuObj) {
     if (penerbitIdx !== -1) sheet.getRange(rowToUpdate, penerbitIdx + 1).setValue(bukuObj.penerbit || '');
     if (tahunIdx !== -1) sheet.getRange(rowToUpdate, tahunIdx + 1).setValue(bukuObj.tahun_terbit || '');
     if (kategoriIdx !== -1) sheet.getRange(rowToUpdate, kategoriIdx + 1).setValue(bukuObj.kategori || 'Fiksi');
-    if (rakIdx !== -1) sheet.getRange(rowToUpdate, rakIdx + 1).setValue(bukuObj.rak_lokasi || 'Utama');
     if (stokIdx !== -1) sheet.getRange(rowToUpdate, stokIdx + 1).setValue(stokVal);
     if (urlIdx !== -1 && bukuObj.url_sampul !== undefined) sheet.getRange(rowToUpdate, urlIdx + 1).setValue(bukuObj.url_sampul);
     if (urlFileIdx !== -1 && bukuObj.url_file_buku !== undefined) sheet.getRange(rowToUpdate, urlFileIdx + 1).setValue(bukuObj.url_file_buku);
