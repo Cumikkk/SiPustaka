@@ -11,11 +11,13 @@ const UPLOAD_FOLDER_ID = '1XIJJx-OVC7JPZ4eOWUaT_fDJXMQJhOi5';
 
 /**
  * FUNGSI OTORISASI GOOGLE DRIVE
- * Jalankan fungsi ini satu kali di Google Apps Script Editor untuk mengizinkan akses Drive
+ * Jalankan fungsi ini satu kali di Google Apps Script Editor untuk mengizinkan akses Drive (Baca & Tulis)
  */
 function authorizeDriveApp() {
   const folder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
-  Logger.log("Drive berhasil diotorisasi. Target folder: " + folder.getName());
+  const testFile = folder.createFile("test_permission.txt", "Test Drive Permission", MimeType.PLAIN_TEXT);
+  testFile.setTrashed(true);
+  Logger.log("Drive Create & Write File berhasil diotorisasi!");
 }
 
 /**
