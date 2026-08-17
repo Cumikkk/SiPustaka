@@ -231,8 +231,138 @@ function verifyOtpUniversal(email, otpInput) {
   return { success: true, message: 'Kode OTP valid.' };
 }
 
+/**
+ * Update Data Profil & Password Mandiri Pengguna (Siswa / Admin)
+ */
+function updateUserSelfProfile(profileData) {
+  try {
+    const role = String(profileData.role || '').toLowerCase();
+    const idOrNis = String(profileData.identifier || '').trim();
+    const namaLengkap = String(profileData.nama_lengkap || '').trim();
+    const username = String(profileData.username || '').trim();
+    const email = String(profileData.email || '').trim().toLowerCase();
+    const oldPassword = String(profileData.old_password || '').trim();
+    const newPassword = String(profileData.new_password || '').trim();
+
+    if (!namaLengkap || !username || !email) {
+      return { success: false, message: 'Nama lengkap, username, dan email wajib diisi!' };
+    }
+
+    const ss = getDb();
+
+    if (role === 'admin') {
+      const sheet = ss.getSheetByName('admin');
+      if (!sheet) return { success: false, message: 'Sheet admin tidak ditemukan.' };
+      const values = sheet.getDataRange().getValues();
+      const headers = values[0].map(h => String(h).toLowerCase().trim());
+      
+      const idIdx = headers.indexOf('id_admin');
+      const namaIdx = headers.indexOf('nama_lengkap');
+      const userIdx = headers.indexOf('username');
+      const emailIdx = headers.indexOf('email');
+      const passIdx = headers.indexOf('password');
+
+      let rowIndex = -1;
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][idIdx] || values[i][userIdx] || '').trim() === idOrNis) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return { success: false, message: 'Data admin tidak ditemukan di database.' };
+      }
+
+      // Validasi ganti password
+      if (newPassword) {
+        const currentDbPass = String(values[rowIndex - 1][passIdx] || '').trim();
+        if (oldPassword !== currentDbPass) {
+          return { success: false, message: 'Password saat ini / lama yang Anda masukkan salah!' };
+        }
+        sheet.getRange(rowIndex, passIdx + 1).setValue(newPassword);
+      }
+
+      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(namaLengkap);
+      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(username);
+      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(email);
+
+      return {
+        success: true,
+        message: 'Profil berhasil diperbarui!',
+        userData: {
+          id_admin: idOrNis,
+          nama_lengkap: namaLengkap,
+          username: username,
+          email: email,
+          role: 'admin'
+        }
+      };
+
+    } else {
+      // Role Siswa / Anggota
+      const sheet = ss.getSheetByName('siswa') || ss.getSheetByName('anggota');
+      if (!sheet) return { success: false, message: 'Sheet siswa tidak ditemukan.' };
+      const values = sheet.getDataRange().getValues();
+      const headers = values[0].map(h => String(h).toLowerCase().trim());
+
+      const nisIdx = headers.indexOf('nis');
+      const namaIdx = headers.indexOf('nama_lengkap');
+      const userIdx = headers.indexOf('username');
+      const emailIdx = headers.indexOf('email');
+      const passIdx = headers.indexOf('password');
+      const kelasIdx = headers.indexOf('kelas');
+      const statusIdx = headers.indexOf('status');
+
+      let rowIndex = -1;
+      for (let i = 1; i < values.length; i++) {
+        if (String(values[i][nisIdx]).trim() === idOrNis) {
+          rowIndex = i + 1;
+          break;
+        }
+      }
+
+      if (rowIndex === -1) {
+        return { success: false, message: 'Data siswa tidak ditemukan di database.' };
+      }
+
+      // Validasi ganti password
+      if (newPassword) {
+        const currentDbPass = String(values[rowIndex - 1][passIdx] || '').trim();
+        if (oldPassword !== currentDbPass) {
+          return { success: false, message: 'Password saat ini / lama yang Anda masukkan salah!' };
+        }
+        sheet.getRange(rowIndex, passIdx + 1).setValue(newPassword);
+      }
+
+      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(namaLengkap);
+      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(username);
+      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(email);
+
+      const kelasVal = kelasIdx !== -1 ? values[rowIndex - 1][kelasIdx] : '';
+      const statusVal = statusIdx !== -1 ? values[rowIndex - 1][statusIdx] : 'Aktif';
+
+      return {
+        success: true,
+        message: 'Profil data diri berhasil diperbarui!',
+        userData: {
+          nis: idOrNis,
+          nama_lengkap: namaLengkap,
+          username: username,
+          email: email,
+          kelas: kelasVal,
+          status: statusVal,
+          role: 'siswa'
+        }
+      };
+    }
+  } catch (err) {
+    return { success: false, message: 'Error server: ' + err.toString() };
+  }
+}
+
+
 
 // ==========================================
 // API MANAJEMEN BUKU (CRUD LENGKAP)
 // ==========================================
-

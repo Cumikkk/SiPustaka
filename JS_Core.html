@@ -14,15 +14,15 @@
 
   /* SISTEM SESI LOGIN STANDARD WEB (PERSISTENT & AUTO RENEWAL) */
   function saveUserSession(userObj) {
+    if (!userObj) return;
+    const sessionData = {
+      user: userObj,
+      timestamp: new Date().getTime()
+    };
     try {
-      if (!userObj) return;
-      const sessionData = {
-        user: userObj,
-        timestamp: Date.now()
-      };
       localStorage.setItem('sipustaka_session', JSON.stringify(sessionData));
-    } catch (err) {
-      console.warn("Save Session Exception:", err);
+    } catch (e) {
+      console.warn("Storage quota / error saving session:", e);
     }
   }
 
@@ -34,19 +34,20 @@
         return;
       }
 
-      const sessionObj = JSON.parse(rawSession);
-      const now = Date.now();
+      const session = JSON.parse(rawSession);
+      const now = new Date().getTime();
 
-      if (!sessionObj || !sessionObj.user || !sessionObj.timestamp || (now - sessionObj.timestamp > SESSION_TIMEOUT_MS)) {
+      if (now - session.timestamp > SESSION_TIMEOUT_MS) {
         localStorage.removeItem('sipustaka_session');
         showLoginScreenDirect();
         return;
       }
 
-      currentUser = sessionObj.user;
-      sessionObj.timestamp = now;
-      localStorage.setItem('sipustaka_session', JSON.stringify(sessionObj));
+      // Perpanjang masa aktif sesi (Auto Renewal)
+      session.timestamp = now;
+      localStorage.setItem('sipustaka_session', JSON.stringify(session));
 
+      currentUser = session.user;
       applyLoggedInUserUI(currentUser);
     } catch (err) {
       console.error("Restore Session Exception:", err);
@@ -102,6 +103,12 @@
     const userDisplayName = document.getElementById('user-display-name');
     if (userDisplayName) userDisplayName.innerText = res.userData.nama_lengkap;
 
+    const dropName = document.getElementById('topbar-dropdown-name');
+    if (dropName) dropName.innerText = res.userData.nama_lengkap || 'User';
+
+    const dropEmail = document.getElementById('topbar-dropdown-email');
+    if (dropEmail) dropEmail.innerText = res.userData.email || 'user@email.com';
+
     const avatarBox = document.getElementById('user-avatar-box');
     if (avatarBox) {
       const userName = res.userData.nama_lengkap || 'Admin';
@@ -140,7 +147,8 @@
       const allSubviews = [
         'subview-dashboard', 'subview-dashboard-siswa', 'subview-katalog',
         'subview-buku', 'subview-anggota', 'subview-peminjaman',
-        'subview-pengembalian', 'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa'
+        'subview-pengembalian', 'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa',
+        'subview-profil'
       ];
       allSubviews.forEach(id => {
         const el = document.getElementById(id);
@@ -161,6 +169,10 @@
         const targetEl = document.getElementById('subview-katalog');
         if (targetEl) targetEl.classList.remove('d-none');
         loadKatalogData();
+      } else if (subviewName === 'profil') {
+        const targetEl = document.getElementById('subview-profil');
+        if (targetEl) targetEl.classList.remove('d-none');
+        loadSelfProfileView();
       } else {
         const targetEl = document.getElementById('subview-' + subviewName);
         if (targetEl) targetEl.classList.remove('d-none');
@@ -186,6 +198,144 @@
     }
   }
 
+  function loadSelfProfileView() {
+    if (!currentUser || !currentUser.userData) return;
+
+    const ud = currentUser.userData;
+    const isSiswa = currentUser.role === 'siswa';
+
+    // Isi Card Profil Kiri
+    const nameEl = document.getElementById('profil-card-name');
+    if (nameEl) nameEl.innerText = ud.nama_lengkap || '-';
+
+    const avatarEl = document.getElementById('profil-big-avatar');
+    if (avatarEl) {
+      const initial = (ud.nama_lengkap || 'U').charAt(0).toUpperCase();
+      avatarEl.innerText = initial;
+    }
+
+    const roleEl = document.getElementById('profil-card-role');
+    if (roleEl) {
+      roleEl.innerText = isSiswa ? ('Siswa • Kelas ' + (ud.kelas || '-')) : 'Administrator Sistem';
+    }
+
+    const nisEl = document.getElementById('profil-card-nis');
+    if (nisEl) nisEl.innerText = isSiswa ? (ud.nis || '-') : (ud.id_admin || 'ADM-01');
+
+    const kelasBox = document.getElementById('profil-field-kelas-box');
+    const kelasCardEl = document.getElementById('profil-card-kelas');
+    if (isSiswa) {
+      if (kelasBox) kelasBox.classList.remove('d-none');
+      if (kelasCardEl) kelasCardEl.innerText = ud.kelas || '-';
+    } else {
+      if (kelasBox) kelasBox.classList.add('d-none');
+    }
+
+    const usernameCardEl = document.getElementById('profil-card-username');
+    if (usernameCardEl) usernameCardEl.innerText = ud.username || '-';
+
+    const statsBox = document.getElementById('profil-siswa-stats-box');
+    if (isSiswa) {
+      if (statsBox) statsBox.classList.remove('d-none');
+      const statAktifEl = document.getElementById('profil-stat-aktif');
+      const statDibacaEl = document.getElementById('profil-stat-dibaca');
+      const dashAktif = document.getElementById('siswa-pinjam-aktif');
+      const dashDibaca = document.getElementById('siswa-total-dibaca');
+      if (statAktifEl && dashAktif) statAktifEl.innerText = dashAktif.innerText;
+      if (statDibacaEl && dashDibaca) statDibacaEl.innerText = dashDibaca.innerText;
+    } else {
+      if (statsBox) statsBox.classList.add('d-none');
+    }
+
+    // Isi Formulir Edit Kanan
+    const inputNama = document.getElementById('profil-input-nama');
+    if (inputNama) inputNama.value = ud.nama_lengkap || '';
+
+    const inputUser = document.getElementById('profil-input-username');
+    if (inputUser) inputUser.value = ud.username || '';
+
+    const inputEmail = document.getElementById('profil-input-email');
+    if (inputEmail) inputEmail.value = ud.email || '';
+
+    const kelasContainer = document.getElementById('profil-input-kelas-container');
+    const inputKelas = document.getElementById('profil-input-kelas');
+    if (isSiswa) {
+      if (kelasContainer) kelasContainer.classList.remove('d-none');
+      if (inputKelas) inputKelas.value = ud.kelas || '-';
+    } else {
+      if (kelasContainer) kelasContainer.classList.add('d-none');
+    }
+
+    // Reset password fields
+    const oldPass = document.getElementById('profil-input-old-pass');
+    const newPass = document.getElementById('profil-input-new-pass');
+    if (oldPass) oldPass.value = '';
+    if (newPass) newPass.value = '';
+  }
+
+  function handleSaveSelfProfile(e) {
+    if (e) e.preventDefault();
+    if (!currentUser || !currentUser.userData) return;
+
+    const namaLengkap = document.getElementById('profil-input-nama') ? document.getElementById('profil-input-nama').value.trim() : '';
+    const username = document.getElementById('profil-input-username') ? document.getElementById('profil-input-username').value.trim() : '';
+    const email = document.getElementById('profil-input-email') ? document.getElementById('profil-input-email').value.trim() : '';
+    const oldPass = document.getElementById('profil-input-old-pass') ? document.getElementById('profil-input-old-pass').value.trim() : '';
+    const newPass = document.getElementById('profil-input-new-pass') ? document.getElementById('profil-input-new-pass').value.trim() : '';
+
+    if (!namaLengkap || !username || !email) {
+      showErrorAlert('Nama lengkap, username, dan email wajib diisi!');
+      return;
+    }
+
+    if (newPass && !oldPass) {
+      showErrorAlert('Untuk mengganti password, silakan masukkan password saat ini / lama!');
+      return;
+    }
+
+    const isSiswa = currentUser.role === 'siswa';
+    const identifier = isSiswa ? currentUser.userData.nis : (currentUser.userData.id_admin || currentUser.userData.username);
+
+    const payload = {
+      role: currentUser.role,
+      identifier: identifier,
+      nama_lengkap: namaLengkap,
+      username: username,
+      email: email,
+      old_password: oldPass,
+      new_password: newPass
+    };
+
+    showLoadingAlert('Menyimpan perubahan data profil...');
+
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message || 'Profil berhasil diperbarui!');
+          
+          currentUser.userData = res.userData;
+          saveUserSession(currentUser);
+          
+          applyLoggedInUserUI(currentUser);
+          loadSelfProfileView();
+        } else {
+          showErrorAlert((res && res.message) || 'Gagal memperbarui profil.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert('Gagal menghubungi server: ' + err.toString());
+      })
+      .updateUserSelfProfile(payload);
+  }
+
+  function toggleFieldPassword(fieldId) {
+    const input = document.getElementById(fieldId);
+    if (!input) return;
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+  }
 
   /* UTILITAS ALERT SWEETALERT2 */
   function showSuccessAlert(msg, callback) {
@@ -303,10 +453,6 @@
       .replace(/'/g, '&#039;');
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    initOtpBoxListeners();
-  });
-
   function initOtpBoxListeners() {
     const otpInputs = document.querySelectorAll('.otp-digit-box');
     otpInputs.forEach((input, idx) => {
@@ -337,21 +483,13 @@
     });
   }
 
-  // ==========================================
-  // CONTROLLER 1: DAFTAR BUKU & FORM BUKU
-  // ==========================================
-
-  let currentSelectedAnggotaPinjam = null;
-  let currentSelectedBukuPinjam = null;
-  let currentFoundTransaksiReturn = null;
-
-
   function showModal(id) {
     const el = document.getElementById(id);
     if (el && typeof bootstrap !== 'undefined') {
       new bootstrap.Modal(el).show();
     }
   }
+
   function hideModal(id) {
     const el = document.getElementById(id);
     if (el && typeof bootstrap !== 'undefined') {
@@ -360,39 +498,25 @@
     }
   }
 
-
   /* CONTROLLER DROPDOWN INTERAKTIF ANGGOTA */
   function toggleAnggotaDropdown(e) {
-    if (e) e.preventDefault();
-    const groupEl = document.getElementById('menu-anggota-group');
-    const subnavEl = document.getElementById('subnav-anggota');
-    if (!groupEl || !subnavEl) return;
-
-    groupEl.classList.toggle('open');
-    subnavEl.classList.toggle('d-none');
+    e.preventDefault();
+    const subnav = document.getElementById('subnav-anggota');
+    const arrow = document.getElementById('arrow-anggota-group');
+    if (subnav && arrow) {
+      subnav.classList.toggle('d-none');
+      arrow.classList.toggle('rotate-90');
+    }
   }
 
   /* CONTROLLER MOBILE OFF-CANVAS SIDEBAR DRAWER */
   function toggleMobileSidebar() {
     const sidebar = document.querySelector('.sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
-    if (!sidebar) return;
-
-    sidebar.classList.toggle('mobile-open');
-    if (backdrop) backdrop.classList.toggle('show');
-  }
-
-  // Auto-close mobile drawer when switching subviews on mobile
-  const origSwitchSubView = switchSubView;
-  switchSubView = function(subviewName) {
-    origSwitchSubView(subviewName);
-    const sidebar = document.querySelector('.sidebar');
-    const backdrop = document.getElementById('sidebar-backdrop');
-    if (sidebar && sidebar.classList.contains('mobile-open')) {
-      sidebar.classList.remove('mobile-open');
-      if (backdrop) backdrop.classList.remove('show');
+    if (sidebar && backdrop) {
+      sidebar.classList.toggle('show');
+      backdrop.classList.toggle('show');
     }
-  };
-
+  }
 
 </script>

@@ -1,0 +1,127 @@
+        <!-- SUBVIEW: PROFIL SAYA & PENGATURAN DATA DIRI -->
+        <div id="subview-profil" class="d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <div>
+              <h3 class="fw-bold m-0 text-dark">Profil Saya</h3>
+              <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <span class="text-dark">Profil &amp; Data Diri</span></small>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <!-- KOLOM KIRI: KARTU IDENTITAS PROFIL -->
+            <div class="col-lg-4">
+              <div class="card border-0 rounded-4 shadow-sm p-4 text-center">
+                <!-- Avatar Inisial Besar -->
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center text-white fw-bold shadow" id="profil-big-avatar" style="width: 85px; height: 85px; border-radius: 50%; font-size: 2.2rem; background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);">
+                  U
+                </div>
+                
+                <h5 class="fw-bold text-dark mb-1" id="profil-card-name">-</h5>
+                <div class="mb-3">
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-semibold" id="profil-card-role">Siswa</span>
+                </div>
+
+                <div class="p-3 bg-light rounded-3 text-start mb-3 border">
+                  <div class="mb-2 pb-2 border-bottom d-flex justify-content-between align-items-center" id="profil-field-nis-box">
+                    <span class="text-muted small fw-semibold">NIS / ID:</span>
+                    <span class="fw-bold text-dark font-monospace" id="profil-card-nis">-</span>
+                  </div>
+                  <div class="mb-2 pb-2 border-bottom d-flex justify-content-between align-items-center" id="profil-field-kelas-box">
+                    <span class="text-muted small fw-semibold">Kelas:</span>
+                    <span class="fw-bold text-dark" id="profil-card-kelas">-</span>
+                  </div>
+                  <div class="mb-2 pb-2 border-bottom d-flex justify-content-between align-items-center">
+                    <span class="text-muted small fw-semibold">Username:</span>
+                    <span class="fw-bold text-dark" id="profil-card-username">-</span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-muted small fw-semibold">Status:</span>
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-0.5 small" id="profil-card-status">Aktif</span>
+                  </div>
+                </div>
+
+                <!-- SISWA STATS SUMMARY (KHUSUS SISWA) -->
+                <div id="profil-siswa-stats-box" class="row g-2 text-center">
+                  <div class="col-6">
+                    <div class="p-2.5 rounded-3 bg-primary bg-opacity-10 border border-primary border-opacity-25">
+                      <small class="text-muted d-block fw-semibold" style="font-size:0.68rem;">PINJAM AKTIF</small>
+                      <div class="fs-5 fw-bold text-primary" id="profil-stat-aktif">0</div>
+                    </div>
+                  </div>
+                  <div class="col-6">
+                    <div class="p-2.5 rounded-3 bg-success bg-opacity-10 border border-success border-opacity-25">
+                      <small class="text-muted d-block fw-semibold" style="font-size:0.68rem;">BUKU DIBACA</small>
+                      <div class="fs-5 fw-bold text-success" id="profil-stat-dibaca">0</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- KOLOM KANAN: FORMULIR EDIT DATA DIRI & KEAMANAN -->
+            <div class="col-lg-8">
+              <div class="card border-0 rounded-4 shadow-sm p-4">
+                <h5 class="fw-bold text-dark mb-4 d-flex align-items-center">
+                  <i class="bi bi-person-gear text-primary" style="margin-right: 8px;"></i>
+                  <span>Pengaturan Akun &amp; Data Diri</span>
+                </h5>
+
+                <form id="form-edit-profil" onsubmit="handleSaveSelfProfile(event)">
+                  <!-- BAGIAN 1: INFORMASI PRIBADI -->
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-secondary mb-3 pb-2 border-bottom small text-uppercase">1. Informasi Pribadi</h6>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+                        <input type="text" id="profil-input-nama" class="form-control rounded-3" required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="profil-input-username" class="form-control rounded-3" required>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Email Terdaftar <span class="text-danger">*</span></label>
+                        <input type="email" id="profil-input-email" class="form-control rounded-3" required>
+                        <small class="text-muted" style="font-size:0.72rem;">Digunakan untuk verifikasi kode OTP dan pemulihan akun.</small>
+                      </div>
+                      <div class="col-md-6" id="profil-input-kelas-container">
+                        <label class="form-label small fw-semibold">Kelas (Terkunci)</label>
+                        <input type="text" id="profil-input-kelas" class="form-control rounded-3 bg-light" readonly disabled>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- BAGIAN 2: GANTI PASSWORD (OPSIONAL) -->
+                  <div class="mb-4">
+                    <h6 class="fw-bold text-secondary mb-3 pb-2 border-bottom small text-uppercase">2. Keamanan &amp; Ganti Password <span class="text-muted fw-normal" style="text-transform:none;">(Kosongkan jika tidak ingin mengubah password)</span></h6>
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Password Saat Ini / Lama</label>
+                        <div class="input-group">
+                          <input type="password" id="profil-input-old-pass" class="form-control border-end-0 rounded-start-3" placeholder="Password lama">
+                          <button type="button" class="btn btn-outline-secondary border-start-0 rounded-end-3 bg-white" onclick="toggleFieldPassword('profil-input-old-pass')"><i class="bi bi-eye"></i></button>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Password Baru</label>
+                        <div class="input-group">
+                          <input type="password" id="profil-input-new-pass" class="form-control border-end-0 rounded-start-3" placeholder="Password baru">
+                          <button type="button" class="btn btn-outline-secondary border-start-0 rounded-end-3 bg-white" onclick="toggleFieldPassword('profil-input-new-pass')"><i class="bi bi-eye"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- TOMBOL SIMPAN -->
+                  <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <button type="button" class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" onclick="switchSubView('dashboard')">Batal</button>
+                    <button type="submit" class="btn btn-primary rounded-3 px-4 fw-semibold" id="btn-save-profil">
+                      <i class="bi bi-save" style="margin-right: 8px;"></i>
+                      <span>Simpan Perubahan</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
