@@ -4,6 +4,7 @@
   let currentCatalogViewMode = 'grid';
   let activeCatalogCategory = 'semua';
   let catalogTableCurrentPage = 1;
+  let catalogGridCurrentPage = 1;
 
   function loadKatalogData() {
     try {
@@ -16,6 +17,7 @@
         .withSuccessHandler(data => {
           catalogDataCache = data || [];
           catalogTableCurrentPage = 1;
+          catalogGridCurrentPage = 1;
           updateKatalogCategoryDropdown(catalogDataCache);
           renderCatalogView();
         })
@@ -60,6 +62,7 @@
     const btnList = document.getElementById('katalog-btn-list');
     const gridToolbar = document.getElementById('katalog-toolbar-grid');
     const gridContainer = document.getElementById('katalog-grid-container');
+    const gridPagination = document.getElementById('katalog-grid-pagination-container');
     const listContainer = document.getElementById('katalog-list-container');
 
     const searchGrid = document.getElementById('katalog-search-input');
@@ -79,6 +82,7 @@
       if (btnList) { btnList.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center'; }
       if (gridToolbar) gridToolbar.classList.remove('d-none');
       if (gridContainer) gridContainer.classList.remove('d-none');
+      if (gridPagination) gridPagination.classList.remove('d-none');
       if (listContainer) listContainer.classList.add('d-none');
     } else {
       // Sinkronkan value dari grid ke tabel
@@ -90,8 +94,10 @@
       if (btnList) { btnList.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center active'; }
       if (gridToolbar) gridToolbar.classList.add('d-none');
       if (gridContainer) gridContainer.classList.add('d-none');
+      if (gridPagination) gridPagination.classList.add('d-none');
       if (listContainer) listContainer.classList.remove('d-none');
     }
+    catalogGridCurrentPage = 1;
     catalogTableCurrentPage = 1;
     renderCatalogView();
   }
@@ -116,17 +122,28 @@
       if (katGrid) activeCatalogCategory = katGrid.value.toLowerCase();
     }
 
+    catalogGridCurrentPage = 1;
     catalogTableCurrentPage = 1;
     renderCatalogView();
+  }
+
+  function changeCatalogGridPage(newPage) {
+    catalogGridCurrentPage = newPage;
+    renderCatalogView();
+    const toolbarEl = document.getElementById('katalog-toolbar-grid');
+    if (toolbarEl) toolbarEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function changeCatalogTablePage(newPage) {
     catalogTableCurrentPage = newPage;
     renderCatalogView();
+    const listEl = document.getElementById('katalog-list-container');
+    if (listEl) listEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function renderCatalogView() {
     const gridContainer = document.getElementById('katalog-grid-container');
+    const gridPagination = document.getElementById('katalog-grid-pagination-container');
     const listBody = document.getElementById('katalog-list-table-body');
 
     const searchInput = (currentCatalogViewMode === 'list') 
@@ -164,6 +181,7 @@
     if (filtered.length === 0) {
       const emptyHtml = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-journal-x display-4 d-block text-secondary mb-2 opacity-50"></i><div class="fw-semibold">Tidak ada koleksi buku yang sesuai dengan pencarian Anda.</div><small class="text-muted">Coba ubah kata kunci pencarian atau filter kategori.</small></div>';
       if (gridContainer) gridContainer.innerHTML = emptyHtml;
+      if (gridPagination) gridPagination.classList.add('d-none');
       if (listBody) listBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada koleksi buku yang sesuai.</td></tr>';
       
       const infoEl = document.getElementById('katalog-table-pagination-info');
@@ -174,8 +192,20 @@
     }
 
     if (currentCatalogViewMode === 'grid') {
+      const totalItems = filtered.length;
+      const entriesSelect = document.getElementById('katalog-grid-entries');
+      const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 8) : 8;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+      if (catalogGridCurrentPage > totalPages) catalogGridCurrentPage = totalPages;
+      if (catalogGridCurrentPage < 1) catalogGridCurrentPage = 1;
+
+      const startIndex = (catalogGridCurrentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = filtered.slice(startIndex, endIndex);
+
       let gridHtml = '';
-      filtered.forEach(b => {
+      pageItems.forEach(b => {
         const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
         const isAvailable = stokNum > 0;
         const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
@@ -241,6 +271,43 @@
         `;
       });
       if (gridContainer) gridContainer.innerHTML = gridHtml;
+
+      // Render Grid Pagination Info & Controls
+      if (gridPagination) gridPagination.classList.remove('d-none');
+      const gridInfoEl = document.getElementById('katalog-grid-pagination-info');
+      const gridNavEl = document.getElementById('katalog-grid-pagination-nav');
+
+      if (gridInfoEl) {
+        gridInfoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} buku`;
+      }
+
+      if (gridNavEl) {
+        let navHtml = '';
+        navHtml += `
+          <li class="page-item ${catalogGridCurrentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changeCatalogGridPage(${catalogGridCurrentPage - 1}); return false;">Sebelumnya</a>
+          </li>
+        `;
+
+        for (let p = 1; p <= totalPages; p++) {
+          if (totalPages <= 7 || p === 1 || p === totalPages || (p >= catalogGridCurrentPage - 1 && p <= catalogGridCurrentPage + 1)) {
+            navHtml += `
+              <li class="page-item ${p === catalogGridCurrentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changeCatalogGridPage(${p}); return false;">${p}</a>
+              </li>
+            `;
+          } else if (p === catalogGridCurrentPage - 2 || p === catalogGridCurrentPage + 2) {
+            navHtml += `<li class="page-item disabled"><span class="page-link border-0">...</span></li>`;
+          }
+        }
+
+        navHtml += `
+          <li class="page-item ${catalogGridCurrentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changeCatalogGridPage(${catalogGridCurrentPage + 1}); return false;">Berikutnya</a>
+          </li>
+        `;
+        gridNavEl.innerHTML = navHtml;
+      }
     } else {
       const totalItems = filtered.length;
       const entriesSelect = document.getElementById('katalog-table-entries');
