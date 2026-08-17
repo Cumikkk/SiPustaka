@@ -14,6 +14,7 @@ Aplikasi Perpustakaan Sekolah berbasis Web App modern menggunakan **Google Apps 
     * 📁 `sampul/` : Menyimpan gambar sampul buku untuk tampilan web
     * 📁 `buku/` : Menyimpan berkas buku digital (PDF/dokumen) untuk dibaca/diunduh siswa & guru
 * **Clasp Script ID:** `16lOateVKmUu1Q8YDmHgfiKqRW3izKDA5ZbAaBtCeS4fLmzY6pqymPkGP`
+* **GitHub Repository:** `https://github.com/Cumikkk/SiPustaka.git` (Branch: `main`)
 
 ---
 
@@ -27,9 +28,19 @@ Aplikasi Perpustakaan Sekolah berbasis Web App modern menggunakan **Google Apps 
 
 ---
 
-## 3. SOP Push Kode & Teks Deskripsi Rilis (WAJIB DIPATUHI)
-Antigravity mengedit kode di laptop dan mengunggahnya ke Apps Script Online via:
-```bash
-npx @google/clasp push -f
-```
-Setelah push selesai, Antigravity **WAJIB menentukan dan merumuskan teks deskripsi rilis** secara spesifik berdasarkan perubahan fitur yang baru dibuat, lalu memberikannya kepada User dalam bentuk kotak teks siap salin untuk diisikan pada kolom Description saat deploy manual di Apps Script Editor.
+## 3. SOP Sinkronisasi Kode & Rilis (WAJIB DIPATUHI)
+
+Setiap kali selesai melakukan perubahan kode/fitur atau perbaikan:
+
+1. **Push ke Google Apps Script Online:**
+   ```bash
+   npx @google/clasp push -f
+   ```
+2. **Commit & Push ke GitHub:**
+   ```bash
+   git add .
+   git commit -m "<tipe(feat/fix/refactor/docs)>: <deskripsi perubahan>"
+   git push origin main
+   ```
+3. **Kotak Teks Deskripsi Rilis:**
+   Antigravity **WAJIB menentukan dan merumuskan teks deskripsi rilis** secara spesifik berdasarkan perubahan fitur yang baru dibuat, lalu memberikannya kepada User dalam bentuk kotak teks siap salin untuk diisikan pada kolom Description saat deploy manual di Apps Script Editor.
