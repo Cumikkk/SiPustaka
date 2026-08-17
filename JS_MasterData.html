@@ -934,26 +934,45 @@
     const terlambat = document.getElementById('lap-terlambat')?.innerText || '0';
 
     const now = new Date();
-    const tglCetak = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const monthsIndoFull = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    const tglCetak = now.getDate() + ' ' + monthsIndoFull[now.getMonth()] + ' ' + now.getFullYear();
+    const jamCetak = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ' WIB';
+    
     const petugasNama = (currentUser && currentUser.userData && currentUser.userData.nama_lengkap) 
       ? currentUser.userData.nama_lengkap 
-      : 'Petugas Administrator';
+      : 'Administrator Perpustakaan';
+
+    let sumPinjam = 0;
+    let sumKembali = 0;
+    let sumDipinjam = 0;
+    let sumTerlambat = 0;
 
     let tableRows = '';
     laporanDataCache.forEach((b, idx) => {
+      const pCount = Number(b.dipinjam || 0);
+      const kCount = Number(b.dikembalikan || 0);
+      const mCount = Number(b.masih_dipinjam || 0);
+      const tCount = Number(b.terlambat || 0);
+
+      sumPinjam += pCount;
+      sumKembali += kCount;
+      sumDipinjam += mCount;
+      sumTerlambat += tCount;
+
       const rawKat = b.kategori ? String(b.kategori).trim() : 'Umum';
       const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
       const penulisStr = (b.penulis && b.penulis !== '-') ? b.penulis : '-';
+      const rowBg = (idx % 2 === 1) ? 'background-color: #f8fafc;' : 'background-color: #ffffff;';
 
-      tableRows += '<tr>' +
-        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1;">' + (idx + 1) + '</td>' +
-        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">' + escapeHtml(b.judul_buku) + '</td>' +
-        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; color: #475569;">' + escapeHtml(penulisStr) + '</td>' +
-        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; text-align: center;"><span style="background: #eef2ff; color: #0052cc; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">' + escapeHtml(katStr) + '</span></td>' +
-        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #0052cc;">' + Number(b.dipinjam || 0).toLocaleString('id-ID') + '</td>' +
-        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #16a34a;">' + Number(b.dikembalikan || 0).toLocaleString('id-ID') + '</td>' +
-        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #d97706;">' + Number(b.masih_dipinjam || 0).toLocaleString('id-ID') + '</td>' +
-        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #dc2626;">' + Number(b.terlambat || 0).toLocaleString('id-ID') + '</td>' +
+      tableRows += '<tr style="' + rowBg + '">' +
+        '<td style="text-align: center; padding: 6px 4px; border: 1px solid #cbd5e1; font-size: 11px; font-weight: 500; color: #475569;">' + (idx + 1) + '</td>' +
+        '<td style="padding: 6px 8px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a; font-size: 11.5px;">' + escapeHtml(b.judul_buku) + '</td>' +
+        '<td style="padding: 6px 8px; border: 1px solid #cbd5e1; color: #475569; font-size: 11px;">' + escapeHtml(penulisStr) + '</td>' +
+        '<td style="padding: 6px 4px; border: 1px solid #cbd5e1; text-align: center;"><span style="background: #eef2ff; color: #0052cc; border: 1px solid #c7d2fe; padding: 1.5px 6px; border-radius: 9999px; font-size: 10px; font-weight: 600; text-transform: uppercase;">' + escapeHtml(katStr) + '</span></td>' +
+        '<td style="text-align: center; padding: 6px 4px; border: 1px solid #cbd5e1; font-weight: 700; color: #0052cc; font-size: 11px;">' + pCount.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 6px 4px; border: 1px solid #cbd5e1; font-weight: 700; color: #16a34a; font-size: 11px;">' + kCount.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 6px 4px; border: 1px solid #cbd5e1; font-weight: 700; color: #d97706; font-size: 11px;">' + mCount.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 6px 4px; border: 1px solid #cbd5e1; font-weight: 700; color: #dc2626; font-size: 11px;">' + tCount.toLocaleString('id-ID') + '</td>' +
       '</tr>';
     });
 
@@ -961,82 +980,105 @@
 '<html lang="id">' +
 '<head>' +
   '<meta charset="utf-8">' +
-  '<title>Laporan Perpustakaan - SiPustaka</title>' +
+  '<title>Laporan Rekapitulasi Sirkulasi - SiPustaka</title>' +
   '<style>' +
-    '@page { size: A4 portrait; margin: 15mm; }' +
-    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; font-size: 12px; line-height: 1.4; background: #ffffff; }' +
-    '.header-kop { border-bottom: 2.5px solid #0052cc; padding-bottom: 12px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }' +
-    '.kop-title { font-size: 18px; font-weight: 800; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }' +
-    '.kop-sub { font-size: 11px; color: #64748b; margin: 0; }' +
-    '.meta-box { text-align: right; font-size: 11px; color: #475569; }' +
-    '.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }' +
-    '.stat-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #f8fafc; }' +
-    '.stat-title { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }' +
-    '.stat-val { font-size: 18px; font-weight: 800; color: #0f172a; }' +
-    'table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 11px; }' +
-    'th { background-color: #f1f5f9; color: #334155; font-weight: 700; text-align: center; padding: 8px 6px; border: 1px solid #cbd5e1; text-transform: uppercase; font-size: 10px; }' +
-    '.footer-sign { display: flex; justify-content: flex-end; margin-top: 30px; page-break-inside: avoid; }' +
-    '.sign-box { text-align: center; width: 220px; }' +
+    '@page { size: A4 portrait; margin: 12mm 15mm 12mm 15mm; }' +
+    'body { font-family: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, Arial, sans-serif; color: #0f172a; margin: 0; padding: 0; font-size: 11.5px; line-height: 1.45; background: #ffffff; }' +
+    '.kop-wrapper { border-bottom: 3.5px double #0f172a; padding-bottom: 10px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }' +
+    '.kop-brand { display: flex; align-items: center; gap: 12px; }' +
+    '.kop-icon { width: 44px; height: 44px; background: #0052cc; color: #ffffff; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: bold; flex-shrink: 0; }' +
+    '.kop-instansi { font-size: 15px; font-weight: 800; color: #0052cc; letter-spacing: 0.5px; text-transform: uppercase; margin: 0; line-height: 1.2; }' +
+    '.kop-layanan { font-size: 11px; font-weight: 600; color: #334155; margin: 2px 0 0 0; }' +
+    '.kop-sub { font-size: 10px; color: #64748b; margin: 1px 0 0 0; }' +
+    '.kop-meta { text-align: right; font-size: 10.5px; color: #475569; line-height: 1.4; }' +
+    '.doc-title-box { text-align: center; margin-bottom: 16px; }' +
+    '.doc-title { font-size: 13.5px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.6px; margin: 0; }' +
+    '.doc-subtitle { font-size: 10.5px; color: #64748b; margin: 3px 0 0 0; }' +
+    '.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }' +
+    '.stat-card { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 10px; background: #f8fafc; }' +
+    '.stat-title { font-size: 9.5px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 2px; }' +
+    '.stat-val { font-size: 17px; font-weight: 800; line-height: 1.2; }' +
+    '.stat-sub { font-size: 9.5px; color: #64748b; margin-top: 2px; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 14px; }' +
+    'th { background-color: #1e293b; color: #ffffff; font-weight: 700; text-align: center; padding: 7px 5px; border: 1px solid #0f172a; text-transform: uppercase; font-size: 10px; letter-spacing: 0.4px; }' +
+    '.total-row td { background-color: #e2e8f0 !important; font-weight: 800 !important; border: 1.5px solid #94a3b8 !important; padding: 7px 6px; font-size: 11px; }' +
+    '.doc-footer-note { border-top: 1px solid #e2e8f0; padding-top: 8px; font-size: 9.5px; color: #64748b; display: flex; justify-content: space-between; align-items: center; }' +
     '@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }' +
   '</style>' +
 '</head>' +
 '<body>' +
-  '<div class="header-kop">' +
-    '<div>' +
-      '<h1 class="kop-title">SiPustaka - Sistem Perpustakaan</h1>' +
-      '<p class="kop-sub">Laporan Rekapitulasi &amp; Statistik Sirkulasi Koleksi Buku</p>' +
+  '<div class="kop-wrapper">' +
+    '<div class="kop-brand">' +
+      '<div class="kop-icon">📚</div>' +
+      '<div>' +
+        '<h1 class="kop-instansi">SISTEM INFORMASI PERPUSTAKAAN (SiPustaka)</h1>' +
+        '<div class="kop-layanan">UPT Layanan Perpustakaan &amp; Literasi Sekolah</div>' +
+        '<div class="kop-sub">Modul Sirkulasi Peminjaman &amp; Inventarisasi Koleksi Digital</div>' +
+      '</div>' +
     '</div>' +
-    '<div class="meta-box">' +
-      '<div><b>Tanggal Cetak:</b> ' + tglCetak + '</div>' +
+    '<div class="kop-meta">' +
+      '<div><b>Tanggal:</b> ' + tglCetak + '</div>' +
+      '<div><b>Waktu:</b> ' + jamCetak + '</div>' +
       '<div><b>Petugas:</b> ' + escapeHtml(petugasNama) + '</div>' +
     '</div>' +
   '</div>' +
 
+  '<div class="doc-title-box">' +
+    '<h2 class="doc-title">LAPORAN REKAPITULASI &amp; STATISTIK SIRKULASI BUKU</h2>' +
+    '<p class="doc-subtitle">Rekapitulasi Data Peminjaman, Pengembalian, dan Kepatuhan Sirkulasi Seluruh Koleksi</p>' +
+  '</div>' +
+
   '<div class="stats-grid">' +
-    '<div class="stat-card" style="border-left: 4px solid #0052cc;">' +
+    '<div class="stat-card" style="border-top: 3px solid #0052cc;">' +
       '<div class="stat-title">Total Peminjaman</div>' +
       '<div class="stat-val" style="color: #0052cc;">' + totalPinjam + '</div>' +
+      '<div class="stat-sub">Akumulasi transaksi pinjam</div>' +
     '</div>' +
-    '<div class="stat-card" style="border-left: 4px solid #16a34a;">' +
+    '<div class="stat-card" style="border-top: 3px solid #16a34a;">' +
       '<div class="stat-title">Sudah Dikembalikan</div>' +
       '<div class="stat-val" style="color: #16a34a;">' + totalKembali + '</div>' +
+      '<div class="stat-sub">Buku telah kembali ke rak</div>' +
     '</div>' +
-    '<div class="stat-card" style="border-left: 4px solid #d97706;">' +
+    '<div class="stat-card" style="border-top: 3px solid #d97706;">' +
       '<div class="stat-title">Sedang Dipinjam</div>' +
       '<div class="stat-val" style="color: #d97706;">' + masihDipinjam + '</div>' +
+      '<div class="stat-sub">Buku masih di peminjam</div>' +
     '</div>' +
-    '<div class="stat-card" style="border-left: 4px solid #dc2626;">' +
-      '<div class="stat-title">Terlambat</div>' +
+    '<div class="stat-card" style="border-top: 3px solid #dc2626;">' +
+      '<div class="stat-title">Pengembalian Terlambat</div>' +
       '<div class="stat-val" style="color: #dc2626;">' + terlambat + '</div>' +
+      '<div class="stat-sub">Lewat tanggal jatuh tempo</div>' +
     '</div>' +
   '</div>' +
 
   '<table>' +
     '<thead>' +
       '<tr>' +
-        '<th style="width: 35px;">No.</th>' +
-        '<th style="text-align: left;">Judul Buku</th>' +
-        '<th style="text-align: left;">Penulis</th>' +
-        '<th style="width: 80px;">Kategori</th>' +
-        '<th style="width: 65px;">Total Pinjam</th>' +
-        '<th style="width: 65px;">Kembali</th>' +
-        '<th style="width: 65px;">Dipinjam</th>' +
-        '<th style="width: 65px;">Terlambat</th>' +
+        '<th style="width: 32px;">No.</th>' +
+        '<th style="text-align: left;">Judul Koleksi Buku</th>' +
+        '<th style="text-align: left; width: 140px;">Penulis / Pengarang</th>' +
+        '<th style="width: 75px;">Kategori</th>' +
+        '<th style="width: 60px;">Total Pinjam</th>' +
+        '<th style="width: 58px;">Kembali</th>' +
+        '<th style="width: 58px;">Dipinjam</th>' +
+        '<th style="width: 58px;">Terlambat</th>' +
       '</tr>' +
     '</thead>' +
     '<tbody>' +
       tableRows +
+      '<tr class="total-row">' +
+        '<td colspan="4" style="text-align: right; padding-right: 12px; color: #0f172a;">TOTAL REKAPITULASI KESELURUHAN (' + laporanDataCache.length + ' BUKU):</td>' +
+        '<td style="text-align: center; color: #0052cc;">' + sumPinjam.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; color: #16a34a;">' + sumKembali.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; color: #d97706;">' + sumDipinjam.toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; color: #dc2626;">' + sumTerlambat.toLocaleString('id-ID') + '</td>' +
+      '</tr>' +
     '</tbody>' +
   '</table>' +
 
-  '<div class="footer-sign">' +
-    '<div class="sign-box">' +
-      '<div>Dicetak pada: ' + tglCetak + '</div>' +
-      '<div style="margin-top: 4px;">Pengelola Perpustakaan,</div>' +
-      '<div style="height: 60px;"></div>' +
-      '<div style="font-weight: bold; text-decoration: underline;">' + escapeHtml(petugasNama) + '</div>' +
-      '<div style="font-size: 10px; color: #64748b;">NIP / ID: Administrator</div>' +
-    '</div>' +
+  '<div class="doc-footer-note">' +
+    '<div>* Dokumen ini dibuat dan divalidasi secara otomatis melalui Sistem Informasi Perpustakaan (SiPustaka).</div>' +
+    '<div>Halaman 1 dari 1</div>' +
   '</div>' +
 '</body>' +
 '</html>';
