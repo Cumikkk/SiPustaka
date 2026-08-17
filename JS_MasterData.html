@@ -36,7 +36,7 @@
     if (!tbody) return;
 
     if (bukuDataCache.length === 0 || forceReload) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
       
       google.script.run
         .withSuccessHandler(list => {
@@ -45,7 +45,7 @@
           executeRenderBukuTable();
         })
         .withFailureHandler(err => {
-          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
         })
         .getBukuListFull('', 'semua', 'semua');
     } else {
@@ -83,14 +83,14 @@
     const controlsEl = document.getElementById('buku-table-pagination-controls');
 
     if (totalItems === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
       if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
       if (controlsEl) controlsEl.innerHTML = '';
       return;
     }
 
     const entriesSelect = document.getElementById('buku-table-entries');
-    const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 10) : 10;
+    const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 5) : 5;
     const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
     if (bukuTableCurrentPage > totalPages) bukuTableCurrentPage = totalPages;
@@ -102,35 +102,35 @@
 
     let html = '';
     pageItems.forEach((b, idx) => {
-      const stok = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
-      const isTersedia = stok > 0;
-      const statusBadge = isTersedia 
-        ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-semibold">Tersedia</span>'
-        : '<span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 fw-semibold">Stok Habis</span>';
+      const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+      const isAvailable = stokNum > 0;
+      const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
+      const badgeText = isAvailable ? 'Tersedia ' + stokNum : 'Stok Habis';
 
       const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
       const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
       const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
-      const ebookBadge = hasEbook ? '<span class="badge badge-ebook rounded-pill px-2 py-0.5 small ms-1" title="Tersedia E-Book">E-Book</span>' : '';
 
-      let coverHtml = '';
-      if (coverUrl) {
-        coverHtml = '<img src="' + coverUrl + '" class="rounded-2 border" style="width: 42px; height: 56px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-2 bg-primary bg-opacity-10 text-primary border d-inline-flex align-items-center justify-content-center\\\' style=\\\'width: 42px; height: 56px;\\\'><i class=\\\'bi bi-journal-bookmark fs-5\\\'></i></div>\'">';
-      } else {
-        coverHtml = '<div class="rounded-2 bg-primary bg-opacity-10 text-primary border d-inline-flex align-items-center justify-content-center" style="width: 42px; height: 56px;"><i class="bi bi-journal-bookmark fs-5"></i></div>';
-      }
+      const imgThumb = coverUrl 
+        ? '<img src="' + coverUrl + '" class="rounded-3 shadow-sm" style="width: 44px; height: 56px; object-fit: cover;" onerror="this.outerHTML=\'<div class=\\\'rounded-3 bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-xs\\\' style=\\\'width: 44px; height: 56px;\\\'><i class=\\\'bi bi-journal-bookmark-fill fs-5\\\'></i></div>\'"> '
+        : '<div class="rounded-3 bg-primary text-white d-inline-flex align-items-center justify-content-center shadow-xs" style="width: 44px; height: 56px;"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>';
 
       html += '<tr>' +
         '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
-        '<td class="border-start text-center" style="width: 75px;">' + coverHtml + '</td>' +
-        '<td class="border-start">' +
-          '<div class="fw-bold text-dark d-flex align-items-center flex-wrap gap-1">' + escapeHtml(b.judul_buku) + ' ' + ebookBadge + '</div>' +
-          '<small class="text-muted">ISBN: ' + escapeHtml(b.isbn || '-') + '</small>' +
+        '<td class="border-start text-center" style="width: 75px;">' + imgThumb + '</td>' +
+        '<td class="border-start text-start">' +
+          '<div class="d-flex align-items-center gap-2 flex-wrap mb-1">' +
+            '<span class="fw-bold text-dark">' + escapeHtml(b.judul_buku) + '</span>' +
+            (hasEbook ? '<span class="badge badge-ebook rounded-pill px-2.5 py-0.5 small fw-semibold ms-1" style="font-size:0.75rem;">E-Book</span>' : '') +
+          '</div>' +
+          '<small class="text-muted d-block">Penulis: ' + escapeHtml(b.penulis || '-') + ' &bull; ISBN: ' + escapeHtml(b.isbn || '-') + '</small>' +
         '</td>' +
-        '<td class="border-start text-secondary">' + escapeHtml(b.penulis || '-') + '</td>' +
-        '<td class="border-start text-center" style="width: 140px;"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(b.kategori || 'Umum') + '</span></td>' +
-        '<td class="border-start text-center fw-bold text-dark" style="width: 80px;">' + stok + '</td>' +
-        '<td class="border-start text-center" style="width: 120px;">' + statusBadge + '</td>' +
+        '<td class="border-start text-center" style="width: 140px;">' +
+          '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-semibold">' + escapeHtml(b.kategori || 'Umum') + '</span>' +
+        '</td>' +
+        '<td class="border-start text-center" style="width: 130px;">' +
+          '<span class="badge ' + badgeClass + ' border rounded-pill px-3 py-1.5 fw-semibold">' + badgeText + '</span>' +
+        '</td>' +
         '<td class="pe-3 text-center border-start" style="width: 120px;">' +
           '<div class="d-flex justify-content-center gap-1">' +
             '<button class="btn btn-sm btn-outline-primary border rounded-2 px-2 py-1" title="Edit Buku" onclick="showFormBukuEdit(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-pencil-square"></i></button>' +

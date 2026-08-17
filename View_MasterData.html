@@ -22,8 +22,8 @@
                   <div class="d-flex align-items-center gap-2">
                     <span class="text-muted small fw-semibold">Tampilkan:</span>
                     <select id="buku-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="bukuTableCurrentPage = 1; renderBukuTable();">
-                      <option value="5">5</option>
-                      <option value="10" selected>10</option>
+                      <option value="5" selected>5</option>
+                      <option value="10">10</option>
                       <option value="25">25</option>
                       <option value="50">50</option>
                       <option value="100">100</option>
@@ -61,17 +61,15 @@
                     <tr>
                       <th class="ps-3 text-center" style="width: 50px;">NO.</th>
                       <th class="border-start text-center" style="width: 75px;">SAMPUL</th>
-                      <th class="border-start text-center">JUDUL BUKU</th>
-                      <th class="border-start text-center">PENULIS</th>
+                      <th class="border-start text-center">JUDUL BUKU &amp; PENULIS</th>
                       <th class="border-start text-center" style="width: 140px;">KATEGORI</th>
-                      <th class="border-start text-center" style="width: 80px;">STOK</th>
-                      <th class="border-start text-center" style="width: 120px;">STATUS</th>
+                      <th class="border-start text-center" style="width: 130px;">STOK</th>
                       <th class="pe-3 text-center border-start" style="width: 120px;">AKSI</th>
                     </tr>
                   </thead>
                   <tbody id="buku-table-body">
                     <tr>
-                      <td colspan="8" class="text-center text-muted py-4">Memuat data buku...</td>
+                      <td colspan="6" class="text-center text-muted py-4">Memuat data buku...</td>
                     </tr>
                   </tbody>
                 </table>
