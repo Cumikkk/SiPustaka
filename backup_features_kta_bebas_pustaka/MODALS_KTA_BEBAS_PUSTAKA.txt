@@ -1,0 +1,114 @@
+<!-- MODAL 1: CETAK KARTU TANDA ANGGOTA (KTA) DIGITAL WITH QR CODE -->
+  <div class="modal fade" id="modalKtaSiswa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-card-heading text-primary me-2"></i>Kartu Tanda Anggota (KTA) Digital</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 d-flex flex-column align-items-center">
+          
+          <!-- KTA CARD PREVIEW CONTAINER -->
+          <div id="kta-card-printable" class="card border-0 shadow-lg rounded-4 overflow-hidden position-relative mb-4" style="width: 440px; background: linear-gradient(135deg, #0052cc 0%, #002e73 100%); color: #ffffff;">
+            <div class="p-3 border-bottom border-white-20 d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center gap-2">
+                <div class="bg-white text-primary rounded-circle p-1 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;"><i class="bi bi-journal-bookmark-fill fs-6"></i></div>
+                <div>
+                  <div class="fw-bold fs-6 leading-none">SiPustaka</div>
+                  <small class="text-white-50" style="font-size: 0.65rem;">PERPUSTAKAAN SEKOLAH</small>
+                </div>
+              </div>
+              <span class="badge bg-white text-primary rounded-pill px-2.5 py-1 font-monospace" style="font-size: 0.68rem;">KTA SISWA</span>
+            </div>
+
+            <div class="p-4 d-flex align-items-center justify-content-between gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div id="kta-avatar" class="rounded-circle bg-white text-primary fw-bold fs-3 d-flex align-items-center justify-content-center border border-2 border-white shadow-sm" style="width: 64px; height: 64px; flex-shrink: 0;">S</div>
+                <div>
+                  <div class="fw-bold fs-5 text-white leading-tight mb-1" id="kta-nama">Nama Siswa</div>
+                  <div class="text-white-50 small mb-1" id="kta-kelas">Kelas: -</div>
+                  <div class="badge bg-white text-dark font-monospace px-2 py-1" id="kta-nis">NIS: 12345</div>
+                </div>
+              </div>
+
+              <div class="bg-white p-2 rounded-3 text-center shadow-sm">
+                <img id="kta-qrcode-img" src="" alt="QR Code NIS" style="width: 84px; height: 84px;">
+                <div class="text-dark font-monospace fw-bold" style="font-size: 0.62rem;" id="kta-qr-sub">SCAN NIS</div>
+              </div>
+            </div>
+
+            <div class="px-4 py-2 bg-black bg-opacity-20 d-flex align-items-center justify-content-between text-white-50 small" style="font-size: 0.68rem;">
+              <span>Berlaku Selama Menjadi Siswa Aktif</span>
+              <span>© SiPustaka UNUSIDA</span>
+            </div>
+          </div>
+
+          <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" onclick="printKtaCard()"><i class="bi bi-printer me-2"></i>Cetak Kartu Tanda Anggota</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- MODAL 2: SURAT BEBAS PERPUSTAKAAN (CLEARANCE CERTIFICATE) -->
+  <div class="modal fade" id="modalSuratBebas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 rounded-4 shadow">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold text-dark"><i class="bi bi-file-earmark-check-fill text-success me-2"></i>Surat Keterangan Bebas Pustaka</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <!-- PRINTABLE CERTIFICATE CARD -->
+          <div id="surat-bebas-printable" class="p-5 border rounded-4 bg-white mb-4 shadow-sm" style="font-family: 'Poppins', sans-serif;">
+            <!-- KOP SURAT SEKOLAH -->
+            <div class="text-center border-bottom pb-3 mb-4">
+              <h4 class="fw-bold text-dark text-uppercase m-0">PERPUSTAKAAN SEKOLAH</h4>
+              <p class="text-muted small m-0">Jl. Pendidikan No. 18 • Telp: (031) 890-1234 • Email: perpus@sekolah.sch.id</p>
+            </div>
+
+            <div class="text-center mb-4">
+              <h5 class="fw-bold text-decoration-underline text-dark mb-1">SURAT KETERANGAN BEBAS PERPUSTAKAAN</h5>
+              <small class="text-muted">Nomor: <span id="surat-no">018/PERPUS/SKBP/2026</span></small>
+            </div>
+
+            <p class="text-dark fs-6 mb-3">Yang bertanda tangan di bawah ini Kepala Perpustakaan Sekolah menerangkan bahwa:</p>
+
+            <table class="table table-borderless mb-4 ms-2" style="max-width: 500px;">
+              <tr>
+                <td style="width: 140px;" class="fw-semibold text-secondary">Nama Lengkap</td>
+                <td>: <strong class="text-dark" id="surat-nama">-</strong></td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-secondary">NIS Siswa</td>
+                <td>: <strong class="text-dark" id="surat-nis">-</strong></td>
+              </tr>
+              <tr>
+                <td class="fw-semibold text-secondary">Kelas</td>
+                <td>: <strong class="text-dark" id="surat-kelas">-</strong></td>
+              </tr>
+            </table>
+
+            <div class="alert alert-success border-success rounded-3 p-3 mb-4">
+              <i class="bi bi-check-circle-fill me-2 fs-5"></i>
+              <strong>BERSIH TANGGUNGAN:</strong> Siswa tersebut di atas dinyatakan <strong>TIDAK MEMILIKI PINJAMAN BUKU</strong> maupun tunggakan denda pada Perpustakaan Sekolah.
+            </div>
+
+            <p class="text-dark fs-6 mb-5">Demikian Surat Keterangan Bebas Perpustakaan ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
+
+            <div class="d-flex justify-content-end text-center pe-4">
+              <div>
+                <div class="text-muted small mb-1" id="surat-tgl">Sidoarjo, 06 Agustus 2026</div>
+                <div class="fw-bold text-dark mb-5">Kepala Perpustakaan,</div>
+                <div class="fw-bold text-dark text-decoration-underline">M. Fahrul Alfanani, S.Pust.</div>
+                <small class="text-muted d-block">NIP. 19950818 202608 1 001</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button class="btn btn-success rounded-3 px-4 py-2 fw-semibold" onclick="printSuratBebas()"><i class="bi bi-printer me-2"></i>Cetak Surat Bebas Pustaka (PDF)</button>
+          </div>
+        </div>
+      </div>
+    </div>

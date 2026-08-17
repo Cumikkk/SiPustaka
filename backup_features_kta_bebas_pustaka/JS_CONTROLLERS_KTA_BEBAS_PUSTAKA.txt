@@ -1,0 +1,80 @@
+function showKtaModal(nis, nama, kelas) {
+    document.getElementById('kta-avatar').innerText = (nama || 'S').charAt(0).toUpperCase();
+    document.getElementById('kta-nama').innerText = nama;
+    document.getElementById('kta-kelas').innerText = 'Kelas: ' + (kelas || '-');
+    document.getElementById('kta-nis').innerText = 'NIS: ' + nis;
+    document.getElementById('kta-qr-sub').innerText = 'SCAN NIS';
+    
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(nis);
+    document.getElementById('kta-qrcode-img').src = qrUrl;
+
+    const modalEl = document.getElementById('modalKtaSiswa');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+function handleCetakSuratBebas(nis) {
+    showLoadingAlert('Memeriksa tanggungan sirkulasi siswa...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          if (!res.isBebas) {
+            showErrorAlert(`Siswa ${res.anggota.nama_lengkap} masih memiliki ${res.activeLoansCount} peminjaman buku aktif. Surat Bebas Pustaka belum dapat diterbitkan!`);
+            return;
+          }
+
+          document.getElementById('surat-nama').innerText = res.anggota.nama_lengkap;
+          document.getElementById('surat-nis').innerText = res.anggota.nis;
+          document.getElementById('surat-kelas').innerText = res.anggota.kelas || '-';
+          document.getElementById('surat-tgl').innerText = 'Sidoarjo, ' + res.tanggal_cetak;
+
+          const modalEl = document.getElementById('modalSuratBebas');
+          if (modalEl && typeof bootstrap !== 'undefined') {
+            const bsModal = new bootstrap.Modal(modalEl);
+            bsModal.show();
+          }
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal memeriksa status anggota.');
+        }
+      })
+      .checkBebasPustaka(nis);
+  }
+
+function printKtaCard() {
+    let printContainer = document.getElementById('print-isolated-container');
+    if (!printContainer) {
+      printContainer = document.createElement('div');
+      printContainer.id = 'print-isolated-container';
+      document.body.appendChild(printContainer);
+    }
+
+    const ktaCardHtml = document.getElementById('kta-card-printable').outerHTML;
+    printContainer.innerHTML = '<div class="kta-card-box">' + ktaCardHtml + '</div>';
+
+    window.print();
+
+    setTimeout(() => {
+      printContainer.innerHTML = '';
+    }, 1200);
+  }
+
+function printSuratBebas() {
+    let printContainer = document.getElementById('print-isolated-container');
+    if (!printContainer) {
+      printContainer = document.createElement('div');
+      printContainer.id = 'print-isolated-container';
+      document.body.appendChild(printContainer);
+    }
+
+    const suratHtml = document.getElementById('surat-bebas-printable').outerHTML;
+    printContainer.innerHTML = '<div class="surat-box">' + suratHtml + '</div>';
+
+    window.print();
+
+    setTimeout(() => {
+      printContainer.innerHTML = '';
+    }, 1200);
+  }

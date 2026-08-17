@@ -1,0 +1,5 @@
+**/*.bak
+**/*.txt
+scratch/
+backup_features_kta_bebas_pustaka/
+*.new_bak

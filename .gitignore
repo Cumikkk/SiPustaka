@@ -1,0 +1,9 @@
+# Cadangan lokal
+backups/
+*.bak
+*.new_bak
+scratch/
+
+# File Sistem Operasi
+.DS_Store
+Thumbs.db

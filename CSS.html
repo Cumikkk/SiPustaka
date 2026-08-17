@@ -1,0 +1,990 @@
+<!-- GOOGLE FONTS & EXTERNAL LIBRARIES -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+<style>
+  /* ==============================
+     1. RESET & GLOBAL BASE
+  ============================== */
+  :root {
+    --bs-primary: #0052cc;
+    --bs-primary-rgb: 0, 82, 204;
+    --bs-font-sans-serif: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--bs-font-sans-serif);
+    background-color: #f8fafc;
+    color: #1e293b;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* SWEETALERT2 OVERRIDE Z-INDEX */
+  .swal2-container {
+    z-index: 999999 !important;
+  }
+
+  /* ==============================
+     2. APP LAYOUT SHELL
+  ============================== */
+  .app-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100vw;
+  }
+
+  .main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background-color: #f8fafc;
+  }
+
+  .content-body {
+    padding: 2rem;
+    flex: 1;
+  }
+
+  /* ==============================
+     3. SIDEBAR NAVIGASI
+  ============================== */
+  .sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    border-right: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 1rem;
+    flex-shrink: 0;
+    min-height: 100vh;
+  }
+
+  .sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .brand-icon-box {
+    width: 40px; height: 40px;
+    background: #0052cc;
+    color: #ffffff;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+  }
+
+  .sidebar-nav {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .sidebar-nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #64748b;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    transition: all 0.2s ease-in-out;
+  }
+
+  .sidebar-nav-item a i {
+    font-size: 1.1rem;
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .sidebar-nav-item a:hover {
+    color: #0052cc;
+    background-color: #f0f5ff;
+    transform: translateX(4px);
+  }
+
+  .sidebar-nav-item a:hover i { transform: scale(1.15); }
+
+  .sidebar-nav-item.active a {
+    color: #0052cc;
+    background-color: #e6f0ff;
+    font-weight: 600;
+    border-left: 4px solid #0052cc;
+  }
+
+  .sidebar-nav-logout a:hover {
+    color: #dc2626 !important;
+    background-color: #fef2f2 !important;
+    transform: translateX(4px);
+  }
+
+  /* ==============================
+     4. TOPBAR HEADER
+  ============================== */
+  .topbar {
+    height: 64px;
+    min-height: 64px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-shrink: 0;
+  }
+
+  .topbar-right-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+  }
+
+  /* Hide hamburger by default (desktop) */
+  #sidebar-mobile-toggle {
+    display: none;
+    flex-shrink: 0;
+  }
+
+  .icon-btn-circle {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background-color: #f8fafc;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .icon-btn-circle:hover {
+    background-color: #e2e8f0;
+    color: #0052cc;
+  }
+
+  .user-avatar-box {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #0052cc;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 82, 204, 0.25);
+    flex-shrink: 0;
+  }
+
+  /* ==============================
+     5. STAT CARDS DASHBOARD
+  ============================== */
+  .stat-card-item {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f5f9;
+  }
+
+  .stat-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+  }
+
+  .stat-number {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1;
+  }
+
+  .icon-box-stat {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+  }
+
+  .stat-blue .icon-box-stat  { background: #eef3ff; color: #0052cc; }
+  .stat-green .icon-box-stat { background: #e6f4ea; color: #10b981; }
+  .stat-orange .icon-box-stat{ background: #fff7ed; color: #f59e0b; }
+  .stat-red .icon-box-stat   { background: #fef2f2; color: #ef4444; }
+
+  /* ==============================
+     6. SECTION CARD & TABLE
+  ============================== */
+  .dashboard-section-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid #f1f5f9;
+    height: 100%;
+  }
+
+  .section-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .section-card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .section-card-link {
+    font-size: 0.8rem;
+    color: #0052cc;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .table-custom-clean {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table-custom-clean th {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    letter-spacing: 0.5px;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left;
+  }
+
+  .table-custom-clean td {
+    padding: 0.85rem 0.5rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f8fafc;
+    color: #334155;
+    vertical-align: middle;
+  }
+
+  /* ==============================
+     7. DONUT CHART LEGEND
+  ============================== */
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .legend-item-box {
+    font-size: 0.75rem;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  /* ==============================
+     8. DASHBOARD BANNER
+  ============================== */
+  .dashboard-banner-card {
+    background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);
+    border-radius: 20px;
+    padding: 2.25rem 2.5rem;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 10px 25px rgba(0, 82, 204, 0.25);
+    flex-wrap: wrap;
+  }
+
+  .banner-text-side { max-width: 60%; min-width: 200px; flex: 1; }
+  .banner-headline { font-size: clamp(1.1rem, 3vw, 1.5rem); font-weight: 700; margin-bottom: 0.5rem; }
+  .banner-subtext { font-size: 0.88rem; opacity: 0.9; margin: 0; line-height: 1.5; }
+
+  .banner-quote-glass {
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    text-align: right;
+    max-width: 320px;
+    flex-shrink: 0;
+  }
+
+  .quote-title { font-size: 0.9rem; font-weight: 600; font-style: italic; }
+  .quote-author { font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem; }
+
+  /* ==============================
+     9. HALAMAN LOGIN (FULLSCREEN 100% - FRAMELESS ICE BLUE HERO & POPPINS FONT)
+  ============================== */
+  #page-login-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #ffffff;
+    z-index: 1000;
+    display: flex;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .login-card-container {
+    width: 100%;
+    min-height: 100vh;
+    background: #ffffff;
+    border-radius: 0;
+    box-shadow: none;
+    display: flex;
+  }
+
+  .login-hero-side {
+    flex: 1.15;
+    background: #eef3ff;
+    padding: 3rem 4rem 2rem 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+    min-height: 100vh;
+  }
+
+  .brand-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .brand-header .brand-icon-box {
+    background: #0052cc;
+    color: #ffffff;
+    border-radius: 10px;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 82, 204, 0.2);
+  }
+
+  .brand-header .brand-text {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #0052cc;
+  }
+
+  .hero-headline {
+    font-family: 'Poppins', sans-serif;
+    font-size: 2.05rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.3;
+    margin-bottom: 1.25rem;
+    max-width: 480px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-illustration-wrapper {
+    margin: 1.25rem 0;
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .hero-illustration-wrapper img {
+    border: none !important;
+    box-shadow: 0 8px 25px rgba(0, 82, 204, 0.08) !important;
+  }
+
+  .hero-quote-pill {
+    background: #ffffff;
+    padding: 0.85rem 1.75rem;
+    border-radius: 30px;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    color: #334155;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+    max-width: 520px;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.4;
+  }
+
+  .hero-copyright {
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.78rem;
+    color: #94a3b8;
+  }
+
+  .login-form-side {
+    flex: 1;
+    background: #ffffff;
+    padding: 3rem 4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  .login-form-inner {
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .form-headline {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-subheadline {
+    font-size: 0.82rem;
+    color: #64748b;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group-item { margin-bottom: 1.25rem; }
+
+  .field-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.35rem;
+  }
+
+  .input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .field-icon {
+    position: absolute;
+    left: 12px;
+    color: #94a3b8;
+    font-size: 1rem;
+  }
+
+  .input-with-icon input {
+    width: 100%;
+    padding: 0.65rem 0.75rem 0.65rem 2.25rem;
+    font-size: 0.875rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: var(--bs-font-sans-serif);
+  }
+
+  .input-with-icon input:focus {
+    border-color: #0052cc;
+    box-shadow: 0 0 0 3px rgba(0, 82, 204, 0.1);
+  }
+
+  .toggle-eye {
+    position: absolute;
+    right: 12px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 1rem;
+  }
+
+  .remember-forgot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #475569;
+    cursor: pointer;
+  }
+
+  .forgot-link {
+    color: #0052cc;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .forgot-link:hover { text-decoration: underline; }
+
+  .btn-submit-login {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #0052cc;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-family: var(--bs-font-sans-serif);
+  }
+
+  .btn-submit-login:hover { background-color: #0041a3; }
+
+  .form-footer-subtext {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 1.5rem;
+  }
+
+  .form-footer-subtext a {
+    color: #0052cc;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* UTILITY */
+  .cursor-pointer { cursor: pointer; }
+
+  /* OTP DIGIT BOXES */
+  .otp-digit-box {
+    width: 48px;
+    height: 56px;
+    border-radius: 12px;
+    border: 2px solid #cbd5e1;
+    font-family: 'Poppins', sans-serif;
+    color: #0052cc;
+    transition: all 0.2s ease;
+    font-size: 1.5rem !important;
+  }
+  .otp-digit-box:focus {
+    border-color: #0052cc !important;
+    box-shadow: 0 0 0 4px rgba(0, 82, 204, 0.18) !important;
+    background-color: #eef3ff;
+  }
+
+  /* ==============================
+     PRINT MEDIA STYLES (PURE 100% CLEAN PDF PRINT - NO HEADERS/FOOTERS)
+  ============================== */
+  @media print {
+    @page {
+      size: A4 portrait;
+      margin: 0; /* Sembunyikan Header Tanggal & Footer URL bawaan browser */
+    }
+
+    body, html {
+      background: #ffffff !important;
+      color: #000000 !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
+    }
+
+    /* Sembunyikan seluruh elemen halaman aplikasi */
+    body > *:not(#print-isolated-container) {
+      display: none !important;
+    }
+
+    /* Tampilkan HANYA kontainer cetak murni */
+    #print-isolated-container {
+      display: block !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #ffffff !important;
+    }
+
+    #print-isolated-container * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+
+  }
+
+  /* SIDEBAR INTERACTIVE DROPDOWN STYLES */
+  .dropdown-arrow {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .nav-dropdown.open #arrow-anggota-group {
+    transform: rotate(90deg);
+  }
+  .sidebar-subnav {
+    border-left: 2px solid #cbd5e1;
+  }
+  .sidebar-subnav-item a {
+    font-size: 0.88rem;
+    color: #475569;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: block;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+  .sidebar-subnav-item a:hover {
+    color: #0052cc !important;
+    background-color: #f1f5f9;
+  }
+  .sidebar-subnav-item.active a {
+    color: #0052cc !important;
+    background-color: #eef3ff !important;
+    font-weight: 600;
+  }
+
+  
+  /* =======================================================
+     COMPREHENSIVE RESPONSIVE SUITE — Bootstrap Breakpoints
+     576px (sm) | 768px (md) | 992px (lg) | 1200px (xl)
+     MOBILE FIRST — min-width priority
+  ======================================================= */
+
+  /* --- Fluid & Global --- */
+  .stat-number { font-size: clamp(1.2rem, 4vw, 2rem) !important; }
+  .table-responsive { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+  
+
+  /* --- Mobile Sidebar Backdrop Overlay --- */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 1045;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-backdrop.show { display: block; }
+
+  /* =========================================
+     BASE (< 768px) — Mobile
+  ========================================= */
+  @media (max-width: 767.98px) {
+
+    /* Sidebar becomes off-canvas drawer */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 260px;
+      z-index: 1050;
+      transform: translateX(-260px);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 4px 0 24px rgba(0,0,0,0.12);
+      overflow-y: auto;
+    }
+    .sidebar.mobile-open {
+      transform: translateX(0);
+    }
+
+    /* Main wrapper fills full width on mobile */
+    .main-wrapper {
+      margin-left: 0 !important;
+      width: 100% !important;
+    }
+
+    /* Hamburger toggle: visible on mobile */
+    #sidebar-mobile-toggle { display: inline-flex !important; align-items: center; justify-content: center; padding: 6px 10px !important; }
+
+    /* Topbar: compact on mobile */
+    .topbar {
+      padding: 0 16px !important;
+      height: 56px !important;
+      min-height: 56px !important;
+    }
+    .topbar-right-actions {
+      gap: 8px !important;
+      margin-right: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    #user-role-title, #user-display-name { display: none !important; }
+    .icon-btn-circle {
+      width: 34px !important;
+      height: 34px !important;
+      font-size: 0.85rem !important;
+      flex-shrink: 0 !important;
+    }
+    .user-avatar-box {
+      width: 34px !important;
+      height: 34px !important;
+      font-size: 0.85rem !important;
+      flex-shrink: 0 !important;
+      margin-right: 4px !important;
+    }
+
+    /* Content padding: compact */
+    .content-body { padding: 14px !important; }
+
+    /* Modal: edge-to-edge on tiny screens */
+    .modal-dialog { margin: 8px !important; max-width: calc(100% - 16px) !important; }
+    .modal-body { padding: 14px !important; }
+
+    /* Login screen: stacked vertically */
+    .login-card-container { flex-direction: column !important; height: auto !important; min-height: 100vh; }
+    .login-hero-side { min-height: 180px !important; padding: 20px !important; flex: none !important; }
+    .login-form-side { padding: 24px 16px !important; flex: none !important; }
+    .hero-headline { font-size: 1.4rem !important; }
+
+    /* Dashboard banner: stack vertically */
+    .dashboard-banner-card {
+      flex-direction: column !important;
+      padding: 1.25rem !important;
+      gap: 1rem !important;
+    }
+    .banner-text-side { max-width: 100% !important; }
+    .banner-quote-glass { max-width: 100% !important; text-align: left !important; }
+
+    /* OTP boxes — smaller on tiny phones */
+    .otp-digit-box {
+      width: 38px !important;
+      height: 44px !important;
+      font-size: 1.15rem !important;
+    }
+
+    /* Stat cards: slightly smaller */
+    .icon-box-stat { width: 40px !important; height: 40px !important; font-size: 1.1rem !important; }
+    .stat-card-item { padding: 12px 14px !important; }
+  }
+
+  /* Extra-small phones (< 400px): hide notification & help icon */
+  @media (max-width: 399.98px) {
+    .icon-btn-circle { display: none !important; }
+    #user-display-name { max-width: 80px !important; }
+  }
+
+  /* =========================================
+     SM (>= 576px) — Large phones / phablets
+  ========================================= */
+  @media (min-width: 576px) and (max-width: 767.98px) {
+    .content-body { padding: 20px !important; }
+  }
+
+  /* =========================================
+     MD (>= 768px) — Tablet & Desktop
+     Sidebar becomes PERMANENT fixed column
+  ========================================= */
+  @media (min-width: 768px) {
+    /* Hide hamburger on desktop */
+    #sidebar-mobile-toggle { display: none !important; }
+
+    /* Sidebar stays fixed on left */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 250px;
+      transform: translateX(0) !important;
+      box-shadow: none;
+      overflow-y: auto;
+    }
+
+    /* Main wrapper offset by sidebar width */
+    .main-wrapper {
+      margin-left: 250px !important;
+      width: calc(100% - 250px) !important;
+    }
+
+    .content-body { padding: 24px 28px !important; }
+  }
+
+  /* =========================================
+     LG (>= 992px) — Laptop
+  ========================================= */
+  @media (min-width: 992px) {
+    .content-body { padding: 28px 32px !important; }
+  }
+
+  /* =========================================
+     XL (>= 1200px) — Wide Desktop
+  ========================================= */
+  @media (min-width: 1200px) {
+    .content-body {
+      padding: 32px 40px !important;
+    }
+  }
+
+  
+  /* =========================================
+     RESPONSIVE LOGIN PAGE (MOBILE & TABLET)
+  ========================================= */
+  @media (max-width: 991.98px) {
+    #page-login-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    .login-card-container {
+      flex-direction: column !important;
+      min-height: 100vh;
+      width: 100% !important;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Hide heavy hero side on mobile/tablet so user immediately sees login form & inputs */
+    .login-hero-side {
+      display: none !important;
+    }
+
+    .login-form-side {
+      width: 100% !important;
+      min-height: 100vh !important;
+      height: auto !important;
+      padding: 2rem 1.5rem !important;
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: center !important;
+      align-items: center !important;
+      background: #ffffff !important;
+    }
+
+    .login-form-inner {
+      width: 100% !important;
+      max-width: 380px !important;
+      margin: auto !important;
+    }
+
+    .form-headline {
+      font-size: 1.4rem !important;
+      text-align: center !important;
+    }
+
+    .form-subheadline {
+      font-size: 0.85rem !important;
+      text-align: center !important;
+      margin-bottom: 1.5rem !important;
+    }
+
+    .input-with-icon input {
+      padding: 0.75rem 0.75rem 0.75rem 2.5rem !important;
+      font-size: 0.95rem !important;
+    }
+
+    .btn-submit-login {
+      padding: 0.85rem !important;
+      font-size: 1rem !important;
+      border-radius: 10px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .login-form-side {
+      padding: 1.5rem 1.25rem !important;
+    }
+    .remember-forgot-row {
+      font-size: 0.78rem !important;
+    }
+  }
+
+  /* =========================================
+     KATALOG BUKU MODERN CARD & HOVER STYLES
+  ========================================= */
+  .book-card-item {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 1px solid #f1f5f9;
+    background: #ffffff;
+  }
+  .book-card-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 28px rgba(0, 82, 204, 0.12) !important;
+    border-color: #cbd5e1;
+  }
+  .book-cover-container {
+    height: 200px;
+    width: 100%;
+    background-color: #f8fafc;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+  }
+  .book-cover-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  .book-card-item:hover .book-cover-img {
+    transform: scale(1.04);
+  }
+  .category-pill {
+    transition: all 0.2s ease;
+  }
+  .category-pill.active {
+    background-color: #0052cc !important;
+    color: #ffffff !important;
+    border-color: #0052cc !important;
+  }
+  
+  /* E-Book Badge & Reader Utilities */
+  .badge-ebook {
+    background-color: #eef2ff !important;
+    color: #4338ca !important;
+    border: 1px solid #c7d2fe !important;
+  }
+  .shadow-2xl {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  }
+  .shadow-xs {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  }
+</style>
+

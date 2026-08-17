@@ -1,0 +1,2831 @@
+<!-- GLOBAL APP SHELL & SESSION MANAGEMENT -->
+<script>
+  let currentUser = null;
+
+  let globalAppCache = null;
+  let isCacheLoading = false;
+
+
+
+  let adminDataCache = null;
+  let donutChartInstance = null;
+  let donutChartSiswaInstance = null;
+  const SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 Jam inaktivitas
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAndRestoreSession();
+  });
+
+  /* SISTEM SESI LOGIN STANDARD WEB (PERSISTENT & AUTO RENEWAL) */
+  function saveUserSession(userObj) {
+    try {
+      if (!userObj) return;
+      const sessionData = {
+        user: userObj,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('sipustaka_session', JSON.stringify(sessionData));
+    } catch (err) {
+      console.warn("Save Session Exception:", err);
+    }
+  }
+
+  function checkAndRestoreSession() {
+    try {
+      const rawSession = localStorage.getItem('sipustaka_session');
+      if (!rawSession) {
+        showLoginScreenDirect();
+        return;
+      }
+
+      const sessionObj = JSON.parse(rawSession);
+      const now = Date.now();
+
+      if (!sessionObj || !sessionObj.user || !sessionObj.timestamp || (now - sessionObj.timestamp > SESSION_TIMEOUT_MS)) {
+        localStorage.removeItem('sipustaka_session');
+        showLoginScreenDirect();
+        return;
+      }
+
+      currentUser = sessionObj.user;
+      sessionObj.timestamp = now;
+      localStorage.setItem('sipustaka_session', JSON.stringify(sessionObj));
+
+      applyLoggedInUserUI(currentUser);
+    } catch (err) {
+      console.error("Restore Session Exception:", err);
+      showLoginScreenDirect();
+    }
+  }
+
+  function showLoginScreenDirect() {
+    const loginCanvas = document.getElementById('page-login-canvas');
+    const mainApp = document.getElementById('page-main-app');
+    if (mainApp) mainApp.classList.add('d-none');
+    if (loginCanvas) loginCanvas.classList.remove('d-none');
+  }
+
+  function handleLogout() {
+    Swal.fire({
+      title: 'Konfirmasi Keluar',
+      text: 'Apakah Anda yakin ingin keluar dari sistem SiPustaka?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Keluar',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Keluar',
+          text: 'Sampai jumpa kembali di SiPustaka!',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          currentUser = null;
+          localStorage.removeItem('sipustaka_session');
+          showLoginScreenDirect();
+          const loginPass = document.getElementById('login-password');
+          if (loginPass) loginPass.value = '';
+        });
+      }
+    });
+  }
+
+  function applyLoggedInUserUI(res) {
+    const loginCanvas = document.getElementById('page-login-canvas');
+    const mainApp = document.getElementById('page-main-app');
+
+    if (loginCanvas) loginCanvas.classList.add('d-none');
+    if (mainApp) mainApp.classList.remove('d-none');
+
+    currentUser = res;
+
+    const userDisplayName = document.getElementById('user-display-name');
+    if (userDisplayName) userDisplayName.innerText = res.userData.nama_lengkap;
+
+    const avatarBox = document.getElementById('user-avatar-box');
+    if (avatarBox) {
+      const userName = res.userData.nama_lengkap || 'Admin';
+      const initial = userName.charAt(0).toUpperCase();
+      avatarBox.innerText = initial;
+      avatarBox.style.background = '#0052cc';
+    }
+
+    const roleTitle = document.getElementById('user-role-title');
+    const roleBadge = document.getElementById('user-role-badge');
+
+    if (res.role === 'admin') {
+      if (roleBadge) roleBadge.innerText = 'Panel Administrasi';
+      if (roleTitle) roleTitle.innerText = 'Petugas / Administrator';
+      document.querySelectorAll('.role-admin-only').forEach(el => el.classList.remove('d-none'));
+      document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.add('d-none'));
+    } else {
+      if (roleBadge) roleBadge.innerText = 'Portal Siswa';
+      if (roleTitle) roleTitle.innerText = 'Siswa • Kelas ' + (res.userData.kelas || '-');
+      document.querySelectorAll('.role-admin-only').forEach(el => el.classList.add('d-none'));
+      document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.remove('d-none'));
+    }
+
+    switchSubView('dashboard');
+  }
+
+  /* GLOBAL ROUTER & SUBVIEW SWITCHER */
+  function switchSubView(subviewName) {
+    try {
+      document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.sidebar-subnav-item').forEach(el => el.classList.remove('active'));
+
+      const activeMenuItem = document.getElementById('menu-' + subviewName);
+      if (activeMenuItem) activeMenuItem.classList.add('active');
+
+      const allSubviews = [
+        'subview-dashboard', 'subview-dashboard-siswa', 'subview-katalog',
+        'subview-buku', 'subview-anggota', 'subview-peminjaman',
+        'subview-pengembalian', 'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa'
+      ];
+      allSubviews.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('d-none');
+      });
+
+      if (subviewName === 'dashboard') {
+        if (currentUser && currentUser.role === 'siswa') {
+          const targetEl = document.getElementById('subview-dashboard-siswa');
+          if (targetEl) targetEl.classList.remove('d-none');
+          loadStudentDashboardData(currentUser.userData.nis);
+        } else {
+          const targetEl = document.getElementById('subview-dashboard');
+          if (targetEl) targetEl.classList.remove('d-none');
+          loadDashboardData();
+        }
+      } else if (subviewName === 'katalog') {
+        const targetEl = document.getElementById('subview-katalog');
+        if (targetEl) targetEl.classList.remove('d-none');
+        loadKatalogData();
+      } else {
+        const targetEl = document.getElementById('subview-' + subviewName);
+        if (targetEl) targetEl.classList.remove('d-none');
+        
+        if (subviewName === 'buku') {
+          hideFormBuku();
+        } else if (subviewName === 'anggota') {
+          renderAnggotaTable();
+        } else if (subviewName === 'peminjaman') {
+          initFormPeminjamanDates();
+        } else if (subviewName === 'laporan') {
+          loadLaporanData();
+        } else if (subviewName === 'petugas') {
+          renderPetugasTable();
+        } else if (subviewName === 'peminjaman-siswa') {
+          loadStudentPeminjamanPageData();
+        } else if (subviewName === 'pengembalian') {
+          renderPengembalianTable();
+        }
+      }
+    } catch (err) {
+      console.error("Switch SubView Exception:", err);
+    }
+  }
+
+  /* LOGIKA LOGIN SUBMIT */
+  function togglePasswordVisibility() {
+    const inputPass = document.getElementById('login-password');
+    const iconEye = document.getElementById('toggle-eye-icon');
+    if (inputPass) {
+      if (inputPass.type === 'password') {
+        inputPass.type = 'text';
+        if (iconEye) { iconEye.classList.remove('bi-eye-slash'); iconEye.classList.add('bi-eye'); }
+      } else {
+        inputPass.type = 'password';
+        if (iconEye) { iconEye.classList.remove('bi-eye'); iconEye.classList.add('bi-eye-slash'); }
+      }
+    }
+  }
+
+  function handleLoginSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const credInput = document.getElementById('login-username') || document.getElementById('login-credential');
+    const passInput = document.getElementById('login-password');
+
+    const credential = credInput ? credInput.value.trim() : '';
+    const password = passInput ? passInput.value.trim() : '';
+
+    if (!credential || !password) {
+      showErrorAlert('Silakan masukkan Username atau Email dan Password Anda.');
+      return;
+    }
+
+    showLoadingAlert('Memverifikasi akun Anda...');
+
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          currentUser = res;
+          saveUserSession(res);
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil Login!',
+            text: `Selamat datang kembali, ${res.userData.nama_lengkap || 'Pengguna'}!`,
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            applyLoggedInUserUI(res);
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Login gagal. Periksa kembali kredensial Anda.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server Google Apps Script.');
+      })
+      .loginUserUnified(credential, password);
+  }
+
+  /* LOGIKA DASHBOARD ADMIN */
+  let adminDashActiveLoans = [];
+  let adminDashLoansPage = 1;
+
+  function changeAdminDashLoanPage(delta) {
+    adminDashLoansPage += delta;
+    renderAdminDashLoansTable();
+  }
+
+  function renderAdminDashLoansTable() {
+    const tbody = document.getElementById('table-peminjaman-hari-ini');
+    if (!tbody) return;
+
+    const totalLoans = adminDashActiveLoans.length;
+    const pageSize = 5;
+    const totalPages = Math.ceil(totalLoans / pageSize) || 1;
+
+    if (adminDashLoansPage > totalPages) adminDashLoansPage = totalPages;
+    if (adminDashLoansPage < 1) adminDashLoansPage = 1;
+
+    const startIndex = (adminDashLoansPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalLoans);
+    const pageItems = adminDashActiveLoans.slice(startIndex, endIndex);
+
+    if (totalLoans === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Saat ini tidak ada peminjaman aktif.</td></tr>';
+    } else {
+      let html = '';
+      pageItems.forEach((t, idx) => {
+        const badgeClass = t.statusBadge ? t.statusBadge.class : 'bg-primary text-white';
+        const badgeText = t.statusBadge ? t.statusBadge.text : 'Dipinjam';
+        const subText = t.statusBadge ? t.statusBadge.subText : (t.subText || '');
+        const periode = t.periode_pinjam || (t.tgl_pinjam_indo + ' - ' + t.tgl_jatuh_tempo_indo);
+
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start">
+              <div class="fw-bold text-dark">${escapeHtml(t.nama_anggota)}</div>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.72rem;">${escapeHtml(t.kelas_anggota)}</small>
+            </td>
+            <td class="border-start">
+              <div class="fw-semibold text-dark">${escapeHtml(t.nama_buku)}</div>
+              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(t.kategori_buku)}</small>
+            </td>
+            <td class="small fw-semibold text-dark border-start">${escapeHtml(periode)}</td>
+            <td class="pe-3 text-end border-start">
+              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    const infoEl = document.getElementById('dash-admin-pagination-info');
+    if (infoEl) {
+      if (totalLoans === 0) {
+        infoEl.innerText = 'Menampilkan 0 dari 0 peminjaman aktif';
+      } else {
+        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} peminjaman aktif`;
+      }
+    }
+
+    const btnPrev = document.getElementById('btn-dash-admin-prev');
+    const btnNext = document.getElementById('btn-dash-admin-next');
+    if (btnPrev) btnPrev.disabled = (adminDashLoansPage <= 1);
+    if (btnNext) btnNext.disabled = (adminDashLoansPage >= totalPages);
+  }
+
+  function loadDashboardData() {
+    try {
+      initDonutChartDynamic(null);
+
+      google.script.run
+        .withSuccessHandler(data => {
+          if (!data) return;
+          adminDataCache = data;
+          
+          const elBuku = document.getElementById('dash-total-buku');
+          if (elBuku) elBuku.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          const elAnggota = document.getElementById('dash-total-anggota');
+          if (elAnggota) elAnggota.innerText = (data.stats.totalAnggota || 0).toLocaleString('id-ID');
+
+          const elPinjam = document.getElementById('dash-pinjam-aktif');
+          if (elPinjam) elPinjam.innerText = (data.stats.peminjamanAktif || 0).toLocaleString('id-ID');
+
+          const elTerlambat = document.getElementById('dash-terlambat');
+          if (elTerlambat) elTerlambat.innerText = (data.stats.peminjamanTerlambat || 0).toLocaleString('id-ID');
+
+          const elCenter = document.getElementById('chart-center-total');
+          if (elCenter) elCenter.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          adminDashActiveLoans = data.peminjamanAktifAll || data.peminjamanTerbaru || [];
+          adminDashLoansPage = 1;
+          renderAdminDashLoansTable();
+
+          initDonutChartDynamic(data.kategoriStats);
+        })
+        .getAdminDashboardData();
+    } catch (err) {
+      console.error("Load Dashboard Exception:", err);
+    }
+  }
+
+  function initDonutChartDynamic(kategoriStats, canvasId = 'chartRingkasanKoleksi', legendId = 'chart-legend-grid', isSiswa = false) {
+    try {
+      const ctx = document.getElementById(canvasId);
+      const legendGrid = document.getElementById(legendId);
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      let labels = [];
+      let dataValues = [];
+      let backgroundColors = [];
+      let legendHtml = '';
+
+      if (kategoriStats && kategoriStats.length > 0) {
+        kategoriStats.forEach(item => {
+          labels.push(item.label);
+          dataValues.push(item.count);
+          backgroundColors.push(item.color);
+          legendHtml += `
+            <div class="legend-item-box">
+              <span class="legend-dot" style="background:${item.color};"></span>
+              ${escapeHtml(item.label)}: <b>${item.count} Buku</b> (${item.percentage}%)
+            </div>
+          `;
+        });
+      } else {
+        labels = ['Memuat...'];
+        dataValues = [100];
+        backgroundColors = ['#e2e8f0'];
+        legendHtml = `<div class="legend-item-box"><span class="legend-dot" style="background:#cbd5e1;"></span> Memuat kategori buku...</div>`;
+      }
+
+      if (legendGrid) legendGrid.innerHTML = legendHtml;
+
+      if (isSiswa) {
+        if (donutChartSiswaInstance) donutChartSiswaInstance.destroy();
+      } else {
+        if (donutChartInstance) donutChartInstance.destroy();
+      }
+
+      const newChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataValues,
+            backgroundColor: backgroundColors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          cutout: '76%',
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 600 },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: kategoriStats && kategoriStats.length > 0 }
+          }
+        }
+      });
+
+      if (isSiswa) {
+        donutChartSiswaInstance = newChart;
+      } else {
+        donutChartInstance = newChart;
+      }
+    } catch (err) {
+      console.warn("Dynamic Donut Chart Exception:", err);
+    }
+  }
+
+  /* LOGIKA DASHBOARD SISWA */
+  let studentDashActiveLoans = [];
+  let studentDashLoansPage = 1;
+
+  function changeStudentDashLoanPage(delta) {
+    studentDashLoansPage += delta;
+    renderStudentDashLoansTable();
+  }
+
+  function renderStudentDashLoansTable() {
+    const tbody = document.getElementById('table-pinjaman-saya');
+    if (!tbody) return;
+
+    const totalLoans = studentDashActiveLoans.length;
+    const pageSize = 5;
+    const totalPages = Math.ceil(totalLoans / pageSize) || 1;
+
+    if (studentDashLoansPage > totalPages) studentDashLoansPage = totalPages;
+    if (studentDashLoansPage < 1) studentDashLoansPage = 1;
+
+    const startIndex = (studentDashLoansPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalLoans);
+    const pageItems = studentDashActiveLoans.slice(startIndex, endIndex);
+
+    if (totalLoans === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Kamu sedang tidak meminjam buku. Silakan cari buku baru di Katalog!</td></tr>';
+    } else {
+      let html = '';
+      pageItems.forEach((l, idx) => {
+        const badgeClass = l.badgeClass || 'bg-primary text-white';
+        const badgeText = l.badgeText || 'Dipinjam';
+        const subText = l.subText || '';
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start">
+              <div class="fw-bold text-dark">${escapeHtml(l.judul_buku)}</div>
+              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(l.kategori_buku)}</small>
+            </td>
+            <td class="border-start">
+              <div class="text-dark small fw-semibold">${escapeHtml(l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo))}</div>
+            </td>
+            <td class="pe-3 text-end border-start">
+              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    const infoEl = document.getElementById('dash-siswa-pagination-info');
+    if (infoEl) {
+      if (totalLoans === 0) {
+        infoEl.innerText = 'Menampilkan 0 dari 0 pinjaman aktif';
+      } else {
+        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} pinjaman aktif`;
+      }
+    }
+
+    const btnPrev = document.getElementById('btn-dash-siswa-prev');
+    const btnNext = document.getElementById('btn-dash-siswa-next');
+    if (btnPrev) btnPrev.disabled = (studentDashLoansPage <= 1);
+    if (btnNext) btnNext.disabled = (studentDashLoansPage >= totalPages);
+  }
+
+  function loadStudentDashboardData(nis) {
+    try {
+      const greeting = document.getElementById('siswa-banner-greeting');
+      if (greeting && currentUser && currentUser.userData) {
+        greeting.innerText = `Semangat Membaca & Rajin Belajar, ${(currentUser.userData.nama_lengkap || '').split(' ')[0]}!`;
+      }
+
+      initDonutChartDynamic(null, 'chartRingkasanKoleksiSiswa', 'chart-legend-grid-siswa', true);
+
+      google.script.run
+        .withSuccessHandler(data => {
+          if (!data) return;
+
+          const elPinjam = document.getElementById('siswa-pinjam-aktif');
+          if (elPinjam) elPinjam.innerText = (data.stats.dipinjamSaya || 0).toLocaleString('id-ID');
+
+          const elTerlambat = document.getElementById('siswa-pinjam-terlambat');
+          if (elTerlambat) elTerlambat.innerText = (data.stats.totalTerlambat || 0).toLocaleString('id-ID');
+
+          const elDibaca = document.getElementById('siswa-total-dibaca');
+          if (elDibaca) elDibaca.innerText = (data.stats.totalDibaca || 0).toLocaleString('id-ID');
+
+          const elCenterTotal = document.getElementById('chart-center-total-siswa');
+          if (elCenterTotal) elCenterTotal.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          studentDashActiveLoans = data.myActiveLoans || [];
+          studentDashLoansPage = 1;
+          renderStudentDashLoansTable();
+
+          if (data.kategoriStats) {
+            initDonutChartDynamic(data.kategoriStats, 'chartRingkasanKoleksiSiswa', 'chart-legend-grid-siswa', true);
+          }
+        })
+        .getStudentDashboardData(nis);
+    } catch (err) {
+      console.error("Load Student Dashboard Exception:", err);
+    }
+  }
+
+  /* LOGIKA KATALOG BUKU (ENHANCED CATALOG SUITE FOR SISWA) */
+  let catalogDataCache = [];
+  let currentCatalogViewMode = 'grid';
+  let activeCatalogCategory = 'semua';
+  let catalogTableCurrentPage = 1;
+
+  function loadKatalogData() {
+    try {
+      const gridContainer = document.getElementById('katalog-grid-container');
+      if (!gridContainer) return;
+
+      gridContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><div>Memuat koleksi buku...</div></div>';
+
+      google.script.run
+        .withSuccessHandler(data => {
+          catalogDataCache = data || [];
+          catalogTableCurrentPage = 1;
+          updateKatalogCategoryDropdown(catalogDataCache);
+          renderCatalogView();
+        })
+        .withFailureHandler(err => {
+          console.error("Gagal memuat katalog:", err);
+          gridContainer.innerHTML = '<div class="col-12 text-center text-danger py-5">Gagal memuat koleksi buku dari server.</div>';
+        })
+        .getKatalogBuku('', 'semua');
+    } catch (err) {
+      console.error("Load Katalog Exception:", err);
+    }
+  }
+
+  function updateKatalogCategoryDropdown(data) {
+    const selectKategori = document.getElementById('katalog-filter-kategori');
+    if (!selectKategori) return;
+
+    const currentVal = selectKategori.value || 'semua';
+    const categoriesSet = new Set();
+
+    (data || []).forEach(b => {
+      if (b.kategori && String(b.kategori).trim()) {
+        categoriesSet.add(String(b.kategori).trim());
+      }
+    });
+
+    const sortedCategories = Array.from(categoriesSet).sort();
+
+    let html = '<option value="semua">Semua Kategori</option>';
+    sortedCategories.forEach(cat => {
+      const isSelected = cat.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      html += `<option value="${escapeHtml(cat.toLowerCase())}" ${isSelected}>${escapeHtml(cat)}</option>`;
+    });
+
+    selectKategori.innerHTML = html;
+  }
+
+  function setKatalogViewMode(mode) {
+    currentCatalogViewMode = mode;
+    const btnGrid = document.getElementById('katalog-btn-grid');
+    const btnList = document.getElementById('katalog-btn-list');
+    const gridContainer = document.getElementById('katalog-grid-container');
+    const listContainer = document.getElementById('katalog-list-container');
+
+    if (mode === 'grid') {
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
+      if (gridContainer) gridContainer.classList.remove('d-none');
+      if (listContainer) listContainer.classList.add('d-none');
+    } else {
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
+      if (gridContainer) gridContainer.classList.add('d-none');
+      if (listContainer) listContainer.classList.remove('d-none');
+    }
+    catalogTableCurrentPage = 1;
+    renderCatalogView();
+  }
+
+  function filterKatalogData() {
+    const selectKategori = document.getElementById('katalog-filter-kategori');
+    if (selectKategori) {
+      activeCatalogCategory = selectKategori.value.toLowerCase();
+    }
+    catalogTableCurrentPage = 1;
+    renderCatalogView();
+  }
+
+  function changeCatalogTablePage(newPage) {
+    catalogTableCurrentPage = newPage;
+    renderCatalogView();
+  }
+
+  function renderCatalogView() {
+    const gridContainer = document.getElementById('katalog-grid-container');
+    const listBody = document.getElementById('katalog-list-table-body');
+
+    const search = document.getElementById('katalog-search-input') ? document.getElementById('katalog-search-input').value.trim().toLowerCase() : '';
+    const stokFilter = document.getElementById('katalog-filter-stok') ? document.getElementById('katalog-filter-stok').value : 'semua';
+
+    const filtered = catalogDataCache.filter(b => {
+      const matchSearch = !search ||
+        String(b.judul_buku || '').toLowerCase().includes(search) ||
+        String(b.penulis || '').toLowerCase().includes(search) ||
+        String(b.isbn || '').toLowerCase().includes(search);
+
+      const matchCategory = !activeCatalogCategory || activeCatalogCategory === 'semua' ||
+        String(b.kategori || '').toLowerCase() === activeCatalogCategory;
+
+      const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+      const matchStok = !stokFilter || stokFilter === 'semua' ||
+        (stokFilter === 'tersedia' && stokNum > 0) ||
+        (stokFilter === 'habis' && stokNum <= 0);
+
+      return matchSearch && matchCategory && matchStok;
+    });
+
+    if (filtered.length === 0) {
+      const emptyHtml = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-journal-x display-4 d-block text-secondary mb-2 opacity-50"></i><div class="fw-semibold">Tidak ada koleksi buku yang sesuai dengan pencarian Anda.</div><small class="text-muted">Coba ubah kata kunci pencarian atau filter kategori.</small></div>';
+      if (gridContainer) gridContainer.innerHTML = emptyHtml;
+      if (listBody) listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada koleksi buku yang sesuai.</td></tr>';
+      
+      const infoEl = document.getElementById('katalog-table-pagination-info');
+      if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+      const controlsEl = document.getElementById('katalog-table-pagination-controls');
+      if (controlsEl) controlsEl.innerHTML = '';
+      return;
+    }
+
+    if (currentCatalogViewMode === 'grid') {
+      let gridHtml = '';
+      filtered.forEach(b => {
+        const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+        const isAvailable = stokNum > 0;
+        const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
+        const badgeText = isAvailable ? `Tersedia ${stokNum}` : 'Stok Habis';
+
+        const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+        const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+        const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
+
+        let coverHtml = '';
+        if (coverUrl) {
+          coverHtml = `<img src="${coverUrl}" alt="Sampul ${escapeHtml(b.judul_buku)}" class="book-cover-img" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                       <div class="w-100 h-100 d-none flex-column align-items-center justify-content-center p-3 text-white text-center" style="background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);">
+                         <i class="bi bi-journal-bookmark-fill display-5 mb-1 opacity-75"></i>
+                         <div class="fw-bold small leading-tight">${escapeHtml(b.judul_buku)}</div>
+                       </div>`;
+        } else {
+          coverHtml = `<div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 text-white text-center" style="background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);">
+                         <i class="bi bi-journal-bookmark-fill display-5 mb-1 opacity-75"></i>
+                         <div class="fw-bold small leading-tight">${escapeHtml(b.judul_buku)}</div>
+                       </div>`;
+        }
+
+        const ebookBadgeHtml = hasEbook 
+          ? `<span class="badge badge-ebook rounded-pill px-2.5 py-1 small fw-semibold shadow-xs" title="Tersedia Versi E-Book">E-Book</span>` 
+          : '';
+
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        let actionBtnHtml = '';
+
+        if (isAdmin) {
+          actionBtnHtml = `<div class="d-flex gap-2">
+                             <button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-eye"></i><span>Detail</span></button>
+                             <button class="btn btn-sm btn-primary w-100 rounded-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i><span>Edit</span></button>
+                           </div>`;
+        } else {
+          actionBtnHtml = `<button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold py-1.5 d-inline-flex align-items-center justify-content-center gap-1.5" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+        }
+
+        gridHtml += `
+          <div class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 rounded-4 shadow-sm p-3 book-card-item d-flex flex-column justify-content-between cursor-pointer" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')">
+              <div>
+                <div class="book-cover-container mb-3">
+                  ${coverHtml}
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">${escapeHtml(b.kategori || 'Umum')}</span>
+                    ${ebookBadgeHtml}
+                  </div>
+                  <span class="badge ${badgeClass} border rounded-pill px-2.5 py-1 small fw-semibold">${badgeText}</span>
+                </div>
+                <h6 class="fw-bold text-dark mb-1 leading-tight text-truncate" title="${escapeHtml(b.judul_buku)}">${escapeHtml(b.judul_buku)}</h6>
+                <small class="text-muted d-block mb-3 text-truncate">Penulis: <b>${escapeHtml(b.penulis || '-')}</b></small>
+              </div>
+
+              <div class="pt-2 border-top mt-2" onclick="event.stopPropagation();">
+                ${actionBtnHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      if (gridContainer) gridContainer.innerHTML = gridHtml;
+    } else {
+      const totalItems = filtered.length;      const entriesSelect = document.getElementById('katalog-table-entries');
+      const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 5) : 5;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+      if (catalogTableCurrentPage > totalPages) catalogTableCurrentPage = totalPages;
+      if (catalogTableCurrentPage < 1) catalogTableCurrentPage = 1;
+
+      const startIndex = (catalogTableCurrentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = filtered.slice(startIndex, endIndex);
+
+      let listHtml = '';
+      pageItems.forEach((b, idx) => {
+        const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+        const isAvailable = stokNum > 0;
+        const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
+        const badgeText = isAvailable ? `Tersedia ${stokNum}` : 'Stok Habis';
+
+        const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+        const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+        const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
+
+        const imgThumb = coverUrl 
+          ? `<img src="${coverUrl}" class="rounded-3 shadow-sm" style="width: 44px; height: 56px; object-fit: cover;">`
+          : `<div class="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 44px; height: 56px;"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>`;
+
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        let actionBtn = '';
+
+        if (isAdmin) {
+          actionBtn = `<div class="d-flex justify-content-center gap-1.5">
+                         <button class="btn btn-sm btn-outline-primary border-0 me-1" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-eye"></i></button>
+                         <button class="btn btn-sm btn-outline-warning border-0" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
+                       </div>`;
+        } else {
+          actionBtn = `<button class="btn btn-sm btn-outline-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+        }
+
+        listHtml += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start text-center" style="width: 75px;">${imgThumb}</td>
+            <td class="border-start text-start">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="fw-bold text-dark">${escapeHtml(b.judul_buku)}</span>
+                ${hasEbook ? '<span class="badge badge-ebook rounded-pill px-2.5 py-0.5 small fw-semibold ms-1" style="font-size:0.75rem;">E-Book</span>' : ''}
+              </div>
+              <small class="text-muted d-block">Penulis: ${escapeHtml(b.penulis || '-')} &bull; ISBN: ${escapeHtml(b.isbn || '-')}</small>
+            </td>
+            <td class="border-start text-center" style="width: 140px;"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-semibold">${escapeHtml(b.kategori || 'Umum')}</span></td>
+            <td class="border-start text-center" style="width: 130px;"><span class="badge ${badgeClass} border rounded-pill px-3 py-1.5 fw-semibold">${badgeText}</span></td>
+            <td class="border-start text-center px-3" style="width: 180px;">${actionBtn}</td>
+          </tr>
+        `;
+      });
+      if (listBody) listBody.innerHTML = listHtml;
+
+      // Update Pagination Info & Controls
+      const infoEl = document.getElementById('katalog-table-pagination-info');
+      if (infoEl) {
+        if (totalItems === 0) {
+          infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+        } else {
+          infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+        }
+      }
+
+      const controlsEl = document.getElementById('katalog-table-pagination-controls');
+      if (controlsEl) {
+        if (totalItems === 0) {
+          controlsEl.innerHTML = '';
+        } else {
+          let pagHtml = '';
+          const prevDisabled = catalogTableCurrentPage === 1 ? 'disabled' : '';
+          pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${catalogTableCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+
+          for (let p = 1; p <= totalPages; p++) {
+            const activeClass = p === catalogTableCurrentPage ? 'active' : '';
+            pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${p}); return false;">${p}</a></li>`;
+          }
+
+          const nextDisabled = catalogTableCurrentPage === totalPages ? 'disabled' : '';
+          pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${catalogTableCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+
+          controlsEl.innerHTML = pagHtml;
+        }
+      }
+    }
+  }
+
+  function openDetailBukuModal(idBuku) {
+    const buku = catalogDataCache.find(b => String(b.id_buku) === String(idBuku));
+    if (!buku) return;
+
+    const elJudul = document.getElementById('detail-judul-buku');
+    if (elJudul) elJudul.innerText = buku.judul_buku || 'Judul Buku';
+
+    const elPenulis = document.getElementById('detail-penulis');
+    if (elPenulis) elPenulis.innerText = buku.penulis || '-';
+
+    const elPenerbit = document.getElementById('detail-penerbit');
+    if (elPenerbit) elPenerbit.innerText = buku.penerbit || '-';
+
+    const elTahun = document.getElementById('detail-tahun');
+    if (elTahun) elTahun.innerText = buku.tahun_terbit || '-';
+
+    const elKategori = document.getElementById('detail-kategori');
+    if (elKategori) elKategori.innerText = buku.kategori || 'Umum';
+
+    const elIsbn = document.getElementById('detail-isbn');
+    if (elIsbn) elIsbn.innerText = `ISBN: ${buku.isbn || '-'}`;
+    
+    const stokNum = Number((buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 0);
+    const badgeStok = document.getElementById('detail-badge-stok');
+    if (badgeStok) {
+      if (stokNum > 0) {
+        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.innerText = `Tersedia ${stokNum}`;
+      } else {
+        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.innerText = 'Stok Habis';
+      }
+    }
+
+    const rawCover = buku.url_sampul ? String(buku.url_sampul).trim() : '';
+    const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+    const coverImg = document.getElementById('detail-cover-img');
+    const coverFallback = document.getElementById('detail-cover-fallback');
+    const fallbackTitle = document.getElementById('detail-fallback-title');
+
+    if (coverImg) {
+      if (coverUrl) {
+        coverImg.src = coverUrl;
+        coverImg.classList.remove('d-none');
+        if (coverFallback) coverFallback.classList.add('d-none');
+      } else {
+        coverImg.classList.add('d-none');
+        if (coverFallback) coverFallback.classList.remove('d-none');
+        if (fallbackTitle) fallbackTitle.innerText = buku.judul_buku || 'Judul Buku';
+      }
+    }
+
+    // E-Book Action Section Handling
+    const hasEbook = Boolean(buku.url_file_buku && String(buku.url_file_buku).trim() !== '');
+    const badgeEbookContainer = document.getElementById('detail-badge-ebook-container');
+    const sectionEbook = document.getElementById('detail-ebook-section');
+    const btnUnduhEbook = document.getElementById('detail-btn-unduh-ebook');
+    const btnBacaEbook = document.getElementById('detail-btn-baca-ebook');
+
+    if (hasEbook) {
+      if (badgeEbookContainer) badgeEbookContainer.classList.remove('d-none');
+      if (sectionEbook) sectionEbook.classList.remove('d-none');
+      if (btnUnduhEbook) {
+        btnUnduhEbook.href = getDriveDownloadUrl(buku.url_file_buku);
+      }
+      if (btnBacaEbook) {
+        btnBacaEbook.onclick = function() {
+          openModalBacaBuku(buku.url_file_buku, buku.judul_buku);
+        };
+      }
+    } else {
+      if (badgeEbookContainer) badgeEbookContainer.classList.add('d-none');
+      if (sectionEbook) sectionEbook.classList.add('d-none');
+    }
+
+    const btnPinjam = document.getElementById('detail-btn-pinjam');
+    if (btnPinjam) {
+      if (currentUser && currentUser.role === 'admin') {
+        btnPinjam.classList.remove('d-none');
+        btnPinjam.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Data Buku';
+        btnPinjam.onclick = function() {
+          const modalEl = document.getElementById('modalDetailBuku');
+          if (modalEl && typeof bootstrap !== 'undefined') {
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+          }
+          showFormBukuEdit(buku.id_buku);
+        };
+      } else {
+        btnPinjam.classList.add('d-none');
+      }
+    }
+
+    const modalEl = document.getElementById('modalDetailBuku');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function openModalBacaBuku(urlFileBuku, judulBuku) {
+    const previewUrl = getDrivePreviewUrl(urlFileBuku);
+    const downloadUrl = getDriveDownloadUrl(urlFileBuku);
+    
+    const judulEl = document.getElementById('baca-buku-judul');
+    if (judulEl) judulEl.innerText = judulBuku || 'Membaca E-Book';
+    
+    const btnUnduh = document.getElementById('baca-buku-btn-unduh');
+    if (btnUnduh) {
+      btnUnduh.href = downloadUrl;
+    }
+    
+    const loaderEl = document.getElementById('baca-buku-loading');
+    if (loaderEl) loaderEl.classList.remove('d-none');
+    
+    const iframeEl = document.getElementById('baca-buku-iframe');
+    if (iframeEl) {
+      iframeEl.src = previewUrl;
+    }
+    
+    const modalEl = document.getElementById('modalBacaBuku');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function closeModalBacaBuku() {
+    const iframeEl = document.getElementById('baca-buku-iframe');
+    if (iframeEl) {
+      iframeEl.src = 'about:blank';
+    }
+    const loaderEl = document.getElementById('baca-buku-loading');
+    if (loaderEl) loaderEl.classList.remove('d-none');
+  }
+
+  function handlePinjamBukuKatalog(idBuku) {
+    switchSubView('peminjaman');
+    const buku = catalogDataCache.find(b => String(b.id_buku) === String(idBuku));
+    if (buku && typeof selectBukuPinjam === 'function') {
+      selectBukuPinjam(buku);
+    }
+  }
+
+  /* LOGIKA MODAL OTP RESET PASSWORD */
+  function openForgotModal() {
+    try {
+      const step1 = document.getElementById('otp-step-1');
+      const step2 = document.getElementById('otp-step-2');
+      if (step1) step1.classList.remove('d-none');
+      if (step2) step2.classList.add('d-none');
+      
+      const modalEl = document.getElementById('modalLupaPassword');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+      }
+    } catch (err) {
+      console.error("Open Forgot Modal Exception:", err);
+    }
+  }
+
+  function handleSendOtp() {
+    const email = document.getElementById('reset-email').value;
+    if (!email) {
+      showErrorAlert('Silakan masukkan email Anda.');
+      return;
+    }
+
+    showLoadingAlert('Mengirim kode OTP ke email...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            document.getElementById('otp-step-1').classList.add('d-none');
+            document.getElementById('otp-step-2').classList.remove('d-none');
+            document.getElementById('otp-step-3').classList.add('d-none');
+            const targetEmailEl = document.getElementById('target-otp-email');
+            if (targetEmailEl) targetEmailEl.innerText = email;
+            const firstBox = document.querySelector('.otp-digit-box[data-index="0"]');
+            if (firstBox) firstBox.focus();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal mengirim OTP.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server.');
+      })
+      .requestOtpUniversal(email);
+  }
+
+  function backToStep1() {
+    document.getElementById('otp-step-1').classList.remove('d-none');
+    document.getElementById('otp-step-2').classList.add('d-none');
+    document.getElementById('otp-step-3').classList.add('d-none');
+  }
+
+  function handleVerifyOtp() {
+    const email = document.getElementById('reset-email').value;
+    const otp = getOtpCodeValue();
+
+    if (!otp || otp.length < 6) {
+      showErrorAlert('Silakan masukkan 6-digit kode OTP secara lengkap.');
+      return;
+    }
+
+    showLoadingAlert('Memverifikasi kode OTP...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert('Kode OTP Valid!', () => {
+            document.getElementById('otp-step-1').classList.add('d-none');
+            document.getElementById('otp-step-2').classList.add('d-none');
+            document.getElementById('otp-step-3').classList.remove('d-none');
+            const passInput = document.getElementById('reset-new-password');
+            if (passInput) passInput.focus();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Kode OTP tidak valid.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal memverifikasi OTP.');
+      })
+      .verifyOtpUniversal(email, otp);
+  }
+
+  function getOtpCodeValue() {
+    const inputs = document.querySelectorAll('.otp-digit-box');
+    let code = '';
+    inputs.forEach(input => code += input.value.trim());
+    return code;
+  }
+
+  function handleResetPassword() {
+    const email = document.getElementById('reset-email').value;
+    const otp = getOtpCodeValue();
+    const newPassword = document.getElementById('reset-new-password').value;
+
+    if (!otp || otp.length < 6 || !newPassword) {
+      showErrorAlert('Silakan lengkapi 6-digit kode OTP dan password baru.');
+      return;
+    }
+
+    showLoadingAlert('Memproses reset password...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            const modalEl = document.getElementById('modalLupaPassword');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
+            }
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal mereset password.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server.');
+      })
+      .resetPasswordUniversal(email, otp, newPassword);
+  }
+
+  /* UTILITAS ALERT SWEETALERT2 */
+  function showSuccessAlert(msg, callback) {
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil',
+      text: msg,
+      timer: 1800,
+      showConfirmButton: false
+    }).then(() => {
+      if (callback) callback();
+    });
+  }
+
+  function showErrorAlert(msg) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Perhatian',
+      text: msg,
+      confirmButtonColor: '#0052cc'
+    });
+  }
+
+  function showLoadingAlert(msg) {
+    Swal.fire({
+      title: msg || 'Memproses...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+  }
+
+  function closeLoadingAlert() {
+    Swal.close();
+  }
+
+  function showContactAdminInfo() {
+    showLoadingAlert('Mengambil data kontak...');
+    google.script.run
+      .withSuccessHandler(info => {
+        closeLoadingAlert();
+        if (!info) info = {};
+        Swal.fire({
+          title: 'Kontak Administrator Perpustakaan',
+          html: `
+            <div class="text-start fs-6 lh-base p-2">
+              <p class="mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i><b>Lokasi:</b> ${escapeHtml(info.lokasi_perpus || 'Ruang Perpustakaan Sekolah')}</p>
+              <p class="mb-2"><i class="bi bi-envelope-fill text-primary me-2"></i><b>Email:</b> ${escapeHtml(info.email_perpus || 'm.fahrulalfanani25@gmail.com')}</p>
+              <p class="mb-2"><i class="bi bi-whatsapp text-success me-2"></i><b>WhatsApp Petugas:</b> ${escapeHtml(info.wa_petugas || '0812-3456-7890')}</p>
+              <p class="text-muted small mt-3 mb-0">${escapeHtml(info.pesan_bantuan || 'Silakan hubungi petugas jika ada kendala.')}</p>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'Tutup',
+          confirmButtonColor: '#0052cc'
+        });
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal mengambil data.');
+      })
+      .getPengaturanKontak();
+  }
+
+  /* ==========================================
+     GOOGLE DRIVE URL & PREVIEW HELPERS
+     ========================================== */
+  function extractDriveId(urlOrId) {
+    if (!urlOrId) return '';
+    const str = String(urlOrId).trim();
+    if (!str) return '';
+    if (/^[a-zA-Z0-9_-]{25,45}$/.test(str)) {
+      return str;
+    }
+    const matchD = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (matchD && matchD[1]) return matchD[1];
+    const matchId = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (matchId && matchId[1]) return matchId[1];
+    return '';
+  }
+
+  function getDrivePreviewUrl(urlOrId) {
+    if (!urlOrId) return '';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://drive.google.com/file/d/' + driveId + '/preview';
+    }
+    return urlOrId;
+  }
+
+  function getDriveDownloadUrl(urlOrId) {
+    if (!urlOrId) return '#';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://drive.google.com/uc?export=download&id=' + driveId;
+    }
+    return urlOrId;
+  }
+
+  function getDirectImageUrl(urlOrId) {
+    if (!urlOrId) return '';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://lh3.googleusercontent.com/d/' + driveId;
+    }
+    return urlOrId;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initOtpBoxListeners();
+  });
+
+  function initOtpBoxListeners() {
+    const otpInputs = document.querySelectorAll('.otp-digit-box');
+    otpInputs.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val;
+        if (val.length === 1 && idx < otpInputs.length - 1) {
+          otpInputs[idx + 1].focus();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').trim();
+        if (pasteData.length === 6) {
+          pasteData.split('').forEach((char, i) => {
+            if (otpInputs[i]) otpInputs[i].value = char;
+          });
+          otpInputs[5].focus();
+        }
+      });
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 1: DAFTAR BUKU & FORM BUKU
+  // ==========================================
+
+  let currentSelectedAnggotaPinjam = null;
+  let currentSelectedBukuPinjam = null;
+  let currentFoundTransaksiReturn = null;
+
+    function renderBukuTable() {
+    const tbody = document.getElementById('buku-table-body');
+    if (!tbody) return;
+
+    const search = document.getElementById('buku-search-input')?.value || '';
+    const kategori = document.getElementById('buku-filter-kategori')?.value || 'semua';
+    const status = document.getElementById('buku-filter-status')?.value || 'semua';
+
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        list.forEach((b, idx) => {
+          const stok = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+          const isTersedia = stok > 0;
+          const statusBadge = isTersedia 
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5">Tersedia</span>'
+            : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5">Dipinjam</span>';
+
+          const sampulUrl = b.url_sampul || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=120&auto=format&fit=crop&q=80';
+
+          html += `
+            <tr>
+              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
+              <td><img src="${escapeHtml(sampulUrl)}" class="rounded-2 border" style="width: 42px; height: 56px; object-fit: cover;"></td>
+              <td>
+                <div class="fw-bold text-dark">${escapeHtml(b.judul_buku)}</div>
+                <small class="text-muted">ISBN: ${escapeHtml(b.isbn || '-')}</small>
+              </td>
+              <td class="border-start text-secondary">${escapeHtml(b.penulis || '-')}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(b.kategori || 'Fiksi')}</span></td>
+              <td class="border-start fw-bold text-dark">${stok}</td>
+              <td>${statusBadge}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-primary border-0 rounded-2 me-1" title="Edit" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus" onclick="handleDeleteBuku('${escapeHtml(b.id_buku)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      })
+      .withFailureHandler(err => {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
+      })
+      .getBukuListFull(search, kategori, status);
+  }
+
+  function showFormBuku() {
+    document.getElementById('buku-view-list')?.classList.add('d-none');
+    document.getElementById('buku-view-form')?.classList.remove('d-none');
+    document.getElementById('form-buku-title').innerText = 'Tambah Buku';
+    document.getElementById('form-buku-element').reset();
+    document.getElementById('form-buku-id').value = '';
+  }
+
+  function hideFormBuku() {
+    document.getElementById('buku-view-form')?.classList.add('d-none');
+    document.getElementById('buku-view-list')?.classList.remove('d-none');
+    renderBukuTable();
+  }
+
+  function showFormBukuEdit(idBuku) {
+    showLoadingAlert('Mengambil data buku...');
+    google.script.run
+      .withSuccessHandler(list => {
+        closeLoadingAlert();
+        const buku = list.find(b => String(b.id_buku) === String(idBuku));
+        if (!buku) return;
+
+        showFormBuku();
+        document.getElementById('form-buku-title').innerText = 'Edit Data Buku';
+        document.getElementById('form-buku-id').value = buku.id_buku;
+        document.getElementById('form-buku-judul').value = buku.judul_buku || '';
+        document.getElementById('form-buku-isbn').value = buku.isbn || '';
+        document.getElementById('form-buku-penulis').value = buku.penulis || '';
+        document.getElementById('form-buku-tahun').value = buku.tahun_terbit || '';
+        document.getElementById('form-buku-penerbit').value = buku.penerbit || '';
+        document.getElementById('form-buku-stok').value = (buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 1;
+        document.getElementById('form-buku-kategori').value = buku.kategori || 'Fiksi';
+        document.getElementById('form-buku-rak').value = buku.rak_lokasi || 'A1';
+        document.getElementById('form-buku-sampul').value = buku.url_sampul || '';
+      })
+      .getBukuListFull('', 'semua', 'semua');
+  }
+
+  function handleSaveBuku(e) {
+    e.preventDefault();
+    const bukuObj = {
+      id_buku: document.getElementById('form-buku-id').value,
+      judul_buku: document.getElementById('form-buku-judul').value,
+      isbn: document.getElementById('form-buku-isbn').value,
+      penulis: document.getElementById('form-buku-penulis').value,
+      tahun_terbit: document.getElementById('form-buku-tahun').value,
+      penerbit: document.getElementById('form-buku-penerbit').value,
+      stok_aktual: document.getElementById('form-buku-stok').value,
+      kategori: document.getElementById('form-buku-kategori').value,
+      rak_lokasi: document.getElementById('form-buku-rak').value,
+      url_sampul: document.getElementById('form-buku-sampul').value
+    };
+
+    showLoadingAlert('Menyimpan data buku...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            hideFormBuku();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal menyimpan buku.');
+        }
+      })
+      .saveBukuData(bukuObj);
+  }
+
+  function handleDeleteBuku(idBuku) {
+    Swal.fire({
+      title: 'Hapus Buku?',
+      text: 'Apakah Anda yakin ingin menghapus data buku ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus buku...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderBukuTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus buku.');
+            }
+          })
+          .deleteBukuData(idBuku);
+      }
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 2: DAFTAR ANGGOTA & MANAJEMEN SISWA
+  // ==========================================
+
+  let currentAnggotaCache = [];
+  let anggotaTableCurrentPage = 1;
+
+  function changeAnggotaTablePage(newPage) {
+    anggotaTableCurrentPage = newPage;
+    renderAnggotaTable();
+  }
+
+  function renderAnggotaTable() {
+    const tbody = document.getElementById('anggota-table-body');
+    if (!tbody) return;
+
+    const search = document.getElementById('anggota-search-input') ? document.getElementById('anggota-search-input').value.trim() : '';
+    const status = document.getElementById('anggota-filter-status') ? document.getElementById('anggota-filter-status').value : 'semua';
+
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data anggota...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        currentAnggotaCache = list || [];
+        const totalItems = currentAnggotaCache.length;
+
+        if (!list || totalItems === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data anggota yang sesuai.</td></tr>';
+          const infoEl = document.getElementById('anggota-table-pagination-info');
+          if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+          const controlsEl = document.getElementById('anggota-table-pagination-controls');
+          if (controlsEl) controlsEl.innerHTML = '';
+          return;
+        }
+
+        const entriesSelect = document.getElementById('anggota-table-entries');
+        const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 10) : 10;
+        const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+        if (anggotaTableCurrentPage > totalPages) anggotaTableCurrentPage = totalPages;
+        if (anggotaTableCurrentPage < 1) anggotaTableCurrentPage = 1;
+
+        const startIndex = (anggotaTableCurrentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalItems);
+        const pageItems = currentAnggotaCache.slice(startIndex, endIndex);
+
+        let html = '';
+        pageItems.forEach((a, idx) => {
+          const st = String(a.status || 'aktif').toLowerCase();
+          let statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold">Aktif</span>';
+          if (st === 'lulus' || st === 'nonaktif') {
+            statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1.5 fw-semibold">Nonaktif</span>';
+          }
+
+          html += `
+            <tr>
+              <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
+              <td class="border-start text-secondary">${escapeHtml(a.username || '-')}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.kelas || '-')}</span></td>
+              <td class="border-start text-secondary">${escapeHtml(a.email || '-')}</td>
+              <td>${statusBadge}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Data Siswa" onclick="showModalEditAnggota('${escapeHtml(a.nis)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Siswa" onclick="handleDeleteAnggota('${escapeHtml(a.nis)}', '${escapeHtml(a.nama_lengkap)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+
+        // Update Pagination Info & Controls
+        const infoEl = document.getElementById('anggota-table-pagination-info');
+        if (infoEl) {
+          infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+        }
+
+        const controlsEl = document.getElementById('anggota-table-pagination-controls');
+        if (controlsEl) {
+          if (false) {
+            controlsEl.innerHTML = '';
+          } else {
+            let pagHtml = '';
+            const prevDisabled = anggotaTableCurrentPage === 1 ? 'disabled' : '';
+            pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+
+            for (let p = 1; p <= totalPages; p++) {
+              const activeClass = p === anggotaTableCurrentPage ? 'active' : '';
+              pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${p}); return false;">${p}</a></li>`;
+            }
+
+            const nextDisabled = anggotaTableCurrentPage === totalPages ? 'disabled' : '';
+            pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+
+            controlsEl.innerHTML = pagHtml;
+          }
+        }
+      })
+      .getAnggotaListFull(search, status);
+  }
+
+  function showModalEditAnggota(nis) {
+    const item = currentAnggotaCache.find(a => String(a.nis).trim() === String(nis).trim());
+    if (!item) {
+      showErrorAlert("Data anggota siswa tidak ditemukan.");
+      return;
+    }
+
+    const st = String(item.status || 'aktif').toLowerCase();
+
+    Swal.fire({
+      title: 'Edit Data Siswa',
+      width: '680px',
+      html: `
+        <div class="text-start p-1">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">NIS <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-nis" class="form-control rounded-3" value="${escapeHtml(item.nis)}" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-nama" class="form-control rounded-3" value="${escapeHtml(item.nama_lengkap || '')}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kelas <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-kelas" class="form-control rounded-3" value="${escapeHtml(item.kelas || 'X-1')}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Email (Opsional)</label>
+              <input type="email" id="swal-edit-email" class="form-control rounded-3" value="${escapeHtml(item.email || '')}" placeholder="siswa@gmail.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-username" class="form-control rounded-3" value="${escapeHtml(item.username || item.nis || '')}" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kata Sandi (Kosongkan Jika Tidak Diubah)</label>
+              <input type="password" id="swal-edit-pass" class="form-control rounded-3" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Status Anggota <span class="text-danger">*</span></label>
+              <select id="swal-edit-status" class="form-select rounded-3">
+                <option value="aktif" ${st === 'aktif' ? 'selected' : ''}>Aktif</option>
+                <option value="nonaktif" ${st === 'nonaktif' || st === 'lulus' ? 'selected' : ''}>Nonaktif / Lulus</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Perubahan',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const newNis = document.getElementById('swal-edit-nis').value.trim();
+        const nama = document.getElementById('swal-edit-nama').value.trim();
+        const kelas = document.getElementById('swal-edit-kelas').value.trim();
+        const email = document.getElementById('swal-edit-email').value.trim();
+        const username = document.getElementById('swal-edit-username').value.trim();
+        const password = document.getElementById('swal-edit-pass').value.trim();
+        const statusVal = document.getElementById('swal-edit-status').value;
+
+        if (!newNis || !nama || !kelas || !username) {
+          Swal.showValidationMessage('NIS, Nama Lengkap, Kelas, dan Username wajib diisi!');
+          return false;
+        }
+
+        return {
+          originalNis: item.nis,
+          nis: newNis,
+          nama_lengkap: nama,
+          kelas: kelas,
+          email: email,
+          username: username,
+          password: password,
+          status: statusVal
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Memperbarui data siswa...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal memperbarui data siswa.');
+            }
+          })
+          .saveAnggotaData(res.value);
+      }
+    });
+  }
+
+  function showModalTambahAnggota() {
+    Swal.fire({
+      title: 'Tambah Siswa Baru',
+      width: '680px',
+      html: `
+        <div class="text-start p-1">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">NIS <span class="text-danger">*</span></label>
+              <input type="text" id="swal-nis" class="form-control rounded-3" placeholder="Contoh: 12345" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+              <input type="text" id="swal-nama" class="form-control rounded-3" placeholder="Nama lengkap siswa">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kelas <span class="text-danger">*</span></label>
+              <input type="text" id="swal-kelas" class="form-control rounded-3" placeholder="Contoh: 6 - A">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Email (Opsional)</label>
+              <input type="email" id="swal-email" class="form-control rounded-3" placeholder="siswa@gmail.com" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+              <input type="text" id="swal-username" class="form-control rounded-3" placeholder="Contoh: siswa123" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kata Sandi <span class="text-danger">*</span></label>
+              <input type="password" id="swal-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi" autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Siswa',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nis = document.getElementById('swal-nis').value.trim();
+        const nama = document.getElementById('swal-nama').value.trim();
+        const kelas = document.getElementById('swal-kelas').value.trim();
+        const email = document.getElementById('swal-email').value.trim();
+        const username = document.getElementById('swal-username').value.trim();
+        const password = document.getElementById('swal-pass').value.trim();
+
+        if (!nis || !nama || !kelas || !username || !password) {
+          Swal.showValidationMessage('NIS, Nama Lengkap, Kelas, Username, dan Kata Sandi wajib diisi!');
+          return false;
+        }
+        return { 
+          nis, 
+          nama_lengkap: nama, 
+          kelas, 
+          email, 
+          username, 
+          password, 
+          status: 'aktif' 
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Menyimpan data siswa...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal menyimpan data siswa.');
+            }
+          })
+          .saveAnggotaData(res.value);
+      }
+    });
+  }
+
+  function handleDeleteAnggota(nis, nama) {
+    Swal.fire({
+      title: 'Hapus Data Siswa?',
+      text: 'Apakah Anda yakin ingin menghapus data siswa "' + (nama || nis) + '"?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus data siswa...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus data siswa.');
+            }
+          })
+          .deleteAnggotaData(nis);
+      }
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 3: SIRKULASI PEMINJAMAN BUKU
+  // ==========================================
+
+  let pilihSiswaCurrentPage = 1;
+  let pilihBukuCurrentPage = 1;
+  
+  function openModalPilihSiswa() {
+    if (!window.allAnggotaForPinjam) {
+      showLoadingAlert('Memuat data anggota...');
+      google.script.run.withSuccessHandler(list => { 
+        closeLoadingAlert();
+        window.allAnggotaForPinjam = list || []; 
+        populateKelasFilter(window.allAnggotaForPinjam);
+        renderTablePilihSiswa();
+        showModal('modalPilihSiswa');
+      }).getAnggotaListFull('', 'aktif');
+    } else {
+      populateKelasFilter(window.allAnggotaForPinjam);
+      renderTablePilihSiswa();
+      showModal('modalPilihSiswa');
+    }
+  }
+
+  function openModalPilihBuku() {
+    if (!window.allBukuForPinjam) {
+      showLoadingAlert('Memuat data buku...');
+      google.script.run.withSuccessHandler(list => { 
+        closeLoadingAlert();
+        window.allBukuForPinjam = list || []; 
+        populateKategoriFilterPilihBuku(window.allBukuForPinjam);
+        renderTablePilihBuku();
+        showModal('modalPilihBuku');
+      }).getBukuListFull('', 'semua', 'semua');
+    } else {
+      populateKategoriFilterPilihBuku(window.allBukuForPinjam);
+      renderTablePilihBuku();
+      showModal('modalPilihBuku');
+    }
+  }
+
+  function showModal(id) {
+    const el = document.getElementById(id);
+    if (el && typeof bootstrap !== 'undefined') {
+      new bootstrap.Modal(el).show();
+    }
+  }
+  function hideModal(id) {
+    const el = document.getElementById(id);
+    if (el && typeof bootstrap !== 'undefined') {
+      const bsModal = bootstrap.Modal.getInstance(el);
+      if (bsModal) bsModal.hide();
+    }
+  }
+
+  function populateKelasFilter(list) {
+    const sel = document.getElementById('pilih-siswa-kelas');
+    if (!sel) return;
+    const currentVal = sel.value;
+    const kelasSet = new Set();
+    list.forEach(a => { if(a.kelas && String(a.kelas).trim() !== '') kelasSet.add(String(a.kelas).trim()); });
+    let html = '<option value="semua">Semua Kelas</option>';
+    Array.from(kelasSet).sort().forEach(k => {
+      html += `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`;
+    });
+    sel.innerHTML = html;
+    sel.value = currentVal || 'semua';
+  }
+
+  
+  function populateKategoriFilterPilihBuku(list) {
+    const sel = document.getElementById('pilih-buku-kategori');
+    if (!sel) return;
+    const currentVal = sel.value;
+    const katSet = new Set();
+    list.forEach(b => { if(b.kategori && String(b.kategori).trim() !== '') katSet.add(String(b.kategori).trim()); });
+    let html = '<option value="semua">Semua Kategori</option>';
+    Array.from(katSet).sort().forEach(k => {
+      html += `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`;
+    });
+    sel.innerHTML = html;
+    sel.value = currentVal || 'semua';
+  }
+
+  function changePilihSiswaPage(p) {
+    pilihSiswaCurrentPage = p;
+    renderTablePilihSiswa();
+  }
+
+  function renderTablePilihSiswa() {
+    const tbody = document.getElementById('pilih-siswa-tbody');
+    const q = (document.getElementById('pilih-siswa-search')?.value || '').toLowerCase();
+    const kelasEl = document.getElementById('pilih-siswa-kelas');
+    const k = kelasEl ? kelasEl.value : 'semua';
+    const entriesSel = document.getElementById('pilih-siswa-entries');
+    const pageSize = entriesSel ? (parseInt(entriesSel.value, 10) || 5) : 5;
+    
+    let filtered = (window.allAnggotaForPinjam || []).filter(a => {
+      const matchQ = String(a.nama_lengkap||'').toLowerCase().includes(q) || String(a.nis||'').toLowerCase().includes(q);
+      const matchK = k === 'semua' || (a.kelas && String(a.kelas).trim() === k);
+      return matchQ && matchK;
+    });
+
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    if(pilihSiswaCurrentPage > totalPages) pilihSiswaCurrentPage = totalPages || 1;
+    if(pilihSiswaCurrentPage < 1) pilihSiswaCurrentPage = 1;
+    
+    const start = (pilihSiswaCurrentPage - 1) * pageSize;
+    const pageData = filtered.slice(start, start + pageSize);
+
+    let html = '';
+    if(pageData.length === 0) {
+      html = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data siswa yang sesuai.</td></tr>';
+    } else {
+      pageData.forEach((a, idx) => {
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${start + idx + 1}</td>
+            <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
+            <td class="border-start text-secondary">${escapeHtml(a.nis)}</td>
+            <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.kelas || '-')}</span></td>
+            <td class="pe-3 text-end border-start">
+              <button class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" onclick="selectAnggotaForPinjam('${escapeHtml(a.nis)}', '${escapeHtml(a.nama_lengkap)}', '${escapeHtml(a.kelas)}')">Pilih</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    tbody.innerHTML = html;
+    
+    let endCount = start + pageData.length;
+    if (filtered.length === 0) { endCount = 0; }
+    document.getElementById('pilih-siswa-info').innerText = `Menampilkan ${filtered.length === 0 ? 0 : start + 1} sampai ${endCount} dari ${filtered.length} entri`;
+    
+    let pagHtml = '';
+    const prevDisabled = pilihSiswaCurrentPage === 1 ? 'disabled' : '';
+    pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changePilihSiswaPage(${pilihSiswaCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+    for (let p = 1; p <= totalPages; p++) {
+      const activeClass = p === pilihSiswaCurrentPage ? 'active' : '';
+      pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changePilihSiswaPage(${p}); return false;">${p}</a></li>`;
+    }
+    const nextDisabled = pilihSiswaCurrentPage === totalPages ? 'disabled' : '';
+    pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changePilihSiswaPage(${pilihSiswaCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+    document.getElementById('pilih-siswa-pagination').innerHTML = pagHtml;
+  }
+
+  function changePilihBukuPage(p) {
+    pilihBukuCurrentPage = p;
+    renderTablePilihBuku();
+  }
+
+  function renderTablePilihBuku() {
+    const tbody = document.getElementById('pilih-buku-tbody');
+    const q = (document.getElementById('pilih-buku-search').value || '').toLowerCase();
+    const k = document.getElementById('pilih-buku-kategori') ? document.getElementById('pilih-buku-kategori').value : 'semua';
+    const entriesSel = document.getElementById('pilih-buku-entries');
+    const pageSize = entriesSel ? (parseInt(entriesSel.value, 10) || 5) : 5;
+    
+    let filtered = (window.allBukuForPinjam || []).filter(b => {
+      const matchQ = String(b.judul_buku||'').toLowerCase().includes(q) || String(b.id_buku||'').toLowerCase().includes(q);
+      const matchK = k === 'semua' || (b.kategori && String(b.kategori).trim() === k);
+      return (b.stok_buku > 0 || b.stok_aktual > 0) && matchQ && matchK;
+    });
+
+    const totalPages = Math.ceil(filtered.length / pageSize) || 1;
+    if(pilihBukuCurrentPage > totalPages) pilihBukuCurrentPage = totalPages || 1;
+    if(pilihBukuCurrentPage < 1) pilihBukuCurrentPage = 1;
+    
+    const start = (pilihBukuCurrentPage - 1) * pageSize;
+    const pageData = filtered.slice(start, start + pageSize);
+
+    let html = '';
+    if(pageData.length === 0) {
+      html = '<tr><td colspan="5" class="text-center text-muted py-4">Buku tidak ditemukan atau stok habis.</td></tr>';
+    } else {
+      pageData.forEach((b, idx) => {
+        const coverUrl = b.url_sampul || '';
+        const stokDisplay = b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual;
+        const cover = coverUrl ? `<img src="${escapeHtml(coverUrl)}" class="w-100 h-100 object-fit-cover rounded-2" onerror="this.outerHTML='<i class=\'bi bi-book text-muted fs-3\'></i>'">` : '<i class="bi bi-book text-muted fs-3"></i>';
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${start + idx + 1}</td>
+            <td>
+              <div class="bg-light border d-flex align-items-center justify-content-center overflow-hidden rounded-2" style="width: 40px; height: 55px;">${cover}</div>
+            </td>
+            <td>
+              <div class="fw-bold text-dark text-truncate" style="max-width: 250px;">${escapeHtml(b.judul_buku)}</div>
+              <small class="text-muted">${escapeHtml(b.kategori || 'Tanpa Kategori')}</small>
+            </td>
+            <td class="border-start"><strong class="text-primary">${stokDisplay}</strong></td>
+            <td class="pe-3 text-end border-start">
+              <button class="btn btn-sm btn-primary rounded-pill px-3 fw-semibold" onclick="selectBukuPinjam('${escapeHtml(b.id_buku)}', '${escapeHtml(b.judul_buku)}', '${stokDisplay}', '${escapeHtml(coverUrl)}', '${escapeHtml(b.penulis || '-')}')">Pilih</button>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    tbody.innerHTML = html;
+    
+    let endCount = start + pageData.length;
+    if (filtered.length === 0) { endCount = 0; }
+    document.getElementById('pilih-buku-info').innerText = `Menampilkan ${filtered.length === 0 ? 0 : start + 1} sampai ${endCount} dari ${filtered.length} entri`;
+    
+    let pagHtml = '';
+    const prevDisabled = pilihBukuCurrentPage === 1 ? 'disabled' : '';
+    pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changePilihBukuPage(${pilihBukuCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+    for (let p = 1; p <= totalPages; p++) {
+      const activeClass = p === pilihBukuCurrentPage ? 'active' : '';
+      pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changePilihBukuPage(${p}); return false;">${p}</a></li>`;
+    }
+    const nextDisabled = pilihBukuCurrentPage === totalPages ? 'disabled' : '';
+    pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changePilihBukuPage(${pilihBukuCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+    document.getElementById('pilih-buku-pagination').innerHTML = pagHtml;
+  }
+
+  function selectAnggotaForPinjam(nis, nama, kelas) {
+    currentSelectedAnggotaPinjam = { nis, nama_lengkap: nama, kelas };
+    document.getElementById('selected-anggota-avatar').innerText = (nama || 'S').charAt(0).toUpperCase();
+    document.getElementById('selected-anggota-nama').innerText = nama;
+    document.getElementById('selected-anggota-sub').innerHTML = 'NIS: ' + nis + ' &bull; Kelas: ' + (kelas || '-');
+    
+    const btnContainer = document.getElementById('btn-pilih-anggota-container');
+    if (btnContainer) btnContainer.classList.add('d-none');
+    
+    document.getElementById('selected-anggota-box').classList.remove('d-none');
+    hideModal('modalPilihSiswa');
+  }
+
+  function selectBukuPinjam(id, judul, stok, sampul, penulis) {
+    currentSelectedBukuPinjam = { id_buku: id, judul_buku: judul, stok_buku: stok };
+    document.getElementById('selected-buku-judul').innerText = judul;
+    document.getElementById('selected-buku-sub').innerHTML = (penulis || '-') + ' &bull; Stok tersisa: <strong class="text-primary">' + stok + '</strong>';
+    
+    const coverEl = document.getElementById('selected-buku-icon');
+    if (coverEl) {
+      if (sampul && sampul !== 'undefined' && sampul.trim() !== '') {
+        coverEl.innerHTML = `<img src="${sampul}" class="w-100 h-100 object-fit-cover" onerror="this.outerHTML='<i class=\'bi bi-book fs-4 text-white\'></i>'">`;
+      } else {
+        coverEl.innerHTML = '<i class="bi bi-book fs-4 text-white"></i>';
+      }
+    }
+    
+    const btnContainer = document.getElementById('btn-pilih-buku-container');
+    if (btnContainer) btnContainer.classList.add('d-none');
+    
+    document.getElementById('selected-buku-box').classList.remove('d-none');
+    hideModal('modalPilihBuku');
+  }
+
+  function clearSelectedAnggota() {
+    currentSelectedAnggotaPinjam = null;
+    document.getElementById('selected-anggota-box').classList.add('d-none');
+    const btn = document.getElementById('btn-pilih-anggota-container');
+    if (btn) btn.classList.remove('d-none');
+  }
+
+  function clearSelectedBuku() {
+    currentSelectedBukuPinjam = null;
+    document.getElementById('selected-buku-box').classList.add('d-none');
+    const btn = document.getElementById('btn-pilih-buku-container');
+    if (btn) btn.classList.remove('d-none');
+  }
+
+  function initFormPeminjamanDates() {
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    
+    const tempoDate = new Date();
+    tempoDate.setDate(today.getDate() + 7);
+    const tempoStr = `${tempoDate.getFullYear()}-${pad(tempoDate.getMonth() + 1)}-${pad(tempoDate.getDate())}`;
+
+    const pinjamInput = document.getElementById('pinjam-tgl-pinjam');
+    const tempoInput = document.getElementById('pinjam-tgl-tempo');
+    if (pinjamInput) pinjamInput.value = todayStr;
+    if (tempoInput) tempoInput.value = tempoStr;
+  }
+
+  function resetFormPeminjaman() {
+    clearSelectedAnggota();
+    clearSelectedBuku();
+    initFormPeminjamanDates();
+  }
+
+  function handleSimpanPeminjaman() {
+    if (!currentSelectedAnggotaPinjam) {
+      showErrorAlert('Silakan cari dan pilih Data Anggota terlebih dahulu.');
+      return;
+    }
+    if (!currentSelectedBukuPinjam) {
+      showErrorAlert('Silakan cari dan pilih Data Buku terlebih dahulu.');
+      return;
+    }
+
+    const tglPinjam = document.getElementById('pinjam-tgl-pinjam').value;
+    const tglTempo = document.getElementById('pinjam-tgl-tempo').value;
+    const catatan = '-';
+
+    showLoadingAlert('Memproses peminjaman buku...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            resetFormPeminjaman();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal menyimpan peminjaman.');
+        }
+      })
+      .createTransaksiPeminjaman(currentSelectedAnggotaPinjam.nis, currentSelectedBukuPinjam.id_buku, tglPinjam, tglTempo, catatan);
+  }
+  // ==========================================
+  // CONTROLLER 4: SIRKULASI PENGEMBALIAN BUKU
+  // ==========================================
+  let kembaliTableData = [];
+  let kembaliTableCurrentPage = 1;
+
+  function renderPengembalianTable() {
+    const query = document.getElementById('kembali-search-query').value.trim().toLowerCase();
+    const tbody = document.getElementById('kembali-list-body');
+    const paginationControls = document.getElementById('kembali-pagination-controls');
+    const paginationInfo = document.getElementById('kembali-pagination-info');
+    const entries = parseInt(document.getElementById('kembali-table-entries').value);
+    const statusFilterEl = document.querySelector('input[name="kembaliStatusFilter"]:checked');
+    const statusFilter = statusFilterEl ? statusFilterEl.value : 'semua';
+    
+    tbody.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data peminjaman...</div>';
+    
+    google.script.run
+      .withSuccessHandler(data => {
+        let listData = data || [];
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        listData = listData.filter(t => {
+          const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
+          if (statusFilter === 'terlambat' && !isTerlambat) return false;
+          if (statusFilter === 'dipinjam' && isTerlambat) return false;
+          return true;
+        });
+
+        kembaliTableData = listData;
+
+        if (listData.length === 0) {
+          tbody.innerHTML = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Tidak ada data peminjaman yang cocok.</div>';
+          paginationInfo.innerHTML = 'Menampilkan 0 sampai 0 dari 0 entri';
+          paginationControls.innerHTML = '';
+          return;
+        }
+
+        const totalData = listData.length;
+        const totalPages = Math.ceil(totalData / entries);
+        if (kembaliTableCurrentPage > totalPages) kembaliTableCurrentPage = totalPages;
+        if (kembaliTableCurrentPage < 1) kembaliTableCurrentPage = 1;
+
+        const startIdx = (kembaliTableCurrentPage - 1) * entries;
+        const endIdx = Math.min(startIdx + entries, totalData);
+        const pageData = listData.slice(startIdx, endIdx);
+
+        let html = '';
+        pageData.forEach((t, i) => {
+          const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
+          let subStatus = '';
+          if (isTerlambat) {
+             const overDays = Math.ceil((new Date() - new Date(t.tgl_jatuh_tempo)) / (1000 * 60 * 60 * 24));
+             subStatus = `Terlambat ${overDays} Hari`;
+          } else {
+             const sisa = Math.ceil((new Date(t.tgl_jatuh_tempo) - new Date()) / (1000 * 60 * 60 * 24));
+             subStatus = sisa === 0 ? 'Hari Ini' : `Sisa ${sisa} Hari`;
+          }
+
+          html += `
+            <button class="list-group-item list-group-item-action p-3 mb-2 rounded-3 border kembali-list-item" id="kembali-item-${t.id_transaksi}" onclick="selectPengembalian('${escapeHtml(t.id_transaksi)}')">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                  <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 fw-bold" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                    ${(t.nama_anggota || 'S').charAt(0).toUpperCase()}
+                  </div>
+                  <div class="overflow-hidden">
+                    <div class="fw-bold text-dark text-truncate mb-1">${escapeHtml(t.nama_anggota)}</div>
+                    <div class="text-muted small text-truncate">
+                      ${escapeHtml(t.judul_buku)} &bull; <span class="${isTerlambat ? 'text-danger fw-bold' : 'text-success'}">${subStatus}</span>
+                    </div>
+                  </div>
+                </div>
+                <i class="bi bi-chevron-right text-muted ms-2 flex-shrink-0"></i>
+              </div>
+            </button>
+          `;
+        });
+        tbody.innerHTML = html;
+
+        paginationInfo.innerHTML = `Menampilkan ${startIdx + 1} sampai ${endIdx} dari ${totalData} entri`;
+        
+        let pghtml = '';
+        const prevDisabled = kembaliTableCurrentPage === 1 ? 'disabled' : '';
+        pghtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage--; renderPengembalianTable(); return false;">Sebelumnya</a></li>`;
+        for (let p = 1; p <= totalPages; p++) {
+          if (p === 1 || p === totalPages || (p >= kembaliTableCurrentPage - 1 && p <= kembaliTableCurrentPage + 1)) {
+            const activeClass = kembaliTableCurrentPage === p ? 'active' : '';
+            pghtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage = ${p}; renderPengembalianTable(); return false;">${p}</a></li>`;
+          } else if (p === kembaliTableCurrentPage - 2 || p === kembaliTableCurrentPage + 2) {
+            pghtml += `<li class="page-item disabled"><a class="page-link rounded-2" href="#">...</a></li>`;
+          }
+        }
+        const nextDisabled = kembaliTableCurrentPage === totalPages ? 'disabled' : '';
+        pghtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="kembaliTableCurrentPage++; renderPengembalianTable(); return false;">Selanjutnya</a></li>`;
+        paginationControls.innerHTML = pghtml;
+      })
+      .getTransaksiPeminjamanAktif(query);
+  }
+
+  function selectPengembalian(idTransaksi) {
+    const t = kembaliTableData.find(x => x.id_transaksi === idTransaksi);
+    if (!t) return;
+    
+    // Update Detail Info
+    document.getElementById('kembali-avatar').innerText = (t.nama_anggota || 'S').charAt(0).toUpperCase();
+    document.getElementById('kembali-nama-anggota').innerText = t.nama_anggota;
+    document.getElementById('kembali-sub-anggota').innerText = 'NIS: ' + t.nis + ' • Kelas ' + (t.kelas || '-');
+    document.getElementById('kembali-judul-buku').innerText = t.judul_buku;
+    document.getElementById('kembali-penulis-buku').innerText = 'ID Buku: ' + t.id_buku + (t.kategori ? ` • Kategori: ${t.kategori}` : '');
+
+    // Update Cover
+    const coverUrl = t.url_sampul ? escapeHtml(t.url_sampul) : '';
+    const coverHtml = coverUrl ? `<img src="${coverUrl}" class="w-100 h-100 object-fit-cover">` : `<i class="bi bi-book text-muted" style="font-size: 3rem;"></i>`;
+    document.getElementById('kembali-cover-container').innerHTML = coverHtml;
+
+    // Update Dates
+    let tglPinjamIndo = t.tgl_pinjam;
+    let tglTempoIndo = t.tgl_jatuh_tempo;
+    try {
+      tglPinjamIndo = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(t.tgl_pinjam));
+      tglTempoIndo = new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(t.tgl_jatuh_tempo));
+    } catch(e) {}
+    document.getElementById('kembali-tgl-pinjam').innerText = tglPinjamIndo || '-';
+    document.getElementById('kembali-tgl-tempo').innerText = tglTempoIndo || '-';
+    
+    // Handle Terlambat Alert
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isTerlambat = t.tgl_jatuh_tempo && t.tgl_jatuh_tempo < todayStr;
+    const alertContainer = document.getElementById('kembali-alert-container');
+    if (isTerlambat) {
+       const overDays = Math.ceil((new Date() - new Date(t.tgl_jatuh_tempo)) / (1000 * 60 * 60 * 24));
+       document.getElementById('kembali-alert-title').innerText = `TERLAMBAT ${overDays} HARI`;
+       alertContainer.classList.remove('d-none');
+    } else {
+       alertContainer.classList.add('d-none');
+    }
+    
+    document.getElementById('kembali-id-transaksi').value = t.id_transaksi;
+
+    // Switch State
+    document.getElementById('kembali-detail-empty').classList.add('d-none');
+    document.getElementById('kembali-detail-form').classList.remove('d-none');
+
+    // Highlight selected item
+    const allItems = document.querySelectorAll('.kembali-list-item');
+    allItems.forEach(item => item.classList.remove('active', 'border-primary', 'shadow-sm'));
+    const clickedItem = document.getElementById('kembali-item-' + idTransaksi);
+    if (clickedItem) clickedItem.classList.add('active', 'border-primary', 'shadow-sm');
+  }
+
+  function handleProsesPengembalianSubmit() {
+    const idTransaksi = document.getElementById('kembali-id-transaksi').value;
+    if (!idTransaksi) return;
+
+    showLoadingAlert('Memproses pengembalian buku...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            document.getElementById('kembali-detail-empty').classList.remove('d-none');
+            document.getElementById('kembali-detail-form').classList.add('d-none');
+            renderPengembalianTable();
+            loadAdminDashboard();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal memproses pengembalian.');
+        }
+      })
+      .processPengembalianBuku(idTransaksi);
+  }
+
+  // ==========================================
+  // CONTROLLER 5: LAPORAN PERPUSTAKAAN
+  // ==========================================
+
+  function loadLaporanData() {
+    const tbody = document.getElementById('laporan-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat laporan...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(data => {
+        if (!data) return;
+
+        document.getElementById('lap-total-pinjam').innerText = data.totalPeminjaman || 0;
+        document.getElementById('lap-total-kembali').innerText = data.totalDikembalikan || 0;
+        document.getElementById('lap-masih-dipinjam').innerText = data.masihDipinjam || 0;
+        document.getElementById('lap-terlambat').innerText = data.terlambat || 0;
+
+        if (!data.ringkasanBuku || data.ringkasanBuku.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data sirkulasi.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        data.ringkasanBuku.forEach((b, idx) => {
+          html += `
+            <tr>
+              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(b.judul_buku)}</td>
+              <td class="text-center fw-semibold text-primary">${b.dipinjam}</td>
+              <td class="text-center fw-semibold text-success">${b.dikembalikan}</td>
+              <td class="text-center fw-semibold text-warning">${b.masih_dipinjam}</td>
+              <td class="text-center fw-bold text-danger">${b.terlambat}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      })
+      .getLaporanRingkasanFull();
+  }
+
+  function handleUnduhLaporanPdf() {
+    window.print();
+  }
+
+  /* HELPER CETAK DOKUMEN & KARTA (ISOLATED 1-PAGE PRINT) */
+  
+
+  
+
+  /* CONTROLLER KENAIKAN KELAS MASSAL & IMPORT CSV */
+  let currentImportTarget = 'buku'; // 'buku' or 'anggota'
+
+  function showModalKenaikanKelas() {
+    const container = document.getElementById('kenaikan-kelas-rules-container');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>Memuat daftar kelas...</div>';
+
+    const modalEl = document.getElementById('modalKenaikanKelas');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+
+    google.script.run
+      .withSuccessHandler(daftarKelas => {
+        if (!daftarKelas || daftarKelas.length === 0) {
+          container.innerHTML = '<div class="alert alert-warning">Tidak ada kelas aktif ditemukan pada data anggota.</div>';
+          return;
+        }
+
+        let html = '<div class="row g-2">';
+        daftarKelas.forEach(k => {
+          let defaultTarget = k;
+          const match = k.match(/(\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num < 6) {
+              defaultTarget = k.replace(String(num), String(num + 1));
+            } else {
+              defaultTarget = 'LULUS';
+            }
+          }
+
+          html += `
+            <div class="col-md-6 mb-2">
+              <div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                <span class="fw-bold text-dark me-2">Kelas ${escapeHtml(k)} &rarr;</span>
+                <input type="text" class="form-control form-control-sm rounded-2 rule-kelas-target" style="width: 140px;" data-source="${escapeHtml(k)}" value="${escapeHtml(defaultTarget)}">
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      })
+      .getDaftarKelasUnik();
+  }
+
+  function handleProsesKenaikanKelasSubmit() {
+    const inputs = document.querySelectorAll('.rule-kelas-target');
+    const mapping = {};
+    inputs.forEach(input => {
+      const source = input.getAttribute('data-source');
+      const target = input.value.trim();
+      if (source && target) {
+        mapping[source] = target;
+      }
+    });
+
+    if (Object.keys(mapping).length === 0) {
+      showErrorAlert('Tidak ada aturan kenaikan kelas yang diset.');
+      return;
+    }
+
+    showLoadingAlert('Memproses kenaikan kelas massal...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            const modalEl = document.getElementById('modalKenaikanKelas');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
+            }
+            renderAnggotaTable();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal memproses kenaikan kelas.');
+        }
+      })
+      .processBulkKenaikanKelas(mapping);
+  }
+
+  function showModalImportBuku() {
+    currentImportTarget = 'buku';
+    document.getElementById('modal-import-title').innerText = 'Import Data Buku (CSV)';
+    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: Judul, ISBN, Penulis, Penerbit, Tahun, Kategori, Stok, URL Sampul';
+    document.getElementById('import-csv-file').value = '';
+    
+    const modalEl = document.getElementById('modalImportCsv');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function showModalImportAnggota() {
+    currentImportTarget = 'anggota';
+    document.getElementById('modal-import-title').innerText = 'Import Data Anggota Siswa (CSV)';
+    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: NIS, Nama Lengkap, Kelas, Email, Password';
+    document.getElementById('import-csv-file').value = '';
+
+    const modalEl = document.getElementById('modalImportCsv');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function handleImportCsvSubmit() {
+    const fileInput = document.getElementById('import-csv-file');
+    if (!fileInput.files || fileInput.files.length === 0) {
+      showErrorAlert('Silakan pilih berkas CSV terlebih dahulu.');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const csvText = e.target.result;
+      showLoadingAlert('Memproses import data CSV...');
+
+      if (currentImportTarget === 'buku') {
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => {
+                const modalEl = document.getElementById('modalImportCsv');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                  const bsModal = bootstrap.Modal.getInstance(modalEl);
+                  if (bsModal) bsModal.hide();
+                }
+                renderBukuTable();
+              });
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
+            }
+          })
+          .importBukuFromCsv(csvText);
+      } else {
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => {
+                const modalEl = document.getElementById('modalImportCsv');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                  const bsModal = bootstrap.Modal.getInstance(modalEl);
+                  if (bsModal) bsModal.hide();
+                }
+                renderAnggotaTable();
+              });
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
+            }
+          })
+          .importAnggotaFromCsv(csvText);
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
+  /* CONTROLLER KELOLA DATA ADMIN */
+  let currentPetugasCache = [];
+  let petugasTableCurrentPage = 1;
+
+  function renderPetugasTable() {
+    const tbody = document.getElementById('petugas-table-body');
+    const paginationControls = document.getElementById('petugas-pagination-controls');
+    const paginationInfo = document.getElementById('petugas-pagination-info');
+    if (!tbody) return;
+
+    const query = (document.getElementById('petugas-search-query')?.value || '').trim().toLowerCase();
+    const entries = parseInt(document.getElementById('petugas-table-entries')?.value || '10');
+
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data admin...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        currentPetugasCache = list || [];
+        
+        let filteredData = currentPetugasCache;
+        if (query) {
+          filteredData = filteredData.filter(a => 
+            String(a.nama_lengkap || '').toLowerCase().includes(query) ||
+            String(a.username || '').toLowerCase().includes(query) ||
+            String(a.email || '').toLowerCase().includes(query)
+          );
+        }
+
+        if (filteredData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data admin yang cocok.</td></tr>';
+          if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan 0 sampai 0 dari 0 entri';
+          if (paginationControls) paginationControls.innerHTML = '';
+          return;
+        }
+
+        const totalData = filteredData.length;
+        const totalPages = Math.ceil(totalData / entries);
+        if (petugasTableCurrentPage > totalPages) petugasTableCurrentPage = totalPages;
+        if (petugasTableCurrentPage < 1) petugasTableCurrentPage = 1;
+
+        const startIdx = (petugasTableCurrentPage - 1) * entries;
+        const endIdx = Math.min(startIdx + entries, totalData);
+        const pageData = filteredData.slice(startIdx, endIdx);
+
+        let html = '';
+        pageData.forEach((a, idx) => {
+          html += `
+            <tr>
+              <td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">${startIdx + idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.username)}</span></td>
+              <td class="border-start text-secondary small">${escapeHtml(a.email || '-')}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Admin" onclick="showModalEditAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Admin" onclick="handleDeleteAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+
+        if (paginationInfo) paginationInfo.innerHTML = `Menampilkan ${startIdx + 1} sampai ${endIdx} dari ${totalData} entri`;
+        
+        if (paginationControls) {
+          let pghtml = '';
+          pghtml += `<li class="page-item ${petugasTableCurrentPage === 1 ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage--; renderPetugasTable(); return false;">Sebelumnya</a></li>`;
+          for (let p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= petugasTableCurrentPage - 1 && p <= petugasTableCurrentPage + 1)) {
+              pghtml += `<li class="page-item ${petugasTableCurrentPage === p ? 'active' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage = ${p}; renderPetugasTable(); return false;">${p}</a></li>`;
+            } else if (p === petugasTableCurrentPage - 2 || p === petugasTableCurrentPage + 2) {
+              pghtml += `<li class="page-item disabled"><a class="page-link shadow-sm rounded-3 me-1" href="#">...</a></li>`;
+            }
+          }
+          pghtml += `<li class="page-item ${petugasTableCurrentPage === totalPages ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3" href="#" onclick="petugasTableCurrentPage++; renderPetugasTable(); return false;">Selanjutnya</a></li>`;
+          paginationControls.innerHTML = pghtml;
+        }
+      })
+      .getAdminListFull();
+  }
+
+  function showModalEditAdmin(idAdmin) {
+    const item = currentPetugasCache.find(a => String(a.id_admin).trim() === String(idAdmin).trim());
+    if (!item) {
+      showErrorAlert("Data admin tidak ditemukan.");
+      return;
+    }
+
+    Swal.fire({
+      title: 'Edit Data Admin',
+      html: `
+        <div class="text-start p-1">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" id="swal-edit-adm-nama" class="form-control rounded-3" value="${escapeHtml(item.nama_lengkap || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+            <input type="text" id="swal-edit-adm-user" class="form-control rounded-3" value="${escapeHtml(item.username || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" id="swal-edit-adm-email" class="form-control rounded-3" value="${escapeHtml(item.email || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Kata Sandi Baru (Kosongkan Jika Tidak Diubah)</label>
+            <input type="password" id="swal-edit-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi baru" autocomplete="new-password">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Perubahan',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nama = document.getElementById('swal-edit-adm-nama').value.trim();
+        const username = document.getElementById('swal-edit-adm-user').value.trim();
+        const email = document.getElementById('swal-edit-adm-email').value.trim();
+        const password = document.getElementById('swal-edit-adm-pass').value.trim();
+
+        if (!nama || !username || !email) {
+          Swal.showValidationMessage('Nama Lengkap, Username, dan Email wajib diisi!');
+          return false;
+        }
+
+        return {
+          id_admin: item.id_admin,
+          nama_lengkap: nama,
+          username: username,
+          email: email,
+          password: password
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Memperbarui data admin...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal memperbarui data admin.');
+            }
+          })
+          .saveAdminData(res.value);
+      }
+    });
+  }
+
+  function showModalTambahAdmin() {
+    Swal.fire({
+      title: 'Tambah Admin Baru',
+      html: `
+        <div class="text-start p-1">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" id="swal-adm-nama" class="form-control rounded-3" placeholder="Contoh: Ahmad Syahputra, S.IP">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+            <input type="text" id="swal-adm-user" class="form-control rounded-3" placeholder="Contoh: admin2" autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" id="swal-adm-email" class="form-control rounded-3" placeholder="admin@gmail.com" autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Kata Sandi <span class="text-danger">*</span></label>
+            <input type="password" id="swal-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi" autocomplete="new-password">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Admin',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nama = document.getElementById('swal-adm-nama').value.trim();
+        const username = document.getElementById('swal-adm-user').value.trim();
+        const email = document.getElementById('swal-adm-email').value.trim();
+        const password = document.getElementById('swal-adm-pass').value.trim();
+
+        if (!nama || !username || !email || !password) {
+          Swal.showValidationMessage('Seluruh kolom data admin wajib diisi!');
+          return false;
+        }
+        return { nama_lengkap: nama, username, email, password };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Menyimpan admin baru...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal menyimpan admin.');
+            }
+          })
+          .saveAdminData(res.value);
+      }
+    });
+  }
+
+  function handleDeleteAdmin(idAdmin) {
+    const item = currentPetugasCache.find(a => String(a.id_admin).trim() === String(idAdmin).trim());
+    const nameStr = item ? item.nama_lengkap : 'Admin ini';
+
+    Swal.fire({
+      title: 'Hapus Admin?',
+      text: `Apakah Anda yakin ingin menghapus admin "${nameStr}" dari sistem?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus admin...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus admin.');
+            }
+          })
+          .deleteAdminData(idAdmin);
+      }
+    });
+  }
+
+  /* CONTROLLER DROPDOWN INTERAKTIF ANGGOTA */
+  function toggleAnggotaDropdown(e) {
+    if (e) e.preventDefault();
+    const groupEl = document.getElementById('menu-anggota-group');
+    const subnavEl = document.getElementById('subnav-anggota');
+    if (!groupEl || !subnavEl) return;
+
+    groupEl.classList.toggle('open');
+    subnavEl.classList.toggle('d-none');
+  }
+
+  /* CONTROLLER MOBILE OFF-CANVAS SIDEBAR DRAWER */
+  function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('mobile-open');
+    if (backdrop) backdrop.classList.toggle('show');
+  }
+
+  // Auto-close mobile drawer when switching subviews on mobile
+  const origSwitchSubView = switchSubView;
+  switchSubView = function(subviewName) {
+    origSwitchSubView(subviewName);
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar && sidebar.classList.contains('mobile-open')) {
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('show');
+    }
+  };
+
+
+  /* CONTROLLER PEMINJAMAN SAYA (SISWA) */
+  let currentStudentLoansCache = [];
+  let peminjamanSiswaCurrentPage = 1;
+
+  function loadStudentPeminjamanPageData() {
+    peminjamanSiswaCurrentPage = 1;
+    const tbody = document.getElementById('peminjaman-siswa-table-body');
+    if (tbody) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat riwayat peminjaman...</td></tr>';
+    }
+
+    let nis = '';
+    if (currentUser && currentUser.userData) {
+      nis = currentUser.userData.nis || currentUser.userData.id_anggota || '';
+    }
+    
+    if (!nis) {
+      try {
+        const raw = localStorage.getItem('sipustaka_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.user && parsed.user.userData) {
+            nis = parsed.user.userData.nis || parsed.user.userData.id_anggota || '';
+          }
+        }
+      } catch (e) {
+        console.warn("Session restore notice:", e);
+      }
+    }
+
+    if (!nis) {
+      if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Data NIS siswa tidak terdeteksi dalam sesi. Silakan login kembali.</td></tr>';
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(res => {
+        if (!res || !res.success) {
+          if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">' + (res ? escapeHtml(res.message) : 'Belum ada riwayat peminjaman buku.') + '</td></tr>';
+          return;
+        }
+
+        currentStudentLoansCache = res.data || [];
+        const stats = res.stats || { active: 0, read: 0, overdue: 0 };
+
+        const elAktif = document.getElementById('peminjaman-siswa-aktif');
+        if (elAktif) elAktif.innerText = Number(stats.active || 0).toLocaleString('id-ID');
+
+        const elDibaca = document.getElementById('peminjaman-siswa-dibaca');
+        if (elDibaca) elDibaca.innerText = Number(stats.read || 0).toLocaleString('id-ID');
+
+        const elTerlambat = document.getElementById('peminjaman-siswa-terlambat');
+        if (elTerlambat) elTerlambat.innerText = Number(stats.overdue || 0).toLocaleString('id-ID');
+
+        renderPeminjamanSiswaTable();
+      })
+      .withFailureHandler(err => {
+        console.error("Failure handler getStudentLoansFull:", err);
+        if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Gagal memuat data peminjaman dari server: ' + escapeHtml(err ? err.message : '') + '</td></tr>';
+      })
+      .getStudentLoansFull(nis);
+  }
+
+  function changePeminjamanSiswaPage(newPage) {
+    peminjamanSiswaCurrentPage = newPage;
+    renderPeminjamanSiswaTable();
+  }
+
+  function renderPeminjamanSiswaTable() {
+    const tbody = document.getElementById('peminjaman-siswa-table-body');
+    if (!tbody) return;
+
+    const search = document.getElementById('peminjaman-siswa-search') ? document.getElementById('peminjaman-siswa-search').value.trim().toLowerCase() : '';
+    const statusFilter = document.getElementById('peminjaman-siswa-filter-status') ? document.getElementById('peminjaman-siswa-filter-status').value : 'semua';
+
+    const filtered = currentStudentLoansCache.filter(item => {
+      const matchSearch = !search ||
+        String(item.judul_buku || '').toLowerCase().includes(search);
+
+      const matchStatus = !statusFilter || statusFilter === 'semua' ||
+        (statusFilter === 'dipinjam' && String(item.status).toLowerCase() === 'dipinjam' && item.statusRaw !== 'terlambat') ||
+        (statusFilter === 'dikembalikan' && String(item.status).toLowerCase() === 'dikembalikan') ||
+        (statusFilter === 'terlambat' && item.statusRaw === 'terlambat');
+
+      return matchSearch && matchStatus;
+    });
+
+    const totalItems = filtered.length;
+    const entriesSelect = document.getElementById('peminjaman-siswa-entries');
+    const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 10) : 10;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+    if (peminjamanSiswaCurrentPage > totalPages) {
+      peminjamanSiswaCurrentPage = totalPages;
+    }
+    if (peminjamanSiswaCurrentPage < 1) {
+      peminjamanSiswaCurrentPage = 1;
+    }
+
+    const startIndex = (peminjamanSiswaCurrentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalItems);
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    if (totalItems === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Belum ada riwayat peminjaman buku.</td></tr>';
+    } else {
+      let html = '';
+      pageItems.forEach((l, idx) => {
+        const badgeClass = l.statusClass || 'bg-primary text-white';
+        const badgeText = l.statusText || 'Dipinjam';
+        const subText = l.subText || '';
+        const periode = l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo);
+
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start">
+              <div class="fw-bold text-dark">${escapeHtml(l.judul_buku)}</div>
+              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(l.kategori_buku)}</small>
+            </td>
+            <td class="small fw-semibold text-dark border-start">${escapeHtml(periode)}</td>
+            <td class="pe-3 text-end border-start">
+              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    // Update Pagination Info
+    const infoEl = document.getElementById('peminjaman-siswa-pagination-info');
+    if (infoEl) {
+      if (totalItems === 0) {
+        infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+      } else {
+        infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+      }
+    }
+
+    // Update Pagination Buttons
+    const controlsEl = document.getElementById('peminjaman-siswa-pagination-controls');
+    if (controlsEl) {
+      if (totalItems === 0) {
+        controlsEl.innerHTML = '';
+      } else {
+        let pagHtml = '';
+        const prevDisabled = peminjamanSiswaCurrentPage === 1 ? 'disabled' : '';
+        pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changePeminjamanSiswaPage(${peminjamanSiswaCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+
+        for (let p = 1; p <= totalPages; p++) {
+          const activeClass = p === peminjamanSiswaCurrentPage ? 'active' : '';
+          pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changePeminjamanSiswaPage(${p}); return false;">${p}</a></li>`;
+        }
+
+        const nextDisabled = peminjamanSiswaCurrentPage === totalPages ? 'disabled' : '';
+        pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changePeminjamanSiswaPage(${peminjamanSiswaCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+
+        controlsEl.innerHTML = pagHtml;
+      }
+    }
+  }</script>
