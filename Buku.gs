@@ -73,6 +73,33 @@ function getBukuListFull(searchQuery, kategori, statusFilter) {
   });
 }
 
+// ==========================================
+// MANAJEMEN GOOGLE DRIVE & BERKAS
+// ==========================================
+
+function extractDriveFileId(url) {
+  if (!url || typeof url !== 'string') return null;
+  const match1 = url.match(/\/d\/([a-zA-Z0-9_-]{25,})/);
+  if (match1) return match1[1];
+  const match2 = url.match(/[?&]id=([a-zA-Z0-9_-]{25,})/);
+  if (match2) return match2[1];
+  return null;
+}
+
+function deleteDriveFileSafely(urlOrFileId) {
+  if (!urlOrFileId) return;
+  const fileId = String(urlOrFileId).indexOf('http') !== -1 ? extractDriveFileId(urlOrFileId) : urlOrFileId;
+  if (!fileId) return;
+
+  try {
+    const file = DriveApp.getFileById(fileId);
+    file.setTrashed(true);
+    Logger.log("File Drive berhasil dipindahkan ke sampah: " + fileId);
+  } catch (err) {
+    Logger.log("Info/Warning saat menghapus file Drive (" + fileId + "): " + err.message);
+  }
+}
+
 function getOrCreateSubFolder(parentFolder, subfolderName) {
   if (!parentFolder || !subfolderName) return parentFolder;
   
@@ -159,35 +186,14 @@ function uploadFileToDrive(base64Data, fileName, mimeType, subfolderName) {
   }
 }
 
+// ==========================================
+// CRUD DATA BUKU
+// ==========================================
+
 function saveBukuData(bukuObj) {
   const ss = getDb();
   const sheet = ss.getSheetByName('buku');
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
-
-  // 1. Handle uploaded cover image file -> masuk ke sub-folder 'sampul'
-  if (bukuObj.sampul_base64) {
-    const origName = bukuObj.sampul_filename || 'cover.jpg';
-    const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
-    const ext = origName.includes('.') ? origName.substring(origName.lastIndexOf('.')) : '.jpg';
-    const uploadRes = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg', 'sampul');
-    if (uploadRes && uploadRes.success) {
-      bukuObj.url_sampul = uploadRes.url;
-    } else if (uploadRes && !uploadRes.success) {
-      return { success: false, message: 'Gagal mengunggah sampul buku: ' + uploadRes.error };
-    }
-  }
-
-  // 2. Handle uploaded ebook PDF file -> masuk ke sub-folder 'buku'
-  if (bukuObj.ebook_base64) {
-    const origName = bukuObj.ebook_filename || 'ebook.pdf';
-    const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
-    const uploadRes = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf', 'buku');
-    if (uploadRes && uploadRes.success) {
-      bukuObj.url_file_buku = uploadRes.url;
-    } else if (uploadRes && !uploadRes.success) {
-      return { success: false, message: 'Gagal mengunggah berkas E-Book: ' + uploadRes.error };
-    }
-  }
 
   const values = sheet.getDataRange().getValues();
   const headers = values[0].map(h => String(h).trim().toLowerCase());
@@ -208,6 +214,7 @@ function saveBukuData(bukuObj) {
 
   let rowToUpdate = -1;
   let isEdit = false;
+  let oldRowData = null;
 
   if (bukuObj.id_buku) {
     const searchIdx = idBukuIdx !== -1 ? idBukuIdx : 0;
@@ -215,8 +222,44 @@ function saveBukuData(bukuObj) {
       if (String(values[i][searchIdx]).trim() === String(bukuObj.id_buku).trim()) {
         rowToUpdate = i + 1;
         isEdit = true;
+        oldRowData = values[i];
         break;
       }
+    }
+  }
+
+  // 1. Handle uploaded cover image file -> sub-folder 'sampul'
+  if (bukuObj.sampul_base64) {
+    // Jika sedang edit dan ada file cover lama di Drive, bersihkan file lama
+    if (isEdit && oldRowData && urlIdx !== -1 && oldRowData[urlIdx]) {
+      deleteDriveFileSafely(oldRowData[urlIdx]);
+    }
+
+    const origName = bukuObj.sampul_filename || 'cover.jpg';
+    const cleanTitle = (bukuObj.judul_buku || 'cover').replace(/[^a-zA-Z0-9]/g, '_');
+    const ext = origName.includes('.') ? origName.substring(origName.lastIndexOf('.')) : '.jpg';
+    const uploadRes = uploadFileToDrive(bukuObj.sampul_base64, 'Cover_' + cleanTitle + '_' + Date.now() + ext, 'image/jpeg', 'sampul');
+    if (uploadRes && uploadRes.success) {
+      bukuObj.url_sampul = uploadRes.url;
+    } else if (uploadRes && !uploadRes.success) {
+      return { success: false, message: 'Gagal mengunggah sampul buku: ' + uploadRes.error };
+    }
+  }
+
+  // 2. Handle uploaded ebook PDF file -> sub-folder 'buku'
+  if (bukuObj.ebook_base64) {
+    // Jika sedang edit dan ada file PDF lama di Drive, bersihkan file lama
+    if (isEdit && oldRowData && urlFileIdx !== -1 && oldRowData[urlFileIdx]) {
+      deleteDriveFileSafely(oldRowData[urlFileIdx]);
+    }
+
+    const origName = bukuObj.ebook_filename || 'ebook.pdf';
+    const cleanTitle = (bukuObj.judul_buku || 'ebook').replace(/[^a-zA-Z0-9]/g, '_');
+    const uploadRes = uploadFileToDrive(bukuObj.ebook_base64, 'EBook_' + cleanTitle + '_' + Date.now() + '.pdf', 'application/pdf', 'buku');
+    if (uploadRes && uploadRes.success) {
+      bukuObj.url_file_buku = uploadRes.url;
+    } else if (uploadRes && !uploadRes.success) {
+      return { success: false, message: 'Gagal mengunggah berkas E-Book: ' + uploadRes.error };
     }
   }
 
@@ -264,11 +307,31 @@ function deleteBukuData(idBuku) {
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
 
   const values = sheet.getDataRange().getValues();
+  const headers = values[0].map(h => String(h).trim().toLowerCase());
+  
+  const idBukuIdx = headers.indexOf('id_buku') !== -1 ? headers.indexOf('id_buku') : 0;
+  const urlSampulIdx = headers.indexOf('url_sampul');
+  const urlFileIdx = headers.indexOf('url_file_buku');
+
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][0]).trim() === String(idBuku).trim()) {
+    if (String(values[i][idBukuIdx]).trim() === String(idBuku).trim()) {
+      const row = values[i];
+
+      // 1. Hapus berkas Sampul dari Google Drive jika ada
+      if (urlSampulIdx !== -1 && row[urlSampulIdx]) {
+        deleteDriveFileSafely(row[urlSampulIdx]);
+      }
+
+      // 2. Hapus berkas PDF E-Book dari Google Drive jika ada
+      if (urlFileIdx !== -1 && row[urlFileIdx]) {
+        deleteDriveFileSafely(row[urlFileIdx]);
+      }
+
+      // 3. Hapus baris data dari Google Sheet
       sheet.deleteRow(i + 1);
-      return { success: true, message: 'Buku berhasil dihapus.' };
+      return { success: true, message: 'Buku beserta seluruh berkasnya di Google Drive berhasil dihapus!' };
     }
   }
-  return { success: false, message: 'Buku tidak ditemukan.' };
+
+  return { success: false, message: 'Data buku tidak ditemukan.' };
 }
