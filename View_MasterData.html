@@ -257,33 +257,33 @@
 
         <!-- SUBVIEW: KELOLA DATA ADMIN -->
         <div id="subview-petugas" class="d-none">
-          <div class="d-flex align-items-center justify-content-between mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
             <div>
               <h3 class="fw-bold m-0 text-dark">Kelola Data Admin</h3>
               <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <a href="#" onclick="toggleAnggotaDropdown(); return false;" class="text-decoration-none text-secondary">Anggota</a> &gt; <span class="text-dark">Admin</span></small>
             </div>
-            <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold" onclick="showModalTambahAdmin()"><i class="bi bi-person-plus-fill me-2"></i>Tambah Admin</button>
+            <button class="btn btn-primary rounded-3 px-4 py-2 fw-semibold d-inline-flex align-items-center" onclick="showModalTambahAdmin()"><i class="bi bi-person-plus-fill" style="margin-right: 6px;"></i>Tambah Admin</button>
           </div>
 
           <div class="card border-0 rounded-4 shadow-sm p-4">
             <div class="row g-3 mb-4 align-items-center">
-              <div class="col-md-6">
+              <div class="col-md-4 col-sm-6">
                 <div class="d-flex align-items-center gap-2">
-                  <label class="text-secondary fw-semibold small mb-0 text-nowrap">Tampilkan</label>
-                  <select id="petugas-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="petugasTableCurrentPage = 1; renderPetugasTable();">
-                    <option value="5">5</option>
-                    <option value="10" selected>10</option>
+                  <span class="text-muted small fw-semibold">Tampilkan:</span>
+                  <select id="petugas-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="petugasTableCurrentPage = 1; executeRenderPetugasTable();">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
                     <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                   </select>
-                  <label class="text-secondary fw-semibold small mb-0 text-nowrap">entri</label>
+                  <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
-              <div class="col-md-6">
-                <div class="input-group input-group-sm justify-content-md-end">
+              <div class="col-md-8 col-sm-6">
+                <div class="input-group">
                   <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
-                  <input type="text" id="petugas-search-query" class="form-control border-start-0 rounded-end-3" placeholder="Cari Nama, Username..." onkeyup="petugasTableCurrentPage = 1; renderPetugasTable();" style="max-width: 300px;">
+                  <input type="text" id="petugas-search-query" class="form-control border-start-0 rounded-end-3" placeholder="Cari Nama Lengkap, Username, Email..." onkeyup="petugasTableCurrentPage = 1; executeRenderPetugasTable();">
                 </div>
               </div>
             </div>
@@ -293,10 +293,10 @@
                 <thead class="bg-light text-muted small uppercase">
                   <tr>
                     <th class="ps-3 text-center" style="width: 50px;">NO.</th>
-                    <th class="border-start">NAMA LENGKAP</th>
-                    <th class="border-start">USERNAME</th>
-                    <th class="border-start">EMAIL</th>
-                    <th class="pe-3 text-end border-start">AKSI</th>
+                    <th class="border-start text-center">NAMA LENGKAP</th>
+                    <th class="border-start text-center" style="width: 150px;">USERNAME</th>
+                    <th class="border-start text-center">EMAIL</th>
+                    <th class="pe-3 text-center border-start" style="width: 120px;">AKSI</th>
                   </tr>
                 </thead>
                 <tbody id="petugas-table-body">
@@ -307,15 +307,15 @@
               </table>
             </div>
 
-            <div class="row align-items-center mt-4">
-              <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
-                <span class="text-muted small fw-semibold" id="petugas-pagination-info">Menampilkan 0 sampai 0 dari 0 entri</span>
+            <!-- FOOTER PAGINASI ADMIN -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-4 pt-3 border-top">
+              <div class="text-muted small fw-semibold" id="petugas-pagination-info">
+                Menampilkan 0 dari 0 entri
               </div>
-              <div class="col-md-6 d-flex justify-content-center justify-content-md-end">
-                <ul class="pagination pagination-sm m-0" id="petugas-pagination-controls">
-                  <!-- Pagination controls rendered here -->
+              <nav aria-label="Navigasi Halaman Admin">
+                <ul class="pagination pagination-sm mb-0 gap-1" id="petugas-pagination-controls">
                 </ul>
-              </div>
+              </nav>
             </div>
           </div>
         </div>

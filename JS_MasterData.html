@@ -133,7 +133,7 @@
         '</td>' +
         '<td class="pe-3 text-center border-start" style="width: 120px;">' +
           '<div class="d-flex justify-content-center gap-1">' +
-            '<button class="btn btn-sm btn-outline-primary border rounded-2 px-2 py-1" title="Edit Buku" onclick="showFormBukuEdit(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-pencil-square"></i></button>' +
+            '<button class="btn btn-sm btn-outline-warning border rounded-2 px-2 py-1" title="Edit Buku" onclick="showFormBukuEdit(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-pencil-square"></i></button>' +
             '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Buku" onclick="handleDeleteBuku(\'' + escapeHtml(b.id_buku) + '\')"><i class="bi bi-trash-fill"></i></button>' +
           '</div>' +
         '</td>' +
@@ -873,83 +873,129 @@
       .processBulkKenaikanKelas(mapping);
   }
 
-  /* CONTROLLER KELOLA DATA ADMIN */
+  // ==========================================
+  // CONTROLLER 4: KELOLA DATA ADMIN / PETUGAS
+  // ==========================================
+
   let currentPetugasCache = [];
   let petugasTableCurrentPage = 1;
 
-  function renderPetugasTable() {
+  function changePetugasTablePage(newPage) {
+    petugasTableCurrentPage = newPage;
+    executeRenderPetugasTable();
+  }
+
+  function renderPetugasTable(forceReload = false) {
     const tbody = document.getElementById('petugas-table-body');
-    const paginationControls = document.getElementById('petugas-pagination-controls');
-    const paginationInfo = document.getElementById('petugas-pagination-info');
+    if (!tbody) return;
+
+    if (currentPetugasCache.length === 0 || forceReload) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data admin...</td></tr>';
+
+      google.script.run
+        .withSuccessHandler(list => {
+          currentPetugasCache = list || [];
+          executeRenderPetugasTable();
+        })
+        .withFailureHandler(err => {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger py-4">Gagal memuat data admin.</td></tr>';
+        })
+        .getAdminListFull();
+    } else {
+      executeRenderPetugasTable();
+    }
+  }
+
+  function executeRenderPetugasTable() {
+    const tbody = document.getElementById('petugas-table-body');
     if (!tbody) return;
 
     const query = (document.getElementById('petugas-search-query')?.value || '').trim().toLowerCase();
-    const entries = parseInt(document.getElementById('petugas-table-entries')?.value || '10');
+    const entriesSelect = document.getElementById('petugas-table-entries');
+    const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 5) : 5;
 
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data admin...</td></tr>';
+    const filtered = (currentPetugasCache || []).filter(a => {
+      return !query || 
+        String(a.nama_lengkap || '').toLowerCase().includes(query) ||
+        String(a.username || '').toLowerCase().includes(query) ||
+        String(a.email || '').toLowerCase().includes(query);
+    });
 
-    google.script.run
-      .withSuccessHandler(list => {
-        currentPetugasCache = list || [];
-        
-        let filteredData = currentPetugasCache;
-        if (query) {
-          filteredData = filteredData.filter(a => 
-            String(a.nama_lengkap || '').toLowerCase().includes(query) ||
-            String(a.username || '').toLowerCase().includes(query) ||
-            String(a.email || '').toLowerCase().includes(query)
-          );
-        }
+    const totalItems = filtered.length;
+    const paginationInfo = document.getElementById('petugas-pagination-info');
+    const paginationControls = document.getElementById('petugas-pagination-controls');
 
-        if (filteredData.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data admin yang cocok.</td></tr>';
-          if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan 0 sampai 0 dari 0 entri';
-          if (paginationControls) paginationControls.innerHTML = '';
-          return;
-        }
+    if (totalItems === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data admin yang sesuai.</td></tr>';
+      if (paginationInfo) paginationInfo.innerText = 'Menampilkan 0 dari 0 entri';
+      if (paginationControls) paginationControls.innerHTML = '';
+      return;
+    }
 
-        const totalData = filteredData.length;
-        const totalPages = Math.ceil(totalData / entries);
-        if (petugasTableCurrentPage > totalPages) petugasTableCurrentPage = totalPages;
-        if (petugasTableCurrentPage < 1) petugasTableCurrentPage = 1;
+    const totalPages = Math.ceil(totalItems / pageSize) || 1;
+    if (petugasTableCurrentPage > totalPages) petugasTableCurrentPage = totalPages;
+    if (petugasTableCurrentPage < 1) petugasTableCurrentPage = 1;
 
-        const startIdx = (petugasTableCurrentPage - 1) * entries;
-        const endIdx = Math.min(startIdx + entries, totalData);
-        const pageData = filteredData.slice(startIdx, endIdx);
+    const startIdx = (petugasTableCurrentPage - 1) * pageSize;
+    const endIdx = Math.min(startIdx + pageSize, totalItems);
+    const pageItems = filtered.slice(startIdx, endIdx);
 
-        let html = '';
-        pageData.forEach((a, idx) => {
-          html += '<tr>' +
-            '<td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">' + (startIdx + idx + 1) + '</td>' +
-            '<td class="border-start fw-bold text-dark">' + escapeHtml(a.nama_lengkap) + '</td>' +
-            '<td class="border-start text-center"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">' + escapeHtml(a.username) + '</span></td>' +
-            '<td class="border-start text-secondary small">' + escapeHtml(a.email || '-') + '</td>' +
-            '<td class="pe-3 text-center border-start">' +
-              '<div class="d-flex justify-content-center gap-1">' +
-                '<button class="btn btn-sm btn-outline-warning border rounded-2 px-2 py-1" title="Edit Admin" onclick="showModalEditAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-pencil-square"></i></button>' +
-                '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Admin" onclick="handleDeleteAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-trash-fill"></i></button>' +
-              '</div>' +
-            '</td>' +
-          '</tr>';
-        });
-        tbody.innerHTML = html;
+    let html = '';
+    pageItems.forEach((a, idx) => {
+      html += '<tr>' +
+        '<td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">' + (startIdx + idx + 1) + '</td>' +
+        '<td class="border-start fw-bold text-dark">' + escapeHtml(a.nama_lengkap) + '</td>' +
+        '<td class="border-start text-center" style="width: 150px;"><span class="badge bg-light text-dark border font-monospace px-2.5 py-1 rounded-2">' + escapeHtml(a.username) + '</span></td>' +
+        '<td class="border-start text-secondary">' + escapeHtml(a.email || '-') + '</td>' +
+        '<td class="pe-3 text-center border-start" style="width: 120px;">' +
+          '<div class="d-flex justify-content-center gap-1">' +
+            '<button class="btn btn-sm btn-outline-warning border rounded-2 px-2 py-1" title="Edit Admin" onclick="showModalEditAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-pencil-square"></i></button>' +
+            '<button class="btn btn-sm btn-outline-danger border rounded-2 px-2 py-1" title="Hapus Admin" onclick="handleDeleteAdmin(\'' + escapeHtml(a.id_admin) + '\')"><i class="bi bi-trash-fill"></i></button>' +
+          '</div>' +
+        '</td>' +
+      '</tr>';
+    });
+    tbody.innerHTML = html;
 
-        if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan ' + (startIdx + 1) + ' sampai ' + endIdx + ' dari ' + totalData + ' entri';
-        
-        if (paginationControls) {
-          let pghtml = '';
-          const prevDisabled = petugasTableCurrentPage === 1 ? 'disabled' : '';
-          pghtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage--; renderPetugasTable(); return false;">Sebelumnya</a></li>';
-          for (let p = 1; p <= totalPages; p++) {
-            const activeClass = p === petugasTableCurrentPage ? 'active' : '';
-            pghtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage = ' + p + '; renderPetugasTable(); return false;">' + p + '</a></li>';
-          }
-          const nextDisabled = petugasTableCurrentPage === totalPages ? 'disabled' : '';
-          pghtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="petugasTableCurrentPage++; renderPetugasTable(); return false;">Selanjutnya</a></li>';
-          paginationControls.innerHTML = pghtml;
-        }
-      })
-      .getAdminListFull();
+    if (paginationInfo) {
+      paginationInfo.innerText = 'Menampilkan ' + (startIdx + 1) + ' sampai ' + endIdx + ' dari ' + totalItems + ' entri';
+    }
+    
+    if (paginationControls) {
+      let pghtml = '';
+      const prevDisabled = petugasTableCurrentPage === 1 ? 'disabled' : '';
+      pghtml += '<li class="page-item ' + prevDisabled + '"><a class="page-link rounded-2" href="#" onclick="changePetugasTablePage(' + (petugasTableCurrentPage - 1) + '); return false;">Sebelumnya</a></li>';
+      for (let p = 1; p <= totalPages; p++) {
+        const activeClass = p === petugasTableCurrentPage ? 'active' : '';
+        pghtml += '<li class="page-item ' + activeClass + '"><a class="page-link rounded-2" href="#" onclick="changePetugasTablePage(' + p + '); return false;">' + p + '</a></li>';
+      }
+      const nextDisabled = petugasTableCurrentPage === totalPages ? 'disabled' : '';
+      pghtml += '<li class="page-item ' + nextDisabled + '"><a class="page-link rounded-2" href="#" onclick="changePetugasTablePage(' + (petugasTableCurrentPage + 1) + '); return false;">Selanjutnya</a></li>';
+      paginationControls.innerHTML = pghtml;
+    }
+  }
+
+  function showModalTambahAdmin() {
+    const form = document.getElementById('form-modal-admin');
+    if (form) form.reset();
+
+    document.getElementById('modal-form-admin-title-text').innerText = 'Tambah Admin Baru';
+    document.getElementById('modal-admin-id').value = '';
+    document.getElementById('modal-admin-nama').value = '';
+    document.getElementById('modal-admin-username').value = '';
+    document.getElementById('modal-admin-email').value = '';
+    document.getElementById('modal-admin-password').value = '';
+
+    const passReq = document.getElementById('modal-admin-pass-req');
+    const passHint = document.getElementById('modal-admin-pass-hint');
+    if (passReq) passReq.style.display = 'inline';
+    if (passHint) passHint.style.display = 'none';
+
+    const modalEl = document.getElementById('modalFormAdmin');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
   }
 
   function showModalEditAdmin(idAdmin) {
@@ -959,122 +1005,79 @@
       return;
     }
 
-    Swal.fire({
-      title: 'Edit Data Admin',
-      html: `
-        <div class="text-start p-1">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-            <input type="text" id="swal-edit-adm-nama" class="form-control rounded-3" value="${escapeHtml(item.nama_lengkap || '')}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
-            <input type="text" id="swal-edit-adm-user" class="form-control rounded-3" value="${escapeHtml(item.username || '')}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
-            <input type="email" id="swal-edit-adm-email" class="form-control rounded-3" value="${escapeHtml(item.email || '')}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Kata Sandi Baru (Kosongkan Jika Tidak Diubah)</label>
-            <input type="password" id="swal-edit-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi baru" autocomplete="new-password">
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Simpan Perubahan',
-      confirmButtonColor: '#0052cc',
-      cancelButtonText: 'Batal',
-      preConfirm: () => {
-        const nama = document.getElementById('swal-edit-adm-nama').value.trim();
-        const username = document.getElementById('swal-edit-adm-user').value.trim();
-        const email = document.getElementById('swal-edit-adm-email').value.trim();
-        const password = document.getElementById('swal-edit-adm-pass').value.trim();
+    const form = document.getElementById('form-modal-admin');
+    if (form) form.reset();
 
-        if (!nama || !username || !email) {
-          Swal.showValidationMessage('Nama Lengkap, Username, dan Email wajib diisi!');
-          return false;
-        }
+    document.getElementById('modal-form-admin-title-text').innerText = 'Edit Data Admin';
+    document.getElementById('modal-admin-id').value = item.id_admin || '';
+    document.getElementById('modal-admin-nama').value = item.nama_lengkap || '';
+    document.getElementById('modal-admin-username').value = item.username || '';
+    document.getElementById('modal-admin-email').value = item.email || '';
+    document.getElementById('modal-admin-password').value = '';
 
-        return {
-          id_admin: item.id_admin,
-          nama_lengkap: nama,
-          username: username,
-          email: email,
-          password: password
-        };
-      }
-    }).then(res => {
-      if (res.isConfirmed && res.value) {
-        showLoadingAlert('Memperbarui data admin...');
-        google.script.run
-          .withSuccessHandler(r => {
-            closeLoadingAlert();
-            if (r && r.success) {
-              showSuccessAlert(r.message, () => renderPetugasTable());
-            } else {
-              showErrorAlert(r ? r.message : 'Gagal memperbarui data admin.');
-            }
-          })
-          .saveAdminData(res.value);
-      }
-    });
+    const passReq = document.getElementById('modal-admin-pass-req');
+    const passHint = document.getElementById('modal-admin-pass-hint');
+    if (passReq) passReq.style.display = 'none';
+    if (passHint) passHint.style.display = 'block';
+
+    const modalEl = document.getElementById('modalFormAdmin');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
   }
 
-  function showModalTambahAdmin() {
-    Swal.fire({
-      title: 'Tambah Admin Baru',
-      html: `
-        <div class="text-start p-1">
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
-            <input type="text" id="swal-adm-nama" class="form-control rounded-3" placeholder="Contoh: Ahmad Syahputra, S.IP">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
-            <input type="text" id="swal-adm-user" class="form-control rounded-3" placeholder="Contoh: admin2" autocomplete="off">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
-            <input type="email" id="swal-adm-email" class="form-control rounded-3" placeholder="admin@gmail.com" autocomplete="off">
-          </div>
-          <div class="mb-3">
-            <label class="form-label small fw-semibold">Kata Sandi <span class="text-danger">*</span></label>
-            <input type="password" id="swal-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi" autocomplete="new-password">
-          </div>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Simpan Admin',
-      confirmButtonColor: '#0052cc',
-      cancelButtonText: 'Batal',
-      preConfirm: () => {
-        const nama = document.getElementById('swal-adm-nama').value.trim();
-        const username = document.getElementById('swal-adm-user').value.trim();
-        const email = document.getElementById('swal-adm-email').value.trim();
-        const password = document.getElementById('swal-adm-pass').value.trim();
+  function handleSaveModalAdmin(e) {
+    e.preventDefault();
+    const idAdmin = document.getElementById('modal-admin-id').value;
+    const nama = document.getElementById('modal-admin-nama').value.trim();
+    const username = document.getElementById('modal-admin-username').value.trim();
+    const email = document.getElementById('modal-admin-email').value.trim();
+    const password = document.getElementById('modal-admin-password').value.trim();
 
-        if (!nama || !username || !email || !password) {
-          Swal.showValidationMessage('Seluruh kolom data admin wajib diisi!');
-          return false;
-        }
-        return { nama_lengkap: nama, username, email, password };
-      }
-    }).then(res => {
-      if (res.isConfirmed && res.value) {
-        showLoadingAlert('Menyimpan admin baru...');
-        google.script.run
-          .withSuccessHandler(r => {
-            closeLoadingAlert();
-            if (r && r.success) {
-              showSuccessAlert(r.message, () => renderPetugasTable());
-            } else {
-              showErrorAlert(r ? r.message : 'Gagal menyimpan admin.');
+    const isEdit = Boolean(idAdmin);
+
+    if (!nama || !username || !email) {
+      showErrorAlert('Nama Lengkap, Username, dan Email wajib diisi!');
+      return;
+    }
+
+    if (!isEdit && !password) {
+      showErrorAlert('Kata Sandi wajib diisi untuk pendaftaran admin baru!');
+      return;
+    }
+
+    showLoadingAlert(isEdit ? 'Memperbarui data admin...' : 'Menyimpan admin baru...');
+
+    const payload = {
+      id_admin: idAdmin,
+      nama_lengkap: nama,
+      username: username,
+      email: email,
+      password: password
+    };
+
+    google.script.run
+      .withSuccessHandler(r => {
+        closeLoadingAlert();
+        if (r && r.success) {
+          showSuccessAlert(r.message, () => {
+            const modalEl = document.getElementById('modalFormAdmin');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
             }
-          })
-          .saveAdminData(res.value);
-      }
-    });
+            renderPetugasTable(true);
+          });
+        } else {
+          showErrorAlert(r ? r.message : 'Gagal menyimpan data admin.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert('Terjadi kesalahan: ' + (err.message || err));
+      })
+      .saveAdminData(payload);
   }
 
   function handleDeleteAdmin(idAdmin) {
@@ -1091,12 +1094,12 @@
       cancelButtonText: 'Batal'
     }).then(r => {
       if (r.isConfirmed) {
-        showLoadingAlert('Menghapus admin...');
+        showLoadingAlert('Menghapus data admin...');
         google.script.run
           .withSuccessHandler(res => {
             closeLoadingAlert();
             if (res && res.success) {
-              showSuccessAlert(res.message, () => renderPetugasTable());
+              showSuccessAlert(res.message, () => renderPetugasTable(true));
             } else {
               showErrorAlert(res ? res.message : 'Gagal menghapus admin.');
             }
