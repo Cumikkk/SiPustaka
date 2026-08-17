@@ -860,16 +860,16 @@
             ? 'background-color: #fee2e2; color: #dc2626; border: 1px solid #fecaca;' 
             : 'background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;';
           
-          const icon = isLulus ? '<i class="bi bi-mortarboard-fill me-1.5"></i>' : '<i class="bi bi-arrow-up-circle-fill me-1.5"></i>';
+          const icon = isLulus ? '<i class="bi bi-mortarboard-fill" style="margin-right: 8px;"></i>' : '<i class="bi bi-arrow-up-circle-fill" style="margin-right: 8px;"></i>';
 
           html += '<div class="col-md-6">' +
-            '<div class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between shadow-2xs">' +
-              '<div class="d-flex align-items-center gap-2">' +
+            '<div class="p-3 border rounded-3 bg-white d-flex align-items-center justify-content-between shadow-2xs" style="padding: 14px 18px !important;">' +
+              '<div class="d-flex align-items-center">' +
                 '<span class="badge bg-light text-dark border px-2.5 py-1.5 fw-bold font-monospace">Kelas ' + escapeHtml(k) + '</span>' +
-                '<i class="bi bi-arrow-right text-muted"></i>' +
+                '<i class="bi bi-arrow-right text-muted" style="margin-left: 10px; margin-right: 8px;"></i>' +
               '</div>' +
-              '<span class="badge rounded-pill px-3 py-1.5 fw-bold" style="' + badgeStyle + '">' +
-                icon + escapeHtml(targetDisplay) +
+              '<span class="badge rounded-pill fw-bold d-inline-flex align-items-center" style="padding: 8px 16px; font-size: 0.82rem; ' + badgeStyle + '">' +
+                icon + '<span>' + escapeHtml(targetDisplay) + '</span>' +
               '</span>' +
             '</div>' +
           '</div>';
@@ -1102,8 +1102,8 @@
 
     const isEdit = Boolean(idAdmin);
 
-    if (!nama || !username || !email) {
-      showErrorAlert('Nama Lengkap, Username, dan Email wajib diisi!');
+    if (!nama || !username) {
+      showErrorAlert('Nama Lengkap dan Username wajib diisi!');
       return;
     }
 
