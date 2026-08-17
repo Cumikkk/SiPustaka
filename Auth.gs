@@ -32,7 +32,7 @@ function loginUserUnified(credential, password) {
     };
   }
 
-    // 2. Jika bukan Admin, Cek Siswa / Anggota (Strict: Username atau Email Saja)
+  // 2. Jika bukan Admin, Cek Siswa / Anggota (Strict: Username atau Email Saja)
   const anggota = getSheetData('siswa');
   const siswaUser = anggota.find(a => {
     const userClean = String(a.username || '').trim().toLowerCase();
@@ -53,8 +53,10 @@ function loginUserUnified(credential, password) {
       userData: {
         nis: siswaUser.nis,
         nama_lengkap: siswaUser.nama_lengkap,
+        username: siswaUser.username,
         kelas: siswaUser.kelas,
         email: siswaUser.email,
+        status: siswaUser.status || 'Aktif',
         role_title: 'Siswa (Kelas ' + (siswaUser.kelas || '-') + ')'
       }
     };
@@ -205,7 +207,6 @@ function resetPasswordUniversal(email, otpInput, newPassword) {
 // ==========================================
 // API AREA SISWA & ADMIN
 // ==========================================
-
 
 function verifyOtpUniversal(email, otpInput) {
   const cleanEmail = String(email).trim().toLowerCase();
@@ -360,9 +361,3 @@ function updateUserSelfProfile(profileData) {
     return { success: false, message: 'Error server: ' + err.toString() };
   }
 }
-
-
-
-// ==========================================
-// API MANAJEMEN BUKU (CRUD LENGKAP)
-// ==========================================

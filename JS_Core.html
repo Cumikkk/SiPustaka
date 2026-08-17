@@ -216,6 +216,9 @@
       roleEl.innerText = isSiswa ? ('Siswa • Kelas ' + (ud.kelas || '-')) : 'Administrator Sistem';
     }
 
+    const nisLabel = document.getElementById('profil-field-nis-label');
+    if (nisLabel) nisLabel.innerText = isSiswa ? 'NIS:' : 'ID Admin:';
+
     const nisEl = document.getElementById('profil-card-nis');
     if (nisEl) nisEl.innerText = isSiswa ? (ud.nis || '-') : (ud.id_admin || 'ADM-01');
 
