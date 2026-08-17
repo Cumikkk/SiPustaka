@@ -362,7 +362,16 @@
           currentUser.userData = res.userData;
           saveUserSession(currentUser);
           
-          applyLoggedInUserUI(currentUser);
+          // Update Topbar nama & avatar secara langsung tanpa redirect
+          const userDisplayName = document.getElementById('user-display-name');
+          if (userDisplayName && res.userData.nama_lengkap) {
+            userDisplayName.innerText = res.userData.nama_lengkap;
+          }
+          const avatarBox = document.getElementById('user-avatar-box');
+          if (avatarBox && res.userData.nama_lengkap) {
+            avatarBox.innerText = res.userData.nama_lengkap.charAt(0).toUpperCase();
+          }
+
           loadSelfProfileView();
         } else {
           showErrorAlert((res && res.message) || 'Gagal memperbarui profil.');

@@ -433,6 +433,8 @@
     }
   }
 
+  let readerAutoDismissTimer = null;
+
   function openModalBacaBuku(urlFileBuku, judulBuku) {
     const previewUrl = getDrivePreviewUrl(urlFileBuku);
     const downloadUrl = getDriveDownloadUrl(urlFileBuku);
@@ -444,14 +446,28 @@
     if (btnUnduh) {
       btnUnduh.href = downloadUrl;
     }
+
+    const btnExternal = document.getElementById('baca-buku-btn-external');
+    if (btnExternal) {
+      btnExternal.href = previewUrl || downloadUrl;
+    }
     
     const loaderEl = document.getElementById('baca-buku-loading');
-    if (loaderEl) loaderEl.classList.remove('d-none');
+    if (loaderEl) {
+      loaderEl.classList.remove('d-none');
+      loaderEl.style.opacity = '1';
+    }
     
     const iframeEl = document.getElementById('baca-buku-iframe');
     if (iframeEl) {
       iframeEl.src = previewUrl;
     }
+
+    // Safety timeout: Hilangkan loading otomatis setelah 2 detik
+    if (readerAutoDismissTimer) clearTimeout(readerAutoDismissTimer);
+    readerAutoDismissTimer = setTimeout(() => {
+      handleIframeLoaded();
+    }, 2200);
     
     const modalEl = document.getElementById('modalBacaBuku');
     if (modalEl && typeof bootstrap !== 'undefined') {
@@ -460,13 +476,48 @@
     }
   }
 
+  function handleIframeLoaded() {
+    const loaderEl = document.getElementById('baca-buku-loading');
+    if (loaderEl && !loaderEl.classList.contains('d-none')) {
+      loaderEl.style.opacity = '0';
+      setTimeout(() => {
+        loaderEl.classList.add('d-none');
+        loaderEl.style.opacity = '1';
+      }, 350);
+    }
+  }
+
+  function toggleReaderFullscreen() {
+    const modalContent = document.querySelector('#modalBacaBuku .modal-content');
+    if (!modalContent) return;
+
+    if (!document.fullscreenElement) {
+      if (modalContent.requestFullscreen) {
+        modalContent.requestFullscreen();
+      } else if (modalContent.webkitRequestFullscreen) {
+        modalContent.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  }
+
   function closeModalBacaBuku() {
+    if (readerAutoDismissTimer) clearTimeout(readerAutoDismissTimer);
+    if (document.fullscreenElement) {
+      try { document.exitFullscreen(); } catch (e) {}
+    }
     const iframeEl = document.getElementById('baca-buku-iframe');
     if (iframeEl) {
       iframeEl.src = 'about:blank';
     }
     const loaderEl = document.getElementById('baca-buku-loading');
-    if (loaderEl) loaderEl.classList.remove('d-none');
+    if (loaderEl) {
+      loaderEl.classList.remove('d-none');
+      loaderEl.style.opacity = '1';
+    }
   }
 
   function handlePinjamBukuKatalog(idBuku) {
