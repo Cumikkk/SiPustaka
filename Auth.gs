@@ -233,6 +233,78 @@ function verifyOtpUniversal(email, otpInput) {
 }
 
 /**
+ * Mengambil Data Profil Pengguna 100% Real-time dari Database Google Sheets
+ */
+function getUserSelfProfile(role, identifier) {
+  try {
+    const cleanRole = String(role || '').toLowerCase().trim();
+    const idOrNis = String(identifier || '').trim().toLowerCase();
+    
+    if (cleanRole === 'admin') {
+      const admins = getSheetData('admin');
+      const user = admins.find(a => 
+        String(a.id_admin || '').trim().toLowerCase() === idOrNis || 
+        String(a.username || '').trim().toLowerCase() === idOrNis
+      );
+      if (!user) return { success: false, message: 'Data admin tidak ditemukan di database.' };
+
+      return {
+        success: true,
+        role: 'admin',
+        userData: {
+          id_admin: user.id_admin || user.username,
+          nama_lengkap: user.nama_lengkap || '',
+          username: user.username || '',
+          email: user.email || '',
+          role_title: 'Petugas / Admin'
+        }
+      };
+    } else {
+      const siswaList = getSheetData('siswa');
+      const user = siswaList.find(s => 
+        String(s.nis || '').trim().toLowerCase() === idOrNis || 
+        String(s.username || '').trim().toLowerCase() === idOrNis
+      );
+      if (!user) return { success: false, message: 'Data siswa tidak ditemukan di database.' };
+
+      // Hitung statistik real-time dari transaksi
+      const transaksi = getSheetData('transaksi');
+      let aktifCount = 0;
+      let dibacaCount = 0;
+      const userNis = String(user.nis || '').trim();
+
+      transaksi.forEach(t => {
+        if (String(t.nis || '').trim() === userNis) {
+          const st = String(t.status || '').toLowerCase().trim();
+          if (st === 'dipinjam') aktifCount++;
+          if (st === 'kembali') dibacaCount++;
+        }
+      });
+
+      return {
+        success: true,
+        role: 'siswa',
+        userData: {
+          nis: user.nis || '',
+          nama_lengkap: user.nama_lengkap || '',
+          username: user.username || '',
+          kelas: user.kelas || '',
+          email: user.email || '',
+          status: user.status || 'Aktif',
+          role_title: 'Siswa (Kelas ' + (user.kelas || '-') + ')'
+        },
+        stats: {
+          aktif: aktifCount,
+          dibaca: dibacaCount
+        }
+      };
+    }
+  } catch (err) {
+    return { success: false, message: 'Error server: ' + err.toString() };
+  }
+}
+
+/**
  * Update Data Profil & Password Mandiri Pengguna (Siswa / Admin)
  */
 function updateUserSelfProfile(profileData) {

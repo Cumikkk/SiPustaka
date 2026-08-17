@@ -201,6 +201,36 @@
     const ud = currentUser.userData;
     const isSiswa = currentUser.role === 'siswa';
 
+    // 1. Tampilkan data dari sesi lokal terlebih dahulu (Instant Render)
+    renderProfileDOM(ud, isSiswa);
+
+    // 2. Ambil data 100% REAL-TIME langsung dari database Google Sheets
+    const identifier = isSiswa ? ud.nis : (ud.id_admin || ud.username);
+    if (!identifier) return;
+
+    google.script.run
+      .withSuccessHandler(res => {
+        if (res && res.success && res.userData) {
+          currentUser.userData = res.userData;
+          saveUserSession(currentUser);
+          renderProfileDOM(res.userData, isSiswa, res.stats);
+
+          // Update nama di Topbar secara real-time
+          const userDisplayName = document.getElementById('user-display-name');
+          if (userDisplayName && res.userData.nama_lengkap) {
+            userDisplayName.innerText = res.userData.nama_lengkap;
+          }
+        }
+      })
+      .withFailureHandler(err => {
+        console.warn("Real-time profile fetch error:", err);
+      })
+      .getUserSelfProfile(currentUser.role, identifier);
+  }
+
+  function renderProfileDOM(ud, isSiswa, stats) {
+    if (!ud) return;
+
     // Isi Card Profil Kiri
     const nameEl = document.getElementById('profil-card-name');
     if (nameEl) nameEl.innerText = ud.nama_lengkap || '-';
@@ -232,17 +262,26 @@
     }
 
     const usernameCardEl = document.getElementById('profil-card-username');
-    if (usernameCardEl) usernameCardEl.innerText = ud.username || '-';
+    if (usernameCardEl) usernameCardEl.innerText = (ud.username && ud.username !== '-') ? ud.username : '-';
+
+    const statusCardEl = document.getElementById('profil-card-status');
+    if (statusCardEl) statusCardEl.innerText = ud.status || 'Aktif';
 
     const statsBox = document.getElementById('profil-siswa-stats-box');
     if (isSiswa) {
       if (statsBox) statsBox.classList.remove('d-none');
       const statAktifEl = document.getElementById('profil-stat-aktif');
       const statDibacaEl = document.getElementById('profil-stat-dibaca');
-      const dashAktif = document.getElementById('siswa-pinjam-aktif');
-      const dashDibaca = document.getElementById('siswa-total-dibaca');
-      if (statAktifEl && dashAktif) statAktifEl.innerText = dashAktif.innerText;
-      if (statDibacaEl && dashDibaca) statDibacaEl.innerText = dashDibaca.innerText;
+      
+      if (stats) {
+        if (statAktifEl) statAktifEl.innerText = stats.aktif;
+        if (statDibacaEl) statDibacaEl.innerText = stats.dibaca;
+      } else {
+        const dashAktif = document.getElementById('siswa-pinjam-aktif');
+        const dashDibaca = document.getElementById('siswa-total-dibaca');
+        if (statAktifEl && dashAktif) statAktifEl.innerText = dashAktif.innerText;
+        if (statDibacaEl && dashDibaca) statDibacaEl.innerText = dashDibaca.innerText;
+      }
     } else {
       if (statsBox) statsBox.classList.add('d-none');
     }
