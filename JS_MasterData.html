@@ -1,0 +1,905 @@
+<script>
+    function renderBukuTable() {
+    const tbody = document.getElementById('buku-table-body');
+    if (!tbody) return;
+
+    const search = document.getElementById('buku-search-input')?.value || '';
+    const kategori = document.getElementById('buku-filter-kategori')?.value || 'semua';
+    const status = document.getElementById('buku-filter-status')?.value || 'semua';
+
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data buku...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        if (!list || list.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">Tidak ada data buku yang sesuai.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        list.forEach((b, idx) => {
+          const stok = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+          const isTersedia = stok > 0;
+          const statusBadge = isTersedia 
+            ? '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5">Tersedia</span>'
+            : '<span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5">Dipinjam</span>';
+
+          const sampulUrl = b.url_sampul || 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=120&auto=format&fit=crop&q=80';
+
+          html += `
+            <tr>
+              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
+              <td><img src="${escapeHtml(sampulUrl)}" class="rounded-2 border" style="width: 42px; height: 56px; object-fit: cover;"></td>
+              <td>
+                <div class="fw-bold text-dark">${escapeHtml(b.judul_buku)}</div>
+                <small class="text-muted">ISBN: ${escapeHtml(b.isbn || '-')}</small>
+              </td>
+              <td class="border-start text-secondary">${escapeHtml(b.penulis || '-')}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(b.kategori || 'Fiksi')}</span></td>
+              <td class="border-start fw-bold text-dark">${stok}</td>
+              <td>${statusBadge}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-primary border-0 rounded-2 me-1" title="Edit" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus" onclick="handleDeleteBuku('${escapeHtml(b.id_buku)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      })
+      .withFailureHandler(err => {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4">Gagal memuat data buku.</td></tr>';
+      })
+      .getBukuListFull(search, kategori, status);
+  }
+
+  function showFormBuku() {
+    document.getElementById('buku-view-list')?.classList.add('d-none');
+    document.getElementById('buku-view-form')?.classList.remove('d-none');
+    document.getElementById('form-buku-title').innerText = 'Tambah Buku';
+    document.getElementById('form-buku-element').reset();
+    document.getElementById('form-buku-id').value = '';
+  }
+
+  function hideFormBuku() {
+    document.getElementById('buku-view-form')?.classList.add('d-none');
+    document.getElementById('buku-view-list')?.classList.remove('d-none');
+    renderBukuTable();
+  }
+
+  function showFormBukuEdit(idBuku) {
+    showLoadingAlert('Mengambil data buku...');
+    google.script.run
+      .withSuccessHandler(list => {
+        closeLoadingAlert();
+        const buku = list.find(b => String(b.id_buku) === String(idBuku));
+        if (!buku) return;
+
+        showFormBuku();
+        document.getElementById('form-buku-title').innerText = 'Edit Data Buku';
+        document.getElementById('form-buku-id').value = buku.id_buku;
+        document.getElementById('form-buku-judul').value = buku.judul_buku || '';
+        document.getElementById('form-buku-isbn').value = buku.isbn || '';
+        document.getElementById('form-buku-penulis').value = buku.penulis || '';
+        document.getElementById('form-buku-tahun').value = buku.tahun_terbit || '';
+        document.getElementById('form-buku-penerbit').value = buku.penerbit || '';
+        document.getElementById('form-buku-stok').value = (buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 1;
+        document.getElementById('form-buku-kategori').value = buku.kategori || 'Fiksi';
+        document.getElementById('form-buku-rak').value = buku.rak_lokasi || 'A1';
+        document.getElementById('form-buku-sampul').value = buku.url_sampul || '';
+      })
+      .getBukuListFull('', 'semua', 'semua');
+  }
+
+  function handleSaveBuku(e) {
+    e.preventDefault();
+    const bukuObj = {
+      id_buku: document.getElementById('form-buku-id').value,
+      judul_buku: document.getElementById('form-buku-judul').value,
+      isbn: document.getElementById('form-buku-isbn').value,
+      penulis: document.getElementById('form-buku-penulis').value,
+      tahun_terbit: document.getElementById('form-buku-tahun').value,
+      penerbit: document.getElementById('form-buku-penerbit').value,
+      stok_aktual: document.getElementById('form-buku-stok').value,
+      kategori: document.getElementById('form-buku-kategori').value,
+      rak_lokasi: document.getElementById('form-buku-rak').value,
+      url_sampul: document.getElementById('form-buku-sampul').value
+    };
+
+    showLoadingAlert('Menyimpan data buku...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            hideFormBuku();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal menyimpan buku.');
+        }
+      })
+      .saveBukuData(bukuObj);
+  }
+
+  function handleDeleteBuku(idBuku) {
+    Swal.fire({
+      title: 'Hapus Buku?',
+      text: 'Apakah Anda yakin ingin menghapus data buku ini?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus buku...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderBukuTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus buku.');
+            }
+          })
+          .deleteBukuData(idBuku);
+      }
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 2: DAFTAR ANGGOTA & MANAJEMEN SISWA
+  // ==========================================
+
+  let currentAnggotaCache = [];
+  let anggotaTableCurrentPage = 1;
+
+  function changeAnggotaTablePage(newPage) {
+    anggotaTableCurrentPage = newPage;
+    renderAnggotaTable();
+  }
+
+  function renderAnggotaTable() {
+    const tbody = document.getElementById('anggota-table-body');
+    if (!tbody) return;
+
+    const search = document.getElementById('anggota-search-input') ? document.getElementById('anggota-search-input').value.trim() : '';
+    const status = document.getElementById('anggota-filter-status') ? document.getElementById('anggota-filter-status').value : 'semua';
+
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data anggota...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        currentAnggotaCache = list || [];
+        const totalItems = currentAnggotaCache.length;
+
+        if (!list || totalItems === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Tidak ada data anggota yang sesuai.</td></tr>';
+          const infoEl = document.getElementById('anggota-table-pagination-info');
+          if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+          const controlsEl = document.getElementById('anggota-table-pagination-controls');
+          if (controlsEl) controlsEl.innerHTML = '';
+          return;
+        }
+
+        const entriesSelect = document.getElementById('anggota-table-entries');
+        const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 10) : 10;
+        const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+        if (anggotaTableCurrentPage > totalPages) anggotaTableCurrentPage = totalPages;
+        if (anggotaTableCurrentPage < 1) anggotaTableCurrentPage = 1;
+
+        const startIndex = (anggotaTableCurrentPage - 1) * pageSize;
+        const endIndex = Math.min(startIndex + pageSize, totalItems);
+        const pageItems = currentAnggotaCache.slice(startIndex, endIndex);
+
+        let html = '';
+        pageItems.forEach((a, idx) => {
+          const st = String(a.status || 'aktif').toLowerCase();
+          let statusBadge = '<span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1.5 fw-semibold">Aktif</span>';
+          if (st === 'lulus' || st === 'nonaktif') {
+            statusBadge = '<span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle rounded-pill px-3 py-1.5 fw-semibold">Nonaktif</span>';
+          }
+
+          html += `
+            <tr>
+              <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
+              <td class="border-start text-secondary">${escapeHtml(a.username || '-')}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.kelas || '-')}</span></td>
+              <td class="border-start text-secondary">${escapeHtml(a.email || '-')}</td>
+              <td>${statusBadge}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Data Siswa" onclick="showModalEditAnggota('${escapeHtml(a.nis)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Siswa" onclick="handleDeleteAnggota('${escapeHtml(a.nis)}', '${escapeHtml(a.nama_lengkap)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+
+        // Update Pagination Info & Controls
+        const infoEl = document.getElementById('anggota-table-pagination-info');
+        if (infoEl) {
+          infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+        }
+
+        const controlsEl = document.getElementById('anggota-table-pagination-controls');
+        if (controlsEl) {
+          if (false) {
+            controlsEl.innerHTML = '';
+          } else {
+            let pagHtml = '';
+            const prevDisabled = anggotaTableCurrentPage === 1 ? 'disabled' : '';
+            pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+
+            for (let p = 1; p <= totalPages; p++) {
+              const activeClass = p === anggotaTableCurrentPage ? 'active' : '';
+              pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${p}); return false;">${p}</a></li>`;
+            }
+
+            const nextDisabled = anggotaTableCurrentPage === totalPages ? 'disabled' : '';
+            pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changeAnggotaTablePage(${anggotaTableCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+
+            controlsEl.innerHTML = pagHtml;
+          }
+        }
+      })
+      .getAnggotaListFull(search, status);
+  }
+
+  function showModalEditAnggota(nis) {
+    const item = currentAnggotaCache.find(a => String(a.nis).trim() === String(nis).trim());
+    if (!item) {
+      showErrorAlert("Data anggota siswa tidak ditemukan.");
+      return;
+    }
+
+    const st = String(item.status || 'aktif').toLowerCase();
+
+    Swal.fire({
+      title: 'Edit Data Siswa',
+      width: '680px',
+      html: `
+        <div class="text-start p-1">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">NIS <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-nis" class="form-control rounded-3" value="${escapeHtml(item.nis)}" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-nama" class="form-control rounded-3" value="${escapeHtml(item.nama_lengkap || '')}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kelas <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-kelas" class="form-control rounded-3" value="${escapeHtml(item.kelas || 'X-1')}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Email (Opsional)</label>
+              <input type="email" id="swal-edit-email" class="form-control rounded-3" value="${escapeHtml(item.email || '')}" placeholder="siswa@gmail.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+              <input type="text" id="swal-edit-username" class="form-control rounded-3" value="${escapeHtml(item.username || item.nis || '')}" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kata Sandi (Kosongkan Jika Tidak Diubah)</label>
+              <input type="password" id="swal-edit-pass" class="form-control rounded-3" placeholder="••••••••" autocomplete="new-password">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-semibold">Status Anggota <span class="text-danger">*</span></label>
+              <select id="swal-edit-status" class="form-select rounded-3">
+                <option value="aktif" ${st === 'aktif' ? 'selected' : ''}>Aktif</option>
+                <option value="nonaktif" ${st === 'nonaktif' || st === 'lulus' ? 'selected' : ''}>Nonaktif / Lulus</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Perubahan',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const newNis = document.getElementById('swal-edit-nis').value.trim();
+        const nama = document.getElementById('swal-edit-nama').value.trim();
+        const kelas = document.getElementById('swal-edit-kelas').value.trim();
+        const email = document.getElementById('swal-edit-email').value.trim();
+        const username = document.getElementById('swal-edit-username').value.trim();
+        const password = document.getElementById('swal-edit-pass').value.trim();
+        const statusVal = document.getElementById('swal-edit-status').value;
+
+        if (!newNis || !nama || !kelas || !username) {
+          Swal.showValidationMessage('NIS, Nama Lengkap, Kelas, dan Username wajib diisi!');
+          return false;
+        }
+
+        return {
+          originalNis: item.nis,
+          nis: newNis,
+          nama_lengkap: nama,
+          kelas: kelas,
+          email: email,
+          username: username,
+          password: password,
+          status: statusVal
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Memperbarui data siswa...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal memperbarui data siswa.');
+            }
+          })
+          .saveAnggotaData(res.value);
+      }
+    });
+  }
+
+  function showModalTambahAnggota() {
+    Swal.fire({
+      title: 'Tambah Siswa Baru',
+      width: '680px',
+      html: `
+        <div class="text-start p-1">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">NIS <span class="text-danger">*</span></label>
+              <input type="text" id="swal-nis" class="form-control rounded-3" placeholder="Contoh: 12345" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+              <input type="text" id="swal-nama" class="form-control rounded-3" placeholder="Nama lengkap siswa">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kelas <span class="text-danger">*</span></label>
+              <input type="text" id="swal-kelas" class="form-control rounded-3" placeholder="Contoh: 6 - A">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Email (Opsional)</label>
+              <input type="email" id="swal-email" class="form-control rounded-3" placeholder="siswa@gmail.com" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+              <input type="text" id="swal-username" class="form-control rounded-3" placeholder="Contoh: siswa123" autocomplete="new-password">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-semibold">Kata Sandi <span class="text-danger">*</span></label>
+              <input type="password" id="swal-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi" autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Siswa',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nis = document.getElementById('swal-nis').value.trim();
+        const nama = document.getElementById('swal-nama').value.trim();
+        const kelas = document.getElementById('swal-kelas').value.trim();
+        const email = document.getElementById('swal-email').value.trim();
+        const username = document.getElementById('swal-username').value.trim();
+        const password = document.getElementById('swal-pass').value.trim();
+
+        if (!nis || !nama || !kelas || !username || !password) {
+          Swal.showValidationMessage('NIS, Nama Lengkap, Kelas, Username, dan Kata Sandi wajib diisi!');
+          return false;
+        }
+        return { 
+          nis, 
+          nama_lengkap: nama, 
+          kelas, 
+          email, 
+          username, 
+          password, 
+          status: 'aktif' 
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Menyimpan data siswa...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal menyimpan data siswa.');
+            }
+          })
+          .saveAnggotaData(res.value);
+      }
+    });
+  }
+
+  function handleDeleteAnggota(nis, nama) {
+    Swal.fire({
+      title: 'Hapus Data Siswa?',
+      text: 'Apakah Anda yakin ingin menghapus data siswa "' + (nama || nis) + '"?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus data siswa...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderAnggotaTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus data siswa.');
+            }
+          })
+          .deleteAnggotaData(nis);
+      }
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 3: SIRKULASI PEMINJAMAN BUKU
+  // ==========================================
+
+  let pilihSiswaCurrentPage = 1;
+  let pilihBukuCurrentPage = 1;
+
+  function loadLaporanData() {
+    const tbody = document.getElementById('laporan-table-body');
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat laporan...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(data => {
+        if (!data) return;
+
+        document.getElementById('lap-total-pinjam').innerText = data.totalPeminjaman || 0;
+        document.getElementById('lap-total-kembali').innerText = data.totalDikembalikan || 0;
+        document.getElementById('lap-masih-dipinjam').innerText = data.masihDipinjam || 0;
+        document.getElementById('lap-terlambat').innerText = data.terlambat || 0;
+
+        if (!data.ringkasanBuku || data.ringkasanBuku.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Belum ada data sirkulasi.</td></tr>';
+          return;
+        }
+
+        let html = '';
+        data.ringkasanBuku.forEach((b, idx) => {
+          html += `
+            <tr>
+              <td class="ps-3 fw-bold text-secondary">${idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(b.judul_buku)}</td>
+              <td class="text-center fw-semibold text-primary">${b.dipinjam}</td>
+              <td class="text-center fw-semibold text-success">${b.dikembalikan}</td>
+              <td class="text-center fw-semibold text-warning">${b.masih_dipinjam}</td>
+              <td class="text-center fw-bold text-danger">${b.terlambat}</td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      })
+      .getLaporanRingkasanFull();
+  }
+
+  function handleUnduhLaporanPdf() {
+    window.print();
+  }
+
+  /* HELPER CETAK DOKUMEN & KARTA (ISOLATED 1-PAGE PRINT) */
+  
+
+  
+
+  /* CONTROLLER KENAIKAN KELAS MASSAL & IMPORT CSV */
+  let currentImportTarget = 'buku'; // 'buku' or 'anggota'
+
+  function showModalKenaikanKelas() {
+    const container = document.getElementById('kenaikan-kelas-rules-container');
+    if (!container) return;
+
+    container.innerHTML = '<div class="text-center text-muted py-3"><div class="spinner-border spinner-border-sm me-2"></div>Memuat daftar kelas...</div>';
+
+    const modalEl = document.getElementById('modalKenaikanKelas');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+
+    google.script.run
+      .withSuccessHandler(daftarKelas => {
+        if (!daftarKelas || daftarKelas.length === 0) {
+          container.innerHTML = '<div class="alert alert-warning">Tidak ada kelas aktif ditemukan pada data anggota.</div>';
+          return;
+        }
+
+        let html = '<div class="row g-2">';
+        daftarKelas.forEach(k => {
+          let defaultTarget = k;
+          const match = k.match(/(\d+)/);
+          if (match) {
+            const num = parseInt(match[1], 10);
+            if (num < 6) {
+              defaultTarget = k.replace(String(num), String(num + 1));
+            } else {
+              defaultTarget = 'LULUS';
+            }
+          }
+
+          html += `
+            <div class="col-md-6 mb-2">
+              <div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between">
+                <span class="fw-bold text-dark me-2">Kelas ${escapeHtml(k)} &rarr;</span>
+                <input type="text" class="form-control form-control-sm rounded-2 rule-kelas-target" style="width: 140px;" data-source="${escapeHtml(k)}" value="${escapeHtml(defaultTarget)}">
+              </div>
+            </div>
+          `;
+        });
+        html += '</div>';
+        container.innerHTML = html;
+      })
+      .getDaftarKelasUnik();
+  }
+
+  function handleProsesKenaikanKelasSubmit() {
+    const inputs = document.querySelectorAll('.rule-kelas-target');
+    const mapping = {};
+    inputs.forEach(input => {
+      const source = input.getAttribute('data-source');
+      const target = input.value.trim();
+      if (source && target) {
+        mapping[source] = target;
+      }
+    });
+
+    if (Object.keys(mapping).length === 0) {
+      showErrorAlert('Tidak ada aturan kenaikan kelas yang diset.');
+      return;
+    }
+
+    showLoadingAlert('Memproses kenaikan kelas massal...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            const modalEl = document.getElementById('modalKenaikanKelas');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
+            }
+            renderAnggotaTable();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal memproses kenaikan kelas.');
+        }
+      })
+      .processBulkKenaikanKelas(mapping);
+  }
+
+  function showModalImportBuku() {
+    currentImportTarget = 'buku';
+    document.getElementById('modal-import-title').innerText = 'Import Data Buku (CSV)';
+    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: Judul, ISBN, Penulis, Penerbit, Tahun, Kategori, Stok, URL Sampul';
+    document.getElementById('import-csv-file').value = '';
+    
+    const modalEl = document.getElementById('modalImportCsv');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function showModalImportAnggota() {
+    currentImportTarget = 'anggota';
+    document.getElementById('modal-import-title').innerText = 'Import Data Anggota Siswa (CSV)';
+    document.getElementById('modal-import-desc').innerText = 'Pilih berkas CSV dengan format: NIS, Nama Lengkap, Kelas, Email, Password';
+    document.getElementById('import-csv-file').value = '';
+
+    const modalEl = document.getElementById('modalImportCsv');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function handleImportCsvSubmit() {
+    const fileInput = document.getElementById('import-csv-file');
+    if (!fileInput.files || fileInput.files.length === 0) {
+      showErrorAlert('Silakan pilih berkas CSV terlebih dahulu.');
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+      const csvText = e.target.result;
+      showLoadingAlert('Memproses import data CSV...');
+
+      if (currentImportTarget === 'buku') {
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => {
+                const modalEl = document.getElementById('modalImportCsv');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                  const bsModal = bootstrap.Modal.getInstance(modalEl);
+                  if (bsModal) bsModal.hide();
+                }
+                renderBukuTable();
+              });
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
+            }
+          })
+          .importBukuFromCsv(csvText);
+      } else {
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => {
+                const modalEl = document.getElementById('modalImportCsv');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                  const bsModal = bootstrap.Modal.getInstance(modalEl);
+                  if (bsModal) bsModal.hide();
+                }
+                renderAnggotaTable();
+              });
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal memproses import data.');
+            }
+          })
+          .importAnggotaFromCsv(csvText);
+      }
+    };
+
+    reader.readAsText(file);
+  }
+
+  /* CONTROLLER KELOLA DATA ADMIN */
+  let currentPetugasCache = [];
+  let petugasTableCurrentPage = 1;
+
+  function renderPetugasTable() {
+    const tbody = document.getElementById('petugas-table-body');
+    const paginationControls = document.getElementById('petugas-pagination-controls');
+    const paginationInfo = document.getElementById('petugas-pagination-info');
+    if (!tbody) return;
+
+    const query = (document.getElementById('petugas-search-query')?.value || '').trim().toLowerCase();
+    const entries = parseInt(document.getElementById('petugas-table-entries')?.value || '10');
+
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data admin...</td></tr>';
+
+    google.script.run
+      .withSuccessHandler(list => {
+        currentPetugasCache = list || [];
+        
+        let filteredData = currentPetugasCache;
+        if (query) {
+          filteredData = filteredData.filter(a => 
+            String(a.nama_lengkap || '').toLowerCase().includes(query) ||
+            String(a.username || '').toLowerCase().includes(query) ||
+            String(a.email || '').toLowerCase().includes(query)
+          );
+        }
+
+        if (filteredData.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada data admin yang cocok.</td></tr>';
+          if (paginationInfo) paginationInfo.innerHTML = 'Menampilkan 0 sampai 0 dari 0 entri';
+          if (paginationControls) paginationControls.innerHTML = '';
+          return;
+        }
+
+        const totalData = filteredData.length;
+        const totalPages = Math.ceil(totalData / entries);
+        if (petugasTableCurrentPage > totalPages) petugasTableCurrentPage = totalPages;
+        if (petugasTableCurrentPage < 1) petugasTableCurrentPage = 1;
+
+        const startIdx = (petugasTableCurrentPage - 1) * entries;
+        const endIdx = Math.min(startIdx + entries, totalData);
+        const pageData = filteredData.slice(startIdx, endIdx);
+
+        let html = '';
+        pageData.forEach((a, idx) => {
+          html += `
+            <tr>
+              <td class="ps-3 text-center fw-bold text-secondary" style="width: 50px;">${startIdx + idx + 1}</td>
+              <td class="border-start fw-bold text-dark">${escapeHtml(a.nama_lengkap)}</td>
+              <td class="border-start"><span class="badge bg-light text-dark border px-2.5 py-1 rounded-2">${escapeHtml(a.username)}</span></td>
+              <td class="border-start text-secondary small">${escapeHtml(a.email || '-')}</td>
+              <td class="pe-3 text-end border-start">
+                <button class="btn btn-sm btn-outline-warning border-0 rounded-2 me-1" title="Edit Admin" onclick="showModalEditAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-pencil-square"></i></button>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-2" title="Hapus Admin" onclick="handleDeleteAdmin('${escapeHtml(a.id_admin)}')"><i class="bi bi-trash-fill"></i></button>
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+
+        if (paginationInfo) paginationInfo.innerHTML = `Menampilkan ${startIdx + 1} sampai ${endIdx} dari ${totalData} entri`;
+        
+        if (paginationControls) {
+          let pghtml = '';
+          pghtml += `<li class="page-item ${petugasTableCurrentPage === 1 ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage--; renderPetugasTable(); return false;">Sebelumnya</a></li>`;
+          for (let p = 1; p <= totalPages; p++) {
+            if (p === 1 || p === totalPages || (p >= petugasTableCurrentPage - 1 && p <= petugasTableCurrentPage + 1)) {
+              pghtml += `<li class="page-item ${petugasTableCurrentPage === p ? 'active' : ''}"><a class="page-link shadow-sm rounded-3 me-1" href="#" onclick="petugasTableCurrentPage = ${p}; renderPetugasTable(); return false;">${p}</a></li>`;
+            } else if (p === petugasTableCurrentPage - 2 || p === petugasTableCurrentPage + 2) {
+              pghtml += `<li class="page-item disabled"><a class="page-link shadow-sm rounded-3 me-1" href="#">...</a></li>`;
+            }
+          }
+          pghtml += `<li class="page-item ${petugasTableCurrentPage === totalPages ? 'disabled' : ''}"><a class="page-link shadow-sm rounded-3" href="#" onclick="petugasTableCurrentPage++; renderPetugasTable(); return false;">Selanjutnya</a></li>`;
+          paginationControls.innerHTML = pghtml;
+        }
+      })
+      .getAdminListFull();
+  }
+
+  function showModalEditAdmin(idAdmin) {
+    const item = currentPetugasCache.find(a => String(a.id_admin).trim() === String(idAdmin).trim());
+    if (!item) {
+      showErrorAlert("Data admin tidak ditemukan.");
+      return;
+    }
+
+    Swal.fire({
+      title: 'Edit Data Admin',
+      html: `
+        <div class="text-start p-1">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" id="swal-edit-adm-nama" class="form-control rounded-3" value="${escapeHtml(item.nama_lengkap || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+            <input type="text" id="swal-edit-adm-user" class="form-control rounded-3" value="${escapeHtml(item.username || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" id="swal-edit-adm-email" class="form-control rounded-3" value="${escapeHtml(item.email || '')}">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Kata Sandi Baru (Kosongkan Jika Tidak Diubah)</label>
+            <input type="password" id="swal-edit-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi baru" autocomplete="new-password">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Perubahan',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nama = document.getElementById('swal-edit-adm-nama').value.trim();
+        const username = document.getElementById('swal-edit-adm-user').value.trim();
+        const email = document.getElementById('swal-edit-adm-email').value.trim();
+        const password = document.getElementById('swal-edit-adm-pass').value.trim();
+
+        if (!nama || !username || !email) {
+          Swal.showValidationMessage('Nama Lengkap, Username, dan Email wajib diisi!');
+          return false;
+        }
+
+        return {
+          id_admin: item.id_admin,
+          nama_lengkap: nama,
+          username: username,
+          email: email,
+          password: password
+        };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Memperbarui data admin...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal memperbarui data admin.');
+            }
+          })
+          .saveAdminData(res.value);
+      }
+    });
+  }
+
+  function showModalTambahAdmin() {
+    Swal.fire({
+      title: 'Tambah Admin Baru',
+      html: `
+        <div class="text-start p-1">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Nama Lengkap <span class="text-danger">*</span></label>
+            <input type="text" id="swal-adm-nama" class="form-control rounded-3" placeholder="Contoh: Ahmad Syahputra, S.IP">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Username <span class="text-danger">*</span></label>
+            <input type="text" id="swal-adm-user" class="form-control rounded-3" placeholder="Contoh: admin2" autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+            <input type="email" id="swal-adm-email" class="form-control rounded-3" placeholder="admin@gmail.com" autocomplete="off">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Kata Sandi <span class="text-danger">*</span></label>
+            <input type="password" id="swal-adm-pass" class="form-control rounded-3" placeholder="Masukkan kata sandi" autocomplete="new-password">
+          </div>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Simpan Admin',
+      confirmButtonColor: '#0052cc',
+      cancelButtonText: 'Batal',
+      preConfirm: () => {
+        const nama = document.getElementById('swal-adm-nama').value.trim();
+        const username = document.getElementById('swal-adm-user').value.trim();
+        const email = document.getElementById('swal-adm-email').value.trim();
+        const password = document.getElementById('swal-adm-pass').value.trim();
+
+        if (!nama || !username || !email || !password) {
+          Swal.showValidationMessage('Seluruh kolom data admin wajib diisi!');
+          return false;
+        }
+        return { nama_lengkap: nama, username, email, password };
+      }
+    }).then(res => {
+      if (res.isConfirmed && res.value) {
+        showLoadingAlert('Menyimpan admin baru...');
+        google.script.run
+          .withSuccessHandler(r => {
+            closeLoadingAlert();
+            if (r && r.success) {
+              showSuccessAlert(r.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(r ? r.message : 'Gagal menyimpan admin.');
+            }
+          })
+          .saveAdminData(res.value);
+      }
+    });
+  }
+
+  function handleDeleteAdmin(idAdmin) {
+    const item = currentPetugasCache.find(a => String(a.id_admin).trim() === String(idAdmin).trim());
+    const nameStr = item ? item.nama_lengkap : 'Admin ini';
+
+    Swal.fire({
+      title: 'Hapus Admin?',
+      text: `Apakah Anda yakin ingin menghapus admin "${nameStr}" dari sistem?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal'
+    }).then(r => {
+      if (r.isConfirmed) {
+        showLoadingAlert('Menghapus admin...');
+        google.script.run
+          .withSuccessHandler(res => {
+            closeLoadingAlert();
+            if (res && res.success) {
+              showSuccessAlert(res.message, () => renderPetugasTable());
+            } else {
+              showErrorAlert(res ? res.message : 'Gagal menghapus admin.');
+            }
+          })
+          .deleteAdminData(idAdmin);
+      }
+    });
+  }
+
+</script>

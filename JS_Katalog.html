@@ -1,0 +1,431 @@
+<script>
+  /* LOGIKA KATALOG BUKU (ENHANCED CATALOG SUITE FOR SISWA) */
+  let catalogDataCache = [];
+  let currentCatalogViewMode = 'grid';
+  let activeCatalogCategory = 'semua';
+  let catalogTableCurrentPage = 1;
+
+  function loadKatalogData() {
+    try {
+      const gridContainer = document.getElementById('katalog-grid-container');
+      if (!gridContainer) return;
+
+      gridContainer.innerHTML = '<div class="col-12 text-center text-muted py-5"><div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div><div>Memuat koleksi buku...</div></div>';
+
+      google.script.run
+        .withSuccessHandler(data => {
+          catalogDataCache = data || [];
+          catalogTableCurrentPage = 1;
+          updateKatalogCategoryDropdown(catalogDataCache);
+          renderCatalogView();
+        })
+        .withFailureHandler(err => {
+          console.error("Gagal memuat katalog:", err);
+          gridContainer.innerHTML = '<div class="col-12 text-center text-danger py-5">Gagal memuat koleksi buku dari server.</div>';
+        })
+        .getKatalogBuku('', 'semua');
+    } catch (err) {
+      console.error("Load Katalog Exception:", err);
+    }
+  }
+
+  function updateKatalogCategoryDropdown(data) {
+    const selectKategori = document.getElementById('katalog-filter-kategori');
+    if (!selectKategori) return;
+
+    const currentVal = selectKategori.value || 'semua';
+    const categoriesSet = new Set();
+
+    (data || []).forEach(b => {
+      if (b.kategori && String(b.kategori).trim()) {
+        categoriesSet.add(String(b.kategori).trim());
+      }
+    });
+
+    const sortedCategories = Array.from(categoriesSet).sort();
+
+    let html = '<option value="semua">Semua Kategori</option>';
+    sortedCategories.forEach(cat => {
+      const isSelected = cat.toLowerCase() === currentVal.toLowerCase() ? 'selected' : '';
+      html += `<option value="${escapeHtml(cat.toLowerCase())}" ${isSelected}>${escapeHtml(cat)}</option>`;
+    });
+
+    selectKategori.innerHTML = html;
+  }
+
+  function setKatalogViewMode(mode) {
+    currentCatalogViewMode = mode;
+    const btnGrid = document.getElementById('katalog-btn-grid');
+    const btnList = document.getElementById('katalog-btn-list');
+    const gridContainer = document.getElementById('katalog-grid-container');
+    const listContainer = document.getElementById('katalog-list-container');
+
+    if (mode === 'grid') {
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
+      if (gridContainer) gridContainer.classList.remove('d-none');
+      if (listContainer) listContainer.classList.add('d-none');
+    } else {
+      if (btnGrid) { btnGrid.className = 'btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3'; }
+      if (btnList) { btnList.className = 'btn btn-sm btn-primary rounded-2 fw-semibold px-3 active'; }
+      if (gridContainer) gridContainer.classList.add('d-none');
+      if (listContainer) listContainer.classList.remove('d-none');
+    }
+    catalogTableCurrentPage = 1;
+    renderCatalogView();
+  }
+
+  function filterKatalogData() {
+    const selectKategori = document.getElementById('katalog-filter-kategori');
+    if (selectKategori) {
+      activeCatalogCategory = selectKategori.value.toLowerCase();
+    }
+    catalogTableCurrentPage = 1;
+    renderCatalogView();
+  }
+
+  function changeCatalogTablePage(newPage) {
+    catalogTableCurrentPage = newPage;
+    renderCatalogView();
+  }
+
+  function renderCatalogView() {
+    const gridContainer = document.getElementById('katalog-grid-container');
+    const listBody = document.getElementById('katalog-list-table-body');
+
+    const search = document.getElementById('katalog-search-input') ? document.getElementById('katalog-search-input').value.trim().toLowerCase() : '';
+    const stokFilter = document.getElementById('katalog-filter-stok') ? document.getElementById('katalog-filter-stok').value : 'semua';
+
+    const filtered = catalogDataCache.filter(b => {
+      const matchSearch = !search ||
+        String(b.judul_buku || '').toLowerCase().includes(search) ||
+        String(b.penulis || '').toLowerCase().includes(search) ||
+        String(b.isbn || '').toLowerCase().includes(search);
+
+      const matchCategory = !activeCatalogCategory || activeCatalogCategory === 'semua' ||
+        String(b.kategori || '').toLowerCase() === activeCatalogCategory;
+
+      const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+      const matchStok = !stokFilter || stokFilter === 'semua' ||
+        (stokFilter === 'tersedia' && stokNum > 0) ||
+        (stokFilter === 'habis' && stokNum <= 0);
+
+      return matchSearch && matchCategory && matchStok;
+    });
+
+    if (filtered.length === 0) {
+      const emptyHtml = '<div class="col-12 text-center text-muted py-5"><i class="bi bi-journal-x display-4 d-block text-secondary mb-2 opacity-50"></i><div class="fw-semibold">Tidak ada koleksi buku yang sesuai dengan pencarian Anda.</div><small class="text-muted">Coba ubah kata kunci pencarian atau filter kategori.</small></div>';
+      if (gridContainer) gridContainer.innerHTML = emptyHtml;
+      if (listBody) listBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">Tidak ada koleksi buku yang sesuai.</td></tr>';
+      
+      const infoEl = document.getElementById('katalog-table-pagination-info');
+      if (infoEl) infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+      const controlsEl = document.getElementById('katalog-table-pagination-controls');
+      if (controlsEl) controlsEl.innerHTML = '';
+      return;
+    }
+
+    if (currentCatalogViewMode === 'grid') {
+      let gridHtml = '';
+      filtered.forEach(b => {
+        const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+        const isAvailable = stokNum > 0;
+        const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
+        const badgeText = isAvailable ? `Tersedia ${stokNum}` : 'Stok Habis';
+
+        const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+        const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+        const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
+
+        let coverHtml = '';
+        if (coverUrl) {
+          coverHtml = `<img src="${coverUrl}" alt="Sampul ${escapeHtml(b.judul_buku)}" class="book-cover-img" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('d-none');">
+                       <div class="w-100 h-100 d-none flex-column align-items-center justify-content-center p-3 text-white text-center" style="background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);">
+                         <i class="bi bi-journal-bookmark-fill display-5 mb-1 opacity-75"></i>
+                         <div class="fw-bold small leading-tight">${escapeHtml(b.judul_buku)}</div>
+                       </div>`;
+        } else {
+          coverHtml = `<div class="w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3 text-white text-center" style="background: linear-gradient(135deg, #0052cc 0%, #003da6 100%);">
+                         <i class="bi bi-journal-bookmark-fill display-5 mb-1 opacity-75"></i>
+                         <div class="fw-bold small leading-tight">${escapeHtml(b.judul_buku)}</div>
+                       </div>`;
+        }
+
+        const ebookBadgeHtml = hasEbook 
+          ? `<span class="badge badge-ebook rounded-pill px-2.5 py-1 small fw-semibold shadow-xs" title="Tersedia Versi E-Book">E-Book</span>` 
+          : '';
+
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        let actionBtnHtml = '';
+
+        if (isAdmin) {
+          actionBtnHtml = `<div class="d-flex gap-2">
+                             <button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-eye"></i><span>Detail</span></button>
+                             <button class="btn btn-sm btn-primary w-100 rounded-3 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i><span>Edit</span></button>
+                           </div>`;
+        } else {
+          actionBtnHtml = `<button class="btn btn-sm btn-outline-primary w-100 rounded-3 fw-semibold py-1.5 d-inline-flex align-items-center justify-content-center gap-1.5" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+        }
+
+        gridHtml += `
+          <div class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 rounded-4 shadow-sm p-3 book-card-item d-flex flex-column justify-content-between cursor-pointer" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')">
+              <div>
+                <div class="book-cover-container mb-3">
+                  ${coverHtml}
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-1">
+                  <div class="d-flex align-items-center gap-1">
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-2.5 py-1 small fw-semibold">${escapeHtml(b.kategori || 'Umum')}</span>
+                    ${ebookBadgeHtml}
+                  </div>
+                  <span class="badge ${badgeClass} border rounded-pill px-2.5 py-1 small fw-semibold">${badgeText}</span>
+                </div>
+                <h6 class="fw-bold text-dark mb-1 leading-tight text-truncate" title="${escapeHtml(b.judul_buku)}">${escapeHtml(b.judul_buku)}</h6>
+                <small class="text-muted d-block mb-3 text-truncate">Penulis: <b>${escapeHtml(b.penulis || '-')}</b></small>
+              </div>
+
+              <div class="pt-2 border-top mt-2" onclick="event.stopPropagation();">
+                ${actionBtnHtml}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      if (gridContainer) gridContainer.innerHTML = gridHtml;
+    } else {
+      const totalItems = filtered.length;      const entriesSelect = document.getElementById('katalog-table-entries');
+      const pageSize = entriesSelect ? (parseInt(entriesSelect.value, 10) || 5) : 5;
+      const totalPages = Math.ceil(totalItems / pageSize) || 1;
+
+      if (catalogTableCurrentPage > totalPages) catalogTableCurrentPage = totalPages;
+      if (catalogTableCurrentPage < 1) catalogTableCurrentPage = 1;
+
+      const startIndex = (catalogTableCurrentPage - 1) * pageSize;
+      const endIndex = Math.min(startIndex + pageSize, totalItems);
+      const pageItems = filtered.slice(startIndex, endIndex);
+
+      let listHtml = '';
+      pageItems.forEach((b, idx) => {
+        const stokNum = Number((b.stok_buku !== undefined ? b.stok_buku : b.stok_aktual) || 0);
+        const isAvailable = stokNum > 0;
+        const badgeClass = isAvailable ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle';
+        const badgeText = isAvailable ? `Tersedia ${stokNum}` : 'Stok Habis';
+
+        const rawCover = b.url_sampul ? String(b.url_sampul).trim() : '';
+        const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+        const hasEbook = Boolean(b.url_file_buku && String(b.url_file_buku).trim() !== '');
+
+        const imgThumb = coverUrl 
+          ? `<img src="${coverUrl}" class="rounded-3 shadow-sm" style="width: 44px; height: 56px; object-fit: cover;">`
+          : `<div class="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center shadow-xs" style="width: 44px; height: 56px;"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>`;
+
+        const isAdmin = currentUser && currentUser.role === 'admin';
+        let actionBtn = '';
+
+        if (isAdmin) {
+          actionBtn = `<div class="d-flex justify-content-center gap-1.5">
+                         <button class="btn btn-sm btn-outline-primary border-0 me-1" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-eye"></i></button>
+                         <button class="btn btn-sm btn-outline-warning border-0" onclick="showFormBukuEdit('${escapeHtml(b.id_buku)}')"><i class="bi bi-pencil-square"></i></button>
+                       </div>`;
+        } else {
+          actionBtn = `<button class="btn btn-sm btn-outline-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-2 shadow-xs" onclick="openDetailBukuModal('${escapeHtml(b.id_buku)}')"><i class="bi bi-info-circle"></i><span>Lihat Detail Buku</span></button>`;
+        }
+
+        listHtml += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start text-center" style="width: 75px;">${imgThumb}</td>
+            <td class="border-start text-start">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="fw-bold text-dark">${escapeHtml(b.judul_buku)}</span>
+                ${hasEbook ? '<span class="badge badge-ebook rounded-pill px-2.5 py-0.5 small fw-semibold ms-1" style="font-size:0.75rem;">E-Book</span>' : ''}
+              </div>
+              <small class="text-muted d-block">Penulis: ${escapeHtml(b.penulis || '-')} &bull; ISBN: ${escapeHtml(b.isbn || '-')}</small>
+            </td>
+            <td class="border-start text-center" style="width: 140px;"><span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 fw-semibold">${escapeHtml(b.kategori || 'Umum')}</span></td>
+            <td class="border-start text-center" style="width: 130px;"><span class="badge ${badgeClass} border rounded-pill px-3 py-1.5 fw-semibold">${badgeText}</span></td>
+            <td class="border-start text-center px-3" style="width: 180px;">${actionBtn}</td>
+          </tr>
+        `;
+      });
+      if (listBody) listBody.innerHTML = listHtml;
+
+      // Update Pagination Info & Controls
+      const infoEl = document.getElementById('katalog-table-pagination-info');
+      if (infoEl) {
+        if (totalItems === 0) {
+          infoEl.innerText = 'Menampilkan 0 dari 0 entri';
+        } else {
+          infoEl.innerText = `Menampilkan ${startIndex + 1} sampai ${endIndex} dari ${totalItems} entri`;
+        }
+      }
+
+      const controlsEl = document.getElementById('katalog-table-pagination-controls');
+      if (controlsEl) {
+        if (totalItems === 0) {
+          controlsEl.innerHTML = '';
+        } else {
+          let pagHtml = '';
+          const prevDisabled = catalogTableCurrentPage === 1 ? 'disabled' : '';
+          pagHtml += `<li class="page-item ${prevDisabled}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${catalogTableCurrentPage - 1}); return false;">Sebelumnya</a></li>`;
+
+          for (let p = 1; p <= totalPages; p++) {
+            const activeClass = p === catalogTableCurrentPage ? 'active' : '';
+            pagHtml += `<li class="page-item ${activeClass}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${p}); return false;">${p}</a></li>`;
+          }
+
+          const nextDisabled = catalogTableCurrentPage === totalPages ? 'disabled' : '';
+          pagHtml += `<li class="page-item ${nextDisabled}"><a class="page-link rounded-2" href="#" onclick="changeCatalogTablePage(${catalogTableCurrentPage + 1}); return false;">Selanjutnya</a></li>`;
+
+          controlsEl.innerHTML = pagHtml;
+        }
+      }
+    }
+  }
+
+  function openDetailBukuModal(idBuku) {
+    const buku = catalogDataCache.find(b => String(b.id_buku) === String(idBuku));
+    if (!buku) return;
+
+    const elJudul = document.getElementById('detail-judul-buku');
+    if (elJudul) elJudul.innerText = buku.judul_buku || 'Judul Buku';
+
+    const elPenulis = document.getElementById('detail-penulis');
+    if (elPenulis) elPenulis.innerText = buku.penulis || '-';
+
+    const elPenerbit = document.getElementById('detail-penerbit');
+    if (elPenerbit) elPenerbit.innerText = buku.penerbit || '-';
+
+    const elTahun = document.getElementById('detail-tahun');
+    if (elTahun) elTahun.innerText = buku.tahun_terbit || '-';
+
+    const elKategori = document.getElementById('detail-kategori');
+    if (elKategori) elKategori.innerText = buku.kategori || 'Umum';
+
+    const elIsbn = document.getElementById('detail-isbn');
+    if (elIsbn) elIsbn.innerText = `ISBN: ${buku.isbn || '-'}`;
+    
+    const stokNum = Number((buku.stok_buku !== undefined ? buku.stok_buku : buku.stok_aktual) || 0);
+    const badgeStok = document.getElementById('detail-badge-stok');
+    if (badgeStok) {
+      if (stokNum > 0) {
+        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.innerText = `Tersedia ${stokNum}`;
+      } else {
+        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
+        badgeStok.innerText = 'Stok Habis';
+      }
+    }
+
+    const rawCover = buku.url_sampul ? String(buku.url_sampul).trim() : '';
+    const coverUrl = rawCover ? getDirectImageUrl(rawCover) : '';
+    const coverImg = document.getElementById('detail-cover-img');
+    const coverFallback = document.getElementById('detail-cover-fallback');
+    const fallbackTitle = document.getElementById('detail-fallback-title');
+
+    if (coverImg) {
+      if (coverUrl) {
+        coverImg.src = coverUrl;
+        coverImg.classList.remove('d-none');
+        if (coverFallback) coverFallback.classList.add('d-none');
+      } else {
+        coverImg.classList.add('d-none');
+        if (coverFallback) coverFallback.classList.remove('d-none');
+        if (fallbackTitle) fallbackTitle.innerText = buku.judul_buku || 'Judul Buku';
+      }
+    }
+
+    // E-Book Action Section Handling
+    const hasEbook = Boolean(buku.url_file_buku && String(buku.url_file_buku).trim() !== '');
+    const badgeEbookContainer = document.getElementById('detail-badge-ebook-container');
+    const sectionEbook = document.getElementById('detail-ebook-section');
+    const btnUnduhEbook = document.getElementById('detail-btn-unduh-ebook');
+    const btnBacaEbook = document.getElementById('detail-btn-baca-ebook');
+
+    if (hasEbook) {
+      if (badgeEbookContainer) badgeEbookContainer.classList.remove('d-none');
+      if (sectionEbook) sectionEbook.classList.remove('d-none');
+      if (btnUnduhEbook) {
+        btnUnduhEbook.href = getDriveDownloadUrl(buku.url_file_buku);
+      }
+      if (btnBacaEbook) {
+        btnBacaEbook.onclick = function() {
+          openModalBacaBuku(buku.url_file_buku, buku.judul_buku);
+        };
+      }
+    } else {
+      if (badgeEbookContainer) badgeEbookContainer.classList.add('d-none');
+      if (sectionEbook) sectionEbook.classList.add('d-none');
+    }
+
+    const btnPinjam = document.getElementById('detail-btn-pinjam');
+    if (btnPinjam) {
+      if (currentUser && currentUser.role === 'admin') {
+        btnPinjam.classList.remove('d-none');
+        btnPinjam.innerHTML = '<i class="bi bi-pencil-square me-2"></i>Edit Data Buku';
+        btnPinjam.onclick = function() {
+          const modalEl = document.getElementById('modalDetailBuku');
+          if (modalEl && typeof bootstrap !== 'undefined') {
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) bsModal.hide();
+          }
+          showFormBukuEdit(buku.id_buku);
+        };
+      } else {
+        btnPinjam.classList.add('d-none');
+      }
+    }
+
+    const modalEl = document.getElementById('modalDetailBuku');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function openModalBacaBuku(urlFileBuku, judulBuku) {
+    const previewUrl = getDrivePreviewUrl(urlFileBuku);
+    const downloadUrl = getDriveDownloadUrl(urlFileBuku);
+    
+    const judulEl = document.getElementById('baca-buku-judul');
+    if (judulEl) judulEl.innerText = judulBuku || 'Membaca E-Book';
+    
+    const btnUnduh = document.getElementById('baca-buku-btn-unduh');
+    if (btnUnduh) {
+      btnUnduh.href = downloadUrl;
+    }
+    
+    const loaderEl = document.getElementById('baca-buku-loading');
+    if (loaderEl) loaderEl.classList.remove('d-none');
+    
+    const iframeEl = document.getElementById('baca-buku-iframe');
+    if (iframeEl) {
+      iframeEl.src = previewUrl;
+    }
+    
+    const modalEl = document.getElementById('modalBacaBuku');
+    if (modalEl && typeof bootstrap !== 'undefined') {
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
+    }
+  }
+
+  function closeModalBacaBuku() {
+    const iframeEl = document.getElementById('baca-buku-iframe');
+    if (iframeEl) {
+      iframeEl.src = 'about:blank';
+    }
+    const loaderEl = document.getElementById('baca-buku-loading');
+    if (loaderEl) loaderEl.classList.remove('d-none');
+  }
+
+  function handlePinjamBukuKatalog(idBuku) {
+    switchSubView('peminjaman');
+    const buku = catalogDataCache.find(b => String(b.id_buku) === String(idBuku));
+    if (buku && typeof selectBukuPinjam === 'function') {
+      selectBukuPinjam(buku);
+    }
+  }
+
+</script>

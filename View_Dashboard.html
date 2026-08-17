@@ -1,0 +1,246 @@
+        <!-- SUBVIEW: DASHBOARD ADMIN OVERVIEW -->
+        <div id="subview-dashboard" class="d-none">
+          
+          <!-- 4 STAT CARDS GRID ADMIN -->
+          <div class="row g-3 mb-4">
+            
+            <div class="col-md-3">
+              <div class="stat-card-item stat-blue">
+                <div>
+                  <div class="stat-title">TOTAL BUKU</div>
+                  <div class="stat-number" id="dash-total-buku">0</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-journal-bookmark-fill"></i></div>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="stat-card-item stat-green">
+                <div>
+                  <div class="stat-title">TOTAL SISWA</div>
+                  <div class="stat-number" id="dash-total-anggota">0</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-person-fill"></i></div>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="stat-card-item stat-orange">
+                <div>
+                  <div class="stat-title">TOTAL BUKU DIPINJAM</div>
+                  <div class="stat-number" id="dash-pinjam-aktif">0</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-file-earmark-text-fill"></i></div>
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <div class="stat-card-item stat-red">
+                <div>
+                  <div class="stat-title">TOTAL PENGEMBALIAN TERLAMBAT</div>
+                  <div class="stat-number" id="dash-terlambat">0</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-exclamation-triangle-fill"></i></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE AREA: TABLE & DONUT CHART SINKRON DATABASE -->
+          <div class="row g-3">
+            
+            <div class="col-md-8">
+              <div class="dashboard-section-card">
+                <div class="section-card-header">
+                  <h5 class="section-card-title">Daftar Peminjaman Aktif</h5>
+                  <a href="#" onclick="switchSubView('peminjaman'); return false;" class="section-card-link">Lihat Semua</a>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
+                    <thead class="bg-light text-muted small uppercase">
+                      <tr>
+                        <th style="width: 50px;" class="ps-3 text-center">NO.</th>
+                        <th class="border-start">PEMINJAM</th>
+                        <th class="border-start">JUDUL BUKU</th>
+                        <th class="border-start">PERIODE PINJAM</th>
+                        <th class="pe-3 text-end border-start">STATUS & TENGGAT</th>
+                      </tr>
+                    </thead>
+                    <tbody id="table-peminjaman-hari-ini">
+                      <tr>
+                        <td colspan="5" class="text-center text-muted py-3">Memuat data transaksi...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- FOOTER PAGINASI DAFTAR PINJAMAN AKTIF ADMIN -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-2 border-top">
+                  <div class="text-muted small fw-semibold" id="dash-admin-pagination-info">
+                    Menampilkan 0 dari 0 peminjaman aktif
+                  </div>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 small fw-semibold" id="btn-dash-admin-prev" onclick="changeAdminDashLoanPage(-1)" disabled>Sebelumnya</button>
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 small fw-semibold" id="btn-dash-admin-next" onclick="changeAdminDashLoanPage(1)" disabled>Selanjutnya</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="dashboard-section-card d-flex flex-column align-items-center justify-content-between">
+                <div class="w-100 text-start mb-2">
+                  <h5 class="section-card-title">Ringkasan Koleksi</h5>
+                </div>
+
+                <div style="position: relative; width: 190px; height: 190px;">
+                  <canvas id="chartRingkasanKoleksi"></canvas>
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div class="fw-bold fs-4 text-dark" id="chart-center-total">-</div>
+                    <small class="text-muted fw-bold" style="font-size: 0.65rem;">TOTAL BUKU</small>
+                  </div>
+                </div>
+
+                <!-- Legend Grid Dinamis Sesuai Database -->
+                <div class="legend-grid w-100" id="chart-legend-grid">
+                  <div class="legend-item-box"><span class="legend-dot" style="background:#0052cc;"></span> Memuat kategori...</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM BANNER -->
+          <div class="dashboard-banner-card mt-4">
+            <div class="banner-text-side">
+              <h3 class="banner-headline">Kelola Perpustakaan Lebih Cerdas</h3>
+              <p class="banner-subtext">SiPustaka membantu Anda mengelola perpustakaan dengan lebih efisien, mulai dari inventarisasi otomatis hingga pelacakan peminjaman real-time.</p>
+            </div>
+
+            <div class="banner-quote-glass">
+              <div class="quote-title">"Buku adalah jendela dunia"</div>
+              <div class="quote-author">&mdash; Pepatah Populer</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUBVIEW: DASHBOARD SISWA (PERSONAL & RELEVAN) -->
+        <div id="subview-dashboard-siswa" class="d-none">
+          
+          <!-- 3 STAT CARDS PERSONAL SISWA -->
+          <div class="row g-3 mb-4">
+            
+            <div class="col-md-4">
+              <div class="stat-card-item stat-blue cursor-pointer" onclick="switchSubView('peminjaman-siswa')">
+                <div>
+                  <div class="stat-title">TOTAL PINJAMAN AKTIF</div>
+                  <div class="stat-number" id="siswa-pinjam-aktif">-</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-journal-bookmark-fill"></i></div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="stat-card-item stat-red cursor-pointer" onclick="switchSubView('peminjaman-siswa')">
+                <div>
+                  <div class="stat-title">TOTAL PENGEMBALIAN TERLAMBAT</div>
+                  <div class="stat-number" id="siswa-pinjam-terlambat">-</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-exclamation-triangle-fill"></i></div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="stat-card-item stat-green cursor-pointer" onclick="switchSubView('peminjaman-siswa')">
+                <div>
+                  <div class="stat-title">TOTAL BUKU DIBACA</div>
+                  <div class="stat-number" id="siswa-total-dibaca">-</div>
+                </div>
+                <div class="icon-box-stat"><i class="bi bi-check-circle-fill"></i></div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MIDDLE AREA: MY LOANS & KOLEKSI BUKU -->
+          <div class="row g-3">
+            
+            <div class="col-md-8">
+              <div class="dashboard-section-card">
+                <div class="section-card-header">
+                  <h5 class="section-card-title">Daftar Pinjaman Aktif Saya</h5>
+                  <a href="#" onclick="switchSubView('peminjaman-siswa'); return false;" class="section-card-link">Lihat Semua Pinjaman</a>
+                </div>
+
+                <div class="table-responsive">
+                  <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
+                    <thead class="bg-light text-muted small uppercase">
+                      <tr>
+                        <th class="ps-3 text-center" style="width: 50px;">NO.</th>
+                        <th class="border-start">JUDUL BUKU</th>
+                        <th class="border-start">PERIODE PINJAM</th>
+                        <th class="pe-3 text-end border-start">STATUS & TENGGAT</th>
+                      </tr>
+                    </thead>
+                    <tbody id="table-pinjaman-saya">
+                      <tr>
+                        <td colspan="4" class="text-center text-muted py-3">Memuat data pinjaman...</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- FOOTER PAGINASI DAFTAR PINJAMAN AKTIF SAYA -->
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-2 border-top">
+                  <div class="text-muted small fw-semibold" id="dash-siswa-pagination-info">
+                    Menampilkan 0 dari 0 pinjaman aktif
+                  </div>
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 small fw-semibold" id="btn-dash-siswa-prev" onclick="changeStudentDashLoanPage(-1)" disabled>Sebelumnya</button>
+                    <button class="btn btn-sm btn-outline-secondary rounded-2 px-2.5 py-1 small fw-semibold" id="btn-dash-siswa-next" onclick="changeStudentDashLoanPage(1)" disabled>Selanjutnya</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="dashboard-section-card d-flex flex-column align-items-center justify-content-between">
+                <div class="w-100 text-start mb-2 d-flex justify-content-between align-items-center">
+                  <h5 class="section-card-title">Koleksi Buku</h5>
+                  <a href="#" onclick="switchSubView('katalog'); return false;" class="section-card-link">Lihat Koleksi Buku</a>
+                </div>
+
+                <div style="position: relative; width: 190px; height: 190px;">
+                  <canvas id="chartRingkasanKoleksiSiswa"></canvas>
+                  <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                    <div class="fw-bold fs-4 text-dark" id="chart-center-total-siswa">-</div>
+                    <small class="text-muted fw-bold" style="font-size: 0.65rem;">TOTAL BUKU</small>
+                  </div>
+                </div>
+
+                <!-- Legend Grid Dinamis Sesuai Database -->
+                <div class="legend-grid w-100" id="chart-legend-grid-siswa">
+                  <div class="legend-item-box"><span class="legend-dot" style="background:#0052cc;"></span> Memuat kategori...</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- BOTTOM BANNER SISWA -->
+          <div class="dashboard-banner-card mt-4">
+            <div class="banner-text-side">
+              <h3 class="banner-headline" id="siswa-banner-greeting">Semangat Membaca & Rajin Belajar!</h3>
+              <p class="banner-subtext">Pastikan untuk mengembalikan atau memperpanjang peminjaman buku tepat waktu agar teman-teman lain di sekolah juga dapat membaca koleksi perpustakaan.</p>
+            </div>
+
+            <div class="banner-quote-glass">
+              <div class="quote-title">"Buku adalah jendela dunia"</div>
+              <div class="quote-author">&mdash; Pepatah Populer</div>
+            </div>
+          </div>
+
+        </div>
+

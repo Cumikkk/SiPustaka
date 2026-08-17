@@ -1,0 +1,286 @@
+<script>
+  /* LOGIKA DASHBOARD ADMIN */
+  let adminDashActiveLoans = [];
+  let adminDashLoansPage = 1;
+
+  function changeAdminDashLoanPage(delta) {
+    adminDashLoansPage += delta;
+    renderAdminDashLoansTable();
+  }
+
+  function renderAdminDashLoansTable() {
+    const tbody = document.getElementById('table-peminjaman-hari-ini');
+    if (!tbody) return;
+
+    const totalLoans = adminDashActiveLoans.length;
+    const pageSize = 5;
+    const totalPages = Math.ceil(totalLoans / pageSize) || 1;
+
+    if (adminDashLoansPage > totalPages) adminDashLoansPage = totalPages;
+    if (adminDashLoansPage < 1) adminDashLoansPage = 1;
+
+    const startIndex = (adminDashLoansPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalLoans);
+    const pageItems = adminDashActiveLoans.slice(startIndex, endIndex);
+
+    if (totalLoans === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-3">Saat ini tidak ada peminjaman aktif.</td></tr>';
+    } else {
+      let html = '';
+      pageItems.forEach((t, idx) => {
+        const badgeClass = t.statusBadge ? t.statusBadge.class : 'bg-primary text-white';
+        const badgeText = t.statusBadge ? t.statusBadge.text : 'Dipinjam';
+        const subText = t.statusBadge ? t.statusBadge.subText : (t.subText || '');
+        const periode = t.periode_pinjam || (t.tgl_pinjam_indo + ' - ' + t.tgl_jatuh_tempo_indo);
+
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start">
+              <div class="fw-bold text-dark">${escapeHtml(t.nama_anggota)}</div>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.72rem;">${escapeHtml(t.kelas_anggota)}</small>
+            </td>
+            <td class="border-start">
+              <div class="fw-semibold text-dark">${escapeHtml(t.nama_buku)}</div>
+              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(t.kategori_buku)}</small>
+            </td>
+            <td class="small fw-semibold text-dark border-start">${escapeHtml(periode)}</td>
+            <td class="pe-3 text-end border-start">
+              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    const infoEl = document.getElementById('dash-admin-pagination-info');
+    if (infoEl) {
+      if (totalLoans === 0) {
+        infoEl.innerText = 'Menampilkan 0 dari 0 peminjaman aktif';
+      } else {
+        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} peminjaman aktif`;
+      }
+    }
+
+    const btnPrev = document.getElementById('btn-dash-admin-prev');
+    const btnNext = document.getElementById('btn-dash-admin-next');
+    if (btnPrev) btnPrev.disabled = (adminDashLoansPage <= 1);
+    if (btnNext) btnNext.disabled = (adminDashLoansPage >= totalPages);
+  }
+
+  function loadDashboardData() {
+    try {
+      initDonutChartDynamic(null);
+
+      google.script.run
+        .withSuccessHandler(data => {
+          if (!data) return;
+          adminDataCache = data;
+          
+          const elBuku = document.getElementById('dash-total-buku');
+          if (elBuku) elBuku.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          const elAnggota = document.getElementById('dash-total-anggota');
+          if (elAnggota) elAnggota.innerText = (data.stats.totalAnggota || 0).toLocaleString('id-ID');
+
+          const elPinjam = document.getElementById('dash-pinjam-aktif');
+          if (elPinjam) elPinjam.innerText = (data.stats.peminjamanAktif || 0).toLocaleString('id-ID');
+
+          const elTerlambat = document.getElementById('dash-terlambat');
+          if (elTerlambat) elTerlambat.innerText = (data.stats.peminjamanTerlambat || 0).toLocaleString('id-ID');
+
+          const elCenter = document.getElementById('chart-center-total');
+          if (elCenter) elCenter.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          adminDashActiveLoans = data.peminjamanAktifAll || data.peminjamanTerbaru || [];
+          adminDashLoansPage = 1;
+          renderAdminDashLoansTable();
+
+          initDonutChartDynamic(data.kategoriStats);
+        })
+        .getAdminDashboardData();
+    } catch (err) {
+      console.error("Load Dashboard Exception:", err);
+    }
+  }
+
+  function initDonutChartDynamic(kategoriStats, canvasId = 'chartRingkasanKoleksi', legendId = 'chart-legend-grid', isSiswa = false) {
+    try {
+      const ctx = document.getElementById(canvasId);
+      const legendGrid = document.getElementById(legendId);
+      if (!ctx || typeof Chart === 'undefined') return;
+
+      let labels = [];
+      let dataValues = [];
+      let backgroundColors = [];
+      let legendHtml = '';
+
+      if (kategoriStats && kategoriStats.length > 0) {
+        kategoriStats.forEach(item => {
+          labels.push(item.label);
+          dataValues.push(item.count);
+          backgroundColors.push(item.color);
+          legendHtml += `
+            <div class="legend-item-box">
+              <span class="legend-dot" style="background:${item.color};"></span>
+              ${escapeHtml(item.label)}: <b>${item.count} Buku</b> (${item.percentage}%)
+            </div>
+          `;
+        });
+      } else {
+        labels = ['Memuat...'];
+        dataValues = [100];
+        backgroundColors = ['#e2e8f0'];
+        legendHtml = `<div class="legend-item-box"><span class="legend-dot" style="background:#cbd5e1;"></span> Memuat kategori buku...</div>`;
+      }
+
+      if (legendGrid) legendGrid.innerHTML = legendHtml;
+
+      if (isSiswa) {
+        if (donutChartSiswaInstance) donutChartSiswaInstance.destroy();
+      } else {
+        if (donutChartInstance) donutChartInstance.destroy();
+      }
+
+      const newChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: dataValues,
+            backgroundColor: backgroundColors,
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: {
+          cutout: '76%',
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: { duration: 600 },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: kategoriStats && kategoriStats.length > 0 }
+          }
+        }
+      });
+
+      if (isSiswa) {
+        donutChartSiswaInstance = newChart;
+      } else {
+        donutChartInstance = newChart;
+      }
+    } catch (err) {
+      console.warn("Dynamic Donut Chart Exception:", err);
+    }
+  }
+
+  /* LOGIKA DASHBOARD SISWA */
+  let studentDashActiveLoans = [];
+  let studentDashLoansPage = 1;
+
+  function changeStudentDashLoanPage(delta) {
+    studentDashLoansPage += delta;
+    renderStudentDashLoansTable();
+  }
+
+  function renderStudentDashLoansTable() {
+    const tbody = document.getElementById('table-pinjaman-saya');
+    if (!tbody) return;
+
+    const totalLoans = studentDashActiveLoans.length;
+    const pageSize = 5;
+    const totalPages = Math.ceil(totalLoans / pageSize) || 1;
+
+    if (studentDashLoansPage > totalPages) studentDashLoansPage = totalPages;
+    if (studentDashLoansPage < 1) studentDashLoansPage = 1;
+
+    const startIndex = (studentDashLoansPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, totalLoans);
+    const pageItems = studentDashActiveLoans.slice(startIndex, endIndex);
+
+    if (totalLoans === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Kamu sedang tidak meminjam buku. Silakan cari buku baru di Katalog!</td></tr>';
+    } else {
+      let html = '';
+      pageItems.forEach((l, idx) => {
+        const badgeClass = l.badgeClass || 'bg-primary text-white';
+        const badgeText = l.badgeText || 'Dipinjam';
+        const subText = l.subText || '';
+        html += `
+          <tr>
+            <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
+            <td class="border-start">
+              <div class="fw-bold text-dark">${escapeHtml(l.judul_buku)}</div>
+              <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(l.kategori_buku)}</small>
+            </td>
+            <td class="border-start">
+              <div class="text-dark small fw-semibold">${escapeHtml(l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo))}</div>
+            </td>
+            <td class="pe-3 text-end border-start">
+              <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
+              <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+
+    const infoEl = document.getElementById('dash-siswa-pagination-info');
+    if (infoEl) {
+      if (totalLoans === 0) {
+        infoEl.innerText = 'Menampilkan 0 dari 0 pinjaman aktif';
+      } else {
+        infoEl.innerText = `Menampilkan ${startIndex + 1} - ${endIndex} dari ${totalLoans} pinjaman aktif`;
+      }
+    }
+
+    const btnPrev = document.getElementById('btn-dash-siswa-prev');
+    const btnNext = document.getElementById('btn-dash-siswa-next');
+    if (btnPrev) btnPrev.disabled = (studentDashLoansPage <= 1);
+    if (btnNext) btnNext.disabled = (studentDashLoansPage >= totalPages);
+  }
+
+  function loadStudentDashboardData(nis) {
+    try {
+      const greeting = document.getElementById('siswa-banner-greeting');
+      if (greeting && currentUser && currentUser.userData) {
+        greeting.innerText = `Semangat Membaca & Rajin Belajar, ${(currentUser.userData.nama_lengkap || '').split(' ')[0]}!`;
+      }
+
+      initDonutChartDynamic(null, 'chartRingkasanKoleksiSiswa', 'chart-legend-grid-siswa', true);
+
+      google.script.run
+        .withSuccessHandler(data => {
+          if (!data) return;
+
+          const elPinjam = document.getElementById('siswa-pinjam-aktif');
+          if (elPinjam) elPinjam.innerText = (data.stats.dipinjamSaya || 0).toLocaleString('id-ID');
+
+          const elTerlambat = document.getElementById('siswa-pinjam-terlambat');
+          if (elTerlambat) elTerlambat.innerText = (data.stats.totalTerlambat || 0).toLocaleString('id-ID');
+
+          const elDibaca = document.getElementById('siswa-total-dibaca');
+          if (elDibaca) elDibaca.innerText = (data.stats.totalDibaca || 0).toLocaleString('id-ID');
+
+          const elCenterTotal = document.getElementById('chart-center-total-siswa');
+          if (elCenterTotal) elCenterTotal.innerText = (data.stats.totalBuku || 0).toLocaleString('id-ID');
+
+          studentDashActiveLoans = data.myActiveLoans || [];
+          studentDashLoansPage = 1;
+          renderStudentDashLoansTable();
+
+          if (data.kategoriStats) {
+            initDonutChartDynamic(data.kategoriStats, 'chartRingkasanKoleksiSiswa', 'chart-legend-grid-siswa', true);
+          }
+        })
+        .getStudentDashboardData(nis);
+    } catch (err) {
+      console.error("Load Student Dashboard Exception:", err);
+    }
+  }
+
+</script>

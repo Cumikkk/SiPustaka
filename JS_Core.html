@@ -1,0 +1,398 @@
+<script>
+  let currentUser = null;
+  let globalAppCache = null;
+  let isCacheLoading = false;
+  let adminDataCache = null;
+  let donutChartInstance = null;
+  let donutChartSiswaInstance = null;
+  const SESSION_TIMEOUT_MS = 2 * 60 * 60 * 1000; // 2 Jam inaktivitas
+
+  document.addEventListener('DOMContentLoaded', () => {
+    checkAndRestoreSession();
+    initOtpBoxListeners();
+  });
+
+  /* SISTEM SESI LOGIN STANDARD WEB (PERSISTENT & AUTO RENEWAL) */
+  function saveUserSession(userObj) {
+    try {
+      if (!userObj) return;
+      const sessionData = {
+        user: userObj,
+        timestamp: Date.now()
+      };
+      localStorage.setItem('sipustaka_session', JSON.stringify(sessionData));
+    } catch (err) {
+      console.warn("Save Session Exception:", err);
+    }
+  }
+
+  function checkAndRestoreSession() {
+    try {
+      const rawSession = localStorage.getItem('sipustaka_session');
+      if (!rawSession) {
+        showLoginScreenDirect();
+        return;
+      }
+
+      const sessionObj = JSON.parse(rawSession);
+      const now = Date.now();
+
+      if (!sessionObj || !sessionObj.user || !sessionObj.timestamp || (now - sessionObj.timestamp > SESSION_TIMEOUT_MS)) {
+        localStorage.removeItem('sipustaka_session');
+        showLoginScreenDirect();
+        return;
+      }
+
+      currentUser = sessionObj.user;
+      sessionObj.timestamp = now;
+      localStorage.setItem('sipustaka_session', JSON.stringify(sessionObj));
+
+      applyLoggedInUserUI(currentUser);
+    } catch (err) {
+      console.error("Restore Session Exception:", err);
+      showLoginScreenDirect();
+    }
+  }
+
+  function showLoginScreenDirect() {
+    const loginCanvas = document.getElementById('page-login-canvas');
+    const mainApp = document.getElementById('page-main-app');
+    if (mainApp) mainApp.classList.add('d-none');
+    if (loginCanvas) loginCanvas.classList.remove('d-none');
+  }
+
+  function handleLogout() {
+    Swal.fire({
+      title: 'Konfirmasi Keluar',
+      text: 'Apakah Anda yakin ingin keluar dari sistem SiPustaka?',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#dc2626',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Ya, Keluar',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Keluar',
+          text: 'Sampai jumpa kembali di SiPustaka!',
+          timer: 1500,
+          showConfirmButton: false
+        }).then(() => {
+          currentUser = null;
+          localStorage.removeItem('sipustaka_session');
+          showLoginScreenDirect();
+          const loginPass = document.getElementById('login-password');
+          if (loginPass) loginPass.value = '';
+        });
+      }
+    });
+  }
+
+  function applyLoggedInUserUI(res) {
+    const loginCanvas = document.getElementById('page-login-canvas');
+    const mainApp = document.getElementById('page-main-app');
+
+    if (loginCanvas) loginCanvas.classList.add('d-none');
+    if (mainApp) mainApp.classList.remove('d-none');
+
+    currentUser = res;
+
+    const userDisplayName = document.getElementById('user-display-name');
+    if (userDisplayName) userDisplayName.innerText = res.userData.nama_lengkap;
+
+    const avatarBox = document.getElementById('user-avatar-box');
+    if (avatarBox) {
+      const userName = res.userData.nama_lengkap || 'Admin';
+      const initial = userName.charAt(0).toUpperCase();
+      avatarBox.innerText = initial;
+      avatarBox.style.background = '#0052cc';
+    }
+
+    const roleTitle = document.getElementById('user-role-title');
+    const roleBadge = document.getElementById('user-role-badge');
+
+    if (res.role === 'admin') {
+      if (roleBadge) roleBadge.innerText = 'Panel Administrasi';
+      if (roleTitle) roleTitle.innerText = 'Petugas / Administrator';
+      document.querySelectorAll('.role-admin-only').forEach(el => el.classList.remove('d-none'));
+      document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.add('d-none'));
+    } else {
+      if (roleBadge) roleBadge.innerText = 'Portal Siswa';
+      if (roleTitle) roleTitle.innerText = 'Siswa • Kelas ' + (res.userData.kelas || '-');
+      document.querySelectorAll('.role-admin-only').forEach(el => el.classList.add('d-none'));
+      document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.remove('d-none'));
+    }
+
+    switchSubView('dashboard');
+  }
+
+  /* GLOBAL ROUTER & SUBVIEW SWITCHER */
+  function switchSubView(subviewName) {
+    try {
+      document.querySelectorAll('.sidebar-nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.sidebar-subnav-item').forEach(el => el.classList.remove('active'));
+
+      const activeMenuItem = document.getElementById('menu-' + subviewName);
+      if (activeMenuItem) activeMenuItem.classList.add('active');
+
+      const allSubviews = [
+        'subview-dashboard', 'subview-dashboard-siswa', 'subview-katalog',
+        'subview-buku', 'subview-anggota', 'subview-peminjaman',
+        'subview-pengembalian', 'subview-riwayat', 'subview-laporan', 'subview-petugas', 'subview-pengaturan', 'subview-peminjaman-siswa'
+      ];
+      allSubviews.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('d-none');
+      });
+
+      if (subviewName === 'dashboard') {
+        if (currentUser && currentUser.role === 'siswa') {
+          const targetEl = document.getElementById('subview-dashboard-siswa');
+          if (targetEl) targetEl.classList.remove('d-none');
+          loadStudentDashboardData(currentUser.userData.nis);
+        } else {
+          const targetEl = document.getElementById('subview-dashboard');
+          if (targetEl) targetEl.classList.remove('d-none');
+          loadDashboardData();
+        }
+      } else if (subviewName === 'katalog') {
+        const targetEl = document.getElementById('subview-katalog');
+        if (targetEl) targetEl.classList.remove('d-none');
+        loadKatalogData();
+      } else {
+        const targetEl = document.getElementById('subview-' + subviewName);
+        if (targetEl) targetEl.classList.remove('d-none');
+        
+        if (subviewName === 'buku') {
+          hideFormBuku();
+        } else if (subviewName === 'anggota') {
+          renderAnggotaTable();
+        } else if (subviewName === 'peminjaman') {
+          initFormPeminjamanDates();
+        } else if (subviewName === 'laporan') {
+          loadLaporanData();
+        } else if (subviewName === 'petugas') {
+          renderPetugasTable();
+        } else if (subviewName === 'peminjaman-siswa') {
+          loadStudentPeminjamanPageData();
+        } else if (subviewName === 'pengembalian') {
+          renderPengembalianTable();
+        }
+      }
+    } catch (err) {
+      console.error("Switch SubView Exception:", err);
+    }
+  }
+
+
+  /* UTILITAS ALERT SWEETALERT2 */
+  function showSuccessAlert(msg, callback) {
+    Swal.fire({
+      icon: 'success',
+      title: 'Berhasil',
+      text: msg,
+      timer: 1800,
+      showConfirmButton: false
+    }).then(() => {
+      if (callback) callback();
+    });
+  }
+
+  function showErrorAlert(msg) {
+    Swal.fire({
+      icon: 'error',
+      title: 'Perhatian',
+      text: msg,
+      confirmButtonColor: '#0052cc'
+    });
+  }
+
+  function showLoadingAlert(msg) {
+    Swal.fire({
+      title: msg || 'Memproses...',
+      allowOutsideClick: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+  }
+
+  function closeLoadingAlert() {
+    Swal.close();
+  }
+
+  function showContactAdminInfo() {
+    showLoadingAlert('Mengambil data kontak...');
+    google.script.run
+      .withSuccessHandler(info => {
+        closeLoadingAlert();
+        if (!info) info = {};
+        Swal.fire({
+          title: 'Kontak Administrator Perpustakaan',
+          html: `
+            <div class="text-start fs-6 lh-base p-2">
+              <p class="mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i><b>Lokasi:</b> ${escapeHtml(info.lokasi_perpus || 'Ruang Perpustakaan Sekolah')}</p>
+              <p class="mb-2"><i class="bi bi-envelope-fill text-primary me-2"></i><b>Email:</b> ${escapeHtml(info.email_perpus || 'm.fahrulalfanani25@gmail.com')}</p>
+              <p class="mb-2"><i class="bi bi-whatsapp text-success me-2"></i><b>WhatsApp Petugas:</b> ${escapeHtml(info.wa_petugas || '0812-3456-7890')}</p>
+              <p class="text-muted small mt-3 mb-0">${escapeHtml(info.pesan_bantuan || 'Silakan hubungi petugas jika ada kendala.')}</p>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'Tutup',
+          confirmButtonColor: '#0052cc'
+        });
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal mengambil data.');
+      })
+      .getPengaturanKontak();
+  }
+
+  /* ==========================================
+     GOOGLE DRIVE URL & PREVIEW HELPERS
+     ========================================== */
+  function extractDriveId(urlOrId) {
+    if (!urlOrId) return '';
+    const str = String(urlOrId).trim();
+    if (!str) return '';
+    if (/^[a-zA-Z0-9_-]{25,45}$/.test(str)) {
+      return str;
+    }
+    const matchD = str.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (matchD && matchD[1]) return matchD[1];
+    const matchId = str.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (matchId && matchId[1]) return matchId[1];
+    return '';
+  }
+
+  function getDrivePreviewUrl(urlOrId) {
+    if (!urlOrId) return '';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://drive.google.com/file/d/' + driveId + '/preview';
+    }
+    return urlOrId;
+  }
+
+  function getDriveDownloadUrl(urlOrId) {
+    if (!urlOrId) return '#';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://drive.google.com/uc?export=download&id=' + driveId;
+    }
+    return urlOrId;
+  }
+
+  function getDirectImageUrl(urlOrId) {
+    if (!urlOrId) return '';
+    const driveId = extractDriveId(urlOrId);
+    if (driveId) {
+      return 'https://lh3.googleusercontent.com/d/' + driveId;
+    }
+    return urlOrId;
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    initOtpBoxListeners();
+  });
+
+  function initOtpBoxListeners() {
+    const otpInputs = document.querySelectorAll('.otp-digit-box');
+    otpInputs.forEach((input, idx) => {
+      input.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val;
+        if (val.length === 1 && idx < otpInputs.length - 1) {
+          otpInputs[idx + 1].focus();
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && idx > 0) {
+          otpInputs[idx - 1].focus();
+        }
+      });
+
+      input.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '').trim();
+        if (pasteData.length === 6) {
+          pasteData.split('').forEach((char, i) => {
+            if (otpInputs[i]) otpInputs[i].value = char;
+          });
+          otpInputs[5].focus();
+        }
+      });
+    });
+  }
+
+  // ==========================================
+  // CONTROLLER 1: DAFTAR BUKU & FORM BUKU
+  // ==========================================
+
+  let currentSelectedAnggotaPinjam = null;
+  let currentSelectedBukuPinjam = null;
+  let currentFoundTransaksiReturn = null;
+
+
+  function showModal(id) {
+    const el = document.getElementById(id);
+    if (el && typeof bootstrap !== 'undefined') {
+      new bootstrap.Modal(el).show();
+    }
+  }
+  function hideModal(id) {
+    const el = document.getElementById(id);
+    if (el && typeof bootstrap !== 'undefined') {
+      const bsModal = bootstrap.Modal.getInstance(el);
+      if (bsModal) bsModal.hide();
+    }
+  }
+
+
+  /* CONTROLLER DROPDOWN INTERAKTIF ANGGOTA */
+  function toggleAnggotaDropdown(e) {
+    if (e) e.preventDefault();
+    const groupEl = document.getElementById('menu-anggota-group');
+    const subnavEl = document.getElementById('subnav-anggota');
+    if (!groupEl || !subnavEl) return;
+
+    groupEl.classList.toggle('open');
+    subnavEl.classList.toggle('d-none');
+  }
+
+  /* CONTROLLER MOBILE OFF-CANVAS SIDEBAR DRAWER */
+  function toggleMobileSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('mobile-open');
+    if (backdrop) backdrop.classList.toggle('show');
+  }
+
+  // Auto-close mobile drawer when switching subviews on mobile
+  const origSwitchSubView = switchSubView;
+  switchSubView = function(subviewName) {
+    origSwitchSubView(subviewName);
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar && sidebar.classList.contains('mobile-open')) {
+      sidebar.classList.remove('mobile-open');
+      if (backdrop) backdrop.classList.remove('show');
+    }
+  };
+
+
+</script>

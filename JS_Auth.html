@@ -1,0 +1,188 @@
+<script>
+  /* LOGIKA LOGIN SUBMIT */
+  function togglePasswordVisibility() {
+    const inputPass = document.getElementById('login-password');
+    const iconEye = document.getElementById('toggle-eye-icon');
+    if (inputPass) {
+      if (inputPass.type === 'password') {
+        inputPass.type = 'text';
+        if (iconEye) { iconEye.classList.remove('bi-eye-slash'); iconEye.classList.add('bi-eye'); }
+      } else {
+        inputPass.type = 'password';
+        if (iconEye) { iconEye.classList.remove('bi-eye'); iconEye.classList.add('bi-eye-slash'); }
+      }
+    }
+  }
+
+  function handleLoginSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const credInput = document.getElementById('login-username') || document.getElementById('login-credential');
+    const passInput = document.getElementById('login-password');
+
+    const credential = credInput ? credInput.value.trim() : '';
+    const password = passInput ? passInput.value.trim() : '';
+
+    if (!credential || !password) {
+      showErrorAlert('Silakan masukkan Username atau Email dan Password Anda.');
+      return;
+    }
+
+    showLoadingAlert('Memverifikasi akun Anda...');
+
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          currentUser = res;
+          saveUserSession(res);
+
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil Login!',
+            text: `Selamat datang kembali, ${res.userData.nama_lengkap || 'Pengguna'}!`,
+            timer: 1500,
+            showConfirmButton: false
+          }).then(() => {
+            applyLoggedInUserUI(res);
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Login gagal. Periksa kembali kredensial Anda.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server Google Apps Script.');
+      })
+      .loginUserUnified(credential, password);
+  }
+
+
+  /* LOGIKA MODAL OTP RESET PASSWORD */
+  function openForgotModal() {
+    try {
+      const step1 = document.getElementById('otp-step-1');
+      const step2 = document.getElementById('otp-step-2');
+      if (step1) step1.classList.remove('d-none');
+      if (step2) step2.classList.add('d-none');
+      
+      const modalEl = document.getElementById('modalLupaPassword');
+      if (modalEl && typeof bootstrap !== 'undefined') {
+        const bsModal = new bootstrap.Modal(modalEl);
+        bsModal.show();
+      }
+    } catch (err) {
+      console.error("Open Forgot Modal Exception:", err);
+    }
+  }
+
+  function handleSendOtp() {
+    const email = document.getElementById('reset-email').value;
+    if (!email) {
+      showErrorAlert('Silakan masukkan email Anda.');
+      return;
+    }
+
+    showLoadingAlert('Mengirim kode OTP ke email...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            document.getElementById('otp-step-1').classList.add('d-none');
+            document.getElementById('otp-step-2').classList.remove('d-none');
+            document.getElementById('otp-step-3').classList.add('d-none');
+            const targetEmailEl = document.getElementById('target-otp-email');
+            if (targetEmailEl) targetEmailEl.innerText = email;
+            const firstBox = document.querySelector('.otp-digit-box[data-index="0"]');
+            if (firstBox) firstBox.focus();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal mengirim OTP.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server.');
+      })
+      .requestOtpUniversal(email);
+  }
+
+  function backToStep1() {
+    document.getElementById('otp-step-1').classList.remove('d-none');
+    document.getElementById('otp-step-2').classList.add('d-none');
+    document.getElementById('otp-step-3').classList.add('d-none');
+  }
+
+  function handleVerifyOtp() {
+    const email = document.getElementById('reset-email').value;
+    const otp = getOtpCodeValue();
+
+    if (!otp || otp.length < 6) {
+      showErrorAlert('Silakan masukkan 6-digit kode OTP secara lengkap.');
+      return;
+    }
+
+    showLoadingAlert('Memverifikasi kode OTP...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert('Kode OTP Valid!', () => {
+            document.getElementById('otp-step-1').classList.add('d-none');
+            document.getElementById('otp-step-2').classList.add('d-none');
+            document.getElementById('otp-step-3').classList.remove('d-none');
+            const passInput = document.getElementById('reset-new-password');
+            if (passInput) passInput.focus();
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Kode OTP tidak valid.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal memverifikasi OTP.');
+      })
+      .verifyOtpUniversal(email, otp);
+  }
+
+  function getOtpCodeValue() {
+    const inputs = document.querySelectorAll('.otp-digit-box');
+    let code = '';
+    inputs.forEach(input => code += input.value.trim());
+    return code;
+  }
+
+  function handleResetPassword() {
+    const email = document.getElementById('reset-email').value;
+    const otp = getOtpCodeValue();
+    const newPassword = document.getElementById('reset-new-password').value;
+
+    if (!otp || otp.length < 6 || !newPassword) {
+      showErrorAlert('Silakan lengkapi 6-digit kode OTP dan password baru.');
+      return;
+    }
+
+    showLoadingAlert('Memproses reset password...');
+    google.script.run
+      .withSuccessHandler(res => {
+        closeLoadingAlert();
+        if (res && res.success) {
+          showSuccessAlert(res.message, () => {
+            const modalEl = document.getElementById('modalLupaPassword');
+            if (modalEl && typeof bootstrap !== 'undefined') {
+              const bsModal = bootstrap.Modal.getInstance(modalEl);
+              if (bsModal) bsModal.hide();
+            }
+          });
+        } else {
+          showErrorAlert(res ? res.message : 'Gagal mereset password.');
+        }
+      })
+      .withFailureHandler(err => {
+        closeLoadingAlert();
+        showErrorAlert(err ? err.message : 'Gagal menghubungi server.');
+      })
+      .resetPasswordUniversal(email, otp, newPassword);
+  }
+
+</script>

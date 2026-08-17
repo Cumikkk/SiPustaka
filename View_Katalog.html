@@ -1,0 +1,101 @@
+        <!-- 1. SUBVIEW: KATALOG BUKU -->
+        <div id="subview-katalog" class="d-none">
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <div>
+              <h3 class="fw-bold m-0 text-dark">Koleksi Buku</h3>
+              <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <span class="text-dark">Koleksi Buku</span></small>
+            </div>
+            
+            <!-- View Mode Switcher -->
+            <div class="btn-group rounded-3 shadow-sm p-1 bg-white border" role="group">
+              <button type="button" class="btn btn-sm btn-primary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center gap-2 active" id="katalog-btn-grid" onclick="setKatalogViewMode('grid')"><i class="bi bi-grid-fill"></i><span>Grid</span></button>
+              <button type="button" class="btn btn-sm btn-light text-secondary rounded-2 fw-semibold px-3 py-1.5 d-inline-flex align-items-center gap-2" id="katalog-btn-list" onclick="setKatalogViewMode('list')"><i class="bi bi-list-task"></i><span>Tabel</span></button>
+            </div>
+          </div>
+
+          <!-- TOOLBAR SEARCH & FILTER BAR -->
+          <div class="card border-0 rounded-4 shadow-sm p-3 p-md-4 mb-4">
+            <div class="row g-3">
+              <!-- Search Bar -->
+              <div class="col-md-6 col-lg-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" id="katalog-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku, Penulis, ISBN..." onkeyup="filterKatalogData()">
+                </div>
+              </div>
+              
+              <!-- Filter Kategori (Dinamis dari Database) -->
+              <div class="col-md-3 col-lg-3">
+                <select id="katalog-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData()">
+                  <option value="semua">Semua Kategori</option>
+                </select>
+              </div>
+
+              <!-- Filter Stok -->
+              <div class="col-md-3 col-lg-3">
+                <select id="katalog-filter-stok" class="form-select rounded-3" onchange="filterKatalogData()">
+                  <option value="semua">Semua Status Stok</option>
+                  <option value="tersedia">Tersedia - Saja</option>
+                  <option value="habis">Stok Habis</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- KATALOG GRID VIEW CONTAINER -->
+          <div id="katalog-grid-container" class="row g-3 g-md-4">
+            <div class="col-12 text-center text-muted py-5">
+              <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+              <div>Memuat koleksi buku...</div>
+            </div>
+          </div>
+
+          <!-- KATALOG LIST TABLE CONTAINER (HIDDEN BY DEFAULT) -->
+          <div id="katalog-list-container" class="card border-0 rounded-4 shadow-sm p-4 d-none">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small fw-semibold">Tampilkan:</span>
+                <select id="katalog-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="catalogTableCurrentPage = 1; renderCatalogView();">
+                  <option value="5" selected>5</option>
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+                <span class="text-muted small fw-semibold">entri</span>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
+                <thead class="bg-light text-muted small uppercase">
+                  <tr>
+                    <th class="ps-3 text-center" style="width: 50px;">NO.</th>
+                    <th class="border-start text-center" style="width: 75px;">SAMPUL</th>
+                    <th class="border-start text-start">JUDUL BUKU &amp; PENULIS</th>
+                    <th class="border-start text-center" style="width: 140px;">KATEGORI</th>
+                    <th class="border-start text-center" style="width: 130px;">STOK</th>
+                    <th class="pe-3 text-center border-start" style="width: 180px;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="katalog-list-table-body">
+                  <tr>
+                    <td colspan="6" class="text-center text-muted py-4">Memuat koleksi buku...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- FOOTER PAGINASI KATALOG TABEL -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-3 border-top">
+              <div class="text-muted small fw-semibold" id="katalog-table-pagination-info">
+                Menampilkan 0 sampai 0 dari 0 entri
+              </div>
+              <nav aria-label="Navigasi halaman koleksi">
+                <ul class="pagination pagination-sm m-0 gap-1" id="katalog-table-pagination-controls">
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </div>
+
