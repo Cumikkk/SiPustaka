@@ -212,14 +212,14 @@
         html += `
           <tr>
             <td class="text-center fw-bold text-secondary" style="width: 50px;">${startIndex + idx + 1}</td>
-            <td class="border-start">
+            <td class="border-start text-start">
               <div class="fw-bold text-dark">${escapeHtml(l.judul_buku)}</div>
               <small class="text-muted d-block" style="font-size:0.72rem;">Kategori: ${escapeHtml(l.kategori_buku)}</small>
             </td>
-            <td class="border-start">
+            <td class="border-start text-center">
               <div class="text-dark small fw-semibold">${escapeHtml(l.periode_pinjam || (l.tgl_pinjam_indo + ' - ' + l.tgl_jatuh_tempo_indo))}</div>
             </td>
-            <td class="pe-3 text-end border-start">
+            <td class="pe-3 text-center border-start">
               <span class="badge ${badgeClass} px-2.5 py-1 rounded-pill shadow-sm mb-1" style="font-size:0.72rem;">${escapeHtml(badgeText)}</span>
               <small class="text-muted d-block fw-semibold" style="font-size:0.7rem;">${escapeHtml(subText)}</small>
             </td>

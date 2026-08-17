@@ -54,59 +54,55 @@
             </div>
           </div>
 
-          <!-- KATALOG LIST TABLE CONTAINER (SATU CARD UTUH TERINTEGRASI PENCARIAN + TABEL) -->
+          <!-- KATALOG LIST TABLE CONTAINER (SATU CARD TERINTEGRASI MENGIKUTI MODEL PEMINJAMAN SAYA) -->
           <div id="katalog-list-container" class="card border-0 rounded-4 shadow-sm p-4 d-none">
             
-            <!-- FILTER & PENCARIAN TERINTEGRASI PADA CARD TABEL -->
-            <div class="row g-3 mb-4">
-              <!-- Search Bar Tabel -->
-              <div class="col-md-6 col-lg-6">
-                <div class="input-group">
-                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
-                  <input type="text" id="katalog-table-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari Judul Buku, Penulis, ISBN..." onkeyup="filterKatalogData('table')">
+            <!-- TOOLBAR SATU BARIS MENGIKUTI MODEL PEMINJAMAN SAYA -->
+            <div class="row g-3 mb-4 align-items-center">
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small fw-semibold">Tampilkan:</span>
+                  <select id="katalog-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="catalogTableCurrentPage = 1; renderCatalogView();">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
               
-              <!-- Filter Kategori Tabel -->
-              <div class="col-md-3 col-lg-3">
+              <div class="col-md-4 col-sm-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" id="katalog-table-search-input" class="form-control border-start-0 rounded-end-3" placeholder="Cari judul, penulis, ISBN..." onkeyup="filterKatalogData('table')">
+                </div>
+              </div>
+              
+              <div class="col-md-3 col-sm-6">
                 <select id="katalog-table-filter-kategori" class="form-select rounded-3" onchange="filterKatalogData('table')">
                   <option value="semua">Semua Kategori</option>
                 </select>
               </div>
 
-              <!-- Filter Stok Tabel -->
-              <div class="col-md-3 col-lg-3">
+              <div class="col-md-2 col-sm-6">
                 <select id="katalog-table-filter-stok" class="form-select rounded-3" onchange="filterKatalogData('table')">
-                  <option value="semua">Semua Status Stok</option>
-                  <option value="tersedia">Tersedia - Saja</option>
-                  <option value="habis">Stok Habis</option>
+                  <option value="semua">Semua Stok</option>
+                  <option value="tersedia">Tersedia</option>
+                  <option value="habis">Habis</option>
                 </select>
               </div>
             </div>
 
-            <!-- TAMPILKAN ENTRI -->
-            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
-              <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small fw-semibold">Tampilkan:</span>
-                <select id="katalog-table-entries" class="form-select form-select-sm w-auto rounded-3" onchange="catalogTableCurrentPage = 1; renderCatalogView();">
-                  <option value="5" selected>5</option>
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-                <span class="text-muted small fw-semibold">entri</span>
-              </div>
-            </div>
-
-            <!-- TABEL DATA BUKU -->
+            <!-- TABEL DATA BUKU DENGAN HEADER RATA TENGAH -->
             <div class="table-responsive">
               <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
                 <thead class="bg-light text-muted small uppercase">
                   <tr>
                     <th class="ps-3 text-center" style="width: 50px;">NO.</th>
                     <th class="border-start text-center" style="width: 75px;">SAMPUL</th>
-                    <th class="border-start text-start">JUDUL BUKU &amp; PENULIS</th>
+                    <th class="border-start text-center">JUDUL BUKU &amp; PENULIS</th>
                     <th class="border-start text-center" style="width: 140px;">KATEGORI</th>
                     <th class="border-start text-center" style="width: 130px;">STOK</th>
                     <th class="pe-3 text-center border-start" style="width: 180px;">AKSI</th>

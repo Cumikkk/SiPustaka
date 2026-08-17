@@ -359,10 +359,10 @@
     const badgeStok = document.getElementById('detail-badge-stok');
     if (badgeStok) {
       if (stokNum > 0) {
-        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100';
+        badgeStok.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
         badgeStok.innerText = `Tersedia ${stokNum}`;
       } else {
-        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100';
+        badgeStok.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 fs-7 w-100 mb-2';
         badgeStok.innerText = 'Stok Habis';
       }
     }
