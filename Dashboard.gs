@@ -5,16 +5,19 @@
  */
 
 function getAdminDashboardData() {
-  const buku = getSheetData('buku');
-  const anggota = getSheetData('siswa');
-  const transaksi = getSheetData('transaksi');
+  const buku = getSheetData('buku') || [];
+  const anggota = getSheetData('siswa') || [];
+  const transaksi = getSheetData('transaksi') || [];
 
   const mapBukuObj = {};
-  buku.forEach(b => mapBukuObj[b.id_buku] = b);
+  buku.forEach(b => {
+    if (b && b.id_buku) mapBukuObj[String(b.id_buku).trim()] = b;
+  });
+
   const mapAnggotaObj = {};
   anggota.forEach(a => {
-    if (a.nis) mapAnggotaObj[String(a.nis).trim()] = a;
-    if (a.id_anggota) mapAnggotaObj[String(a.id_anggota).trim()] = a;
+    if (a && a.nis) mapAnggotaObj[String(a.nis).trim()] = a;
+    if (a && a.id_anggota) mapAnggotaObj[String(a.id_anggota).trim()] = a;
   });
 
   const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
@@ -52,7 +55,9 @@ function getAdminDashboardData() {
     let subText = '-';
     let badgeClass = 'bg-primary text-white';
 
-    if (t.status === 'dipinjam') {
+    const rawStatus = String(t.status || 'dipinjam').toLowerCase().trim();
+
+    if (rawStatus === 'dipinjam') {
       totalPeminjamanAktif++;
       const dueDate = parseLocalYMD(t.tgl_jatuh_tempo);
       
@@ -80,23 +85,24 @@ function getAdminDashboardData() {
     }
 
     const statusBadge = { text: statusText, class: badgeClass, subText: subText };
+    const rawKelas = aInfo.kelas ? String(aInfo.kelas).replace(/^Kelas\s+/i, '').trim() : '-';
 
     return {
       ...t,
-      nama_buku: bInfo.judul_buku || t.id_buku,
+      nama_buku: bInfo.judul_buku || t.id_buku || '-',
       kategori_buku: bInfo.kategori || 'Umum',
       nama_anggota: aInfo.nama_lengkap || tNis || 'Siswa',
-      kelas_anggota: aInfo.kelas ? `Kelas ${aInfo.kelas}` : 'Siswa',
+      kelas_anggota: rawKelas,
       tgl_pinjam_indo: formatIndoDate(t.tgl_pinjam),
       tgl_jatuh_tempo_indo: formatIndoDate(t.tgl_jatuh_tempo),
       periode_pinjam: `${formatIndoDate(t.tgl_pinjam)} - ${formatIndoDate(t.tgl_jatuh_tempo)}`,
-      isTerlambat: t.status === 'dipinjam' && String(t.tgl_jatuh_tempo).split('T')[0] < todayStr,
+      isTerlambat: rawStatus === 'dipinjam' && String(t.tgl_jatuh_tempo).split('T')[0] < todayStr,
       statusBadge,
       subText
     };
   });
 
-  const activeOnly = formattedTransaksi.filter(t => t.status === 'dipinjam');
+  const activeOnly = formattedTransaksi.filter(t => String(t.status || '').toLowerCase().trim() === 'dipinjam');
 
   activeOnly.sort((a, b) => {
     if (a.isTerlambat && !b.isTerlambat) return -1;
@@ -170,9 +176,9 @@ function getAdminDashboardData() {
 function getStudentDashboardData(nis) {
   try {
     const cleanNis = String(nis || '').trim();
-    const buku = getSheetData('buku');
-    const transaksi = getSheetData('transaksi');
-    const anggota = getSheetData('siswa');
+    const buku = getSheetData('buku') || [];
+    const transaksi = getSheetData('transaksi') || [];
+    const anggota = getSheetData('siswa') || [];
 
     const siswaInfo = anggota.find(a => String(a.nis).trim() === cleanNis) || {};
     const mapBuku = {};
@@ -207,12 +213,6 @@ function getStudentDashboardData(nis) {
       }
       const dObj = new Date(str);
       return isNaN(dObj.getTime()) ? new Date() : dObj;
-    }
-
-    function formatIndoDate(dateStr) {
-      if (!dateStr) return '-';
-      const dObj = parseLocalYMD(dateStr);
-      return `${dObj.getDate()} ${monthsIndo[dObj.getMonth()]} ${dObj.getFullYear()}`;
     }
 
     function formatShortIndoDate(dateStr) {
@@ -363,8 +363,6 @@ function getStudentDashboardData(nis) {
     return { error: err.toString() };
   }
 }
-
-
 
 function getLaporanRingkasanFull() {
   const ss = getDb();

@@ -37,7 +37,7 @@
           '<td class="text-center fw-bold text-secondary" style="width: 50px;">' + (startIndex + idx + 1) + '</td>' +
           '<td class="border-start text-start">' +
             '<div class="fw-bold text-dark">' + escapeHtml(t.nama_anggota) + '</div>' +
-            '<small class="text-muted d-block" style="font-size:0.72rem;">Kelas ' + escapeHtml(t.kelas_anggota || '-') + '</small>' +
+            '<small class="text-muted d-block" style="font-size:0.72rem;">Kelas ' + escapeHtml(String(t.kelas_anggota || '-').replace(/^Kelas\s+/i, '')) + '</small>' +
           '</td>' +
           '<td class="border-start text-start">' +
             '<div class="fw-bold text-dark">' + escapeHtml(t.nama_buku) + '</div>' +

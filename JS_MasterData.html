@@ -923,7 +923,155 @@
   }
 
   function handleUnduhLaporanPdf() {
-    window.print();
+    if (!laporanDataCache || laporanDataCache.length === 0) {
+      showErrorAlert('Data laporan belum dimuat atau masih kosong.');
+      return;
+    }
+
+    const totalPinjam = document.getElementById('lap-total-pinjam')?.innerText || '0';
+    const totalKembali = document.getElementById('lap-total-kembali')?.innerText || '0';
+    const masihDipinjam = document.getElementById('lap-masih-dipinjam')?.innerText || '0';
+    const terlambat = document.getElementById('lap-terlambat')?.innerText || '0';
+
+    const now = new Date();
+    const tglCetak = now.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    const petugasNama = (currentUser && currentUser.userData && currentUser.userData.nama_lengkap) 
+      ? currentUser.userData.nama_lengkap 
+      : 'Petugas Administrator';
+
+    let tableRows = '';
+    laporanDataCache.forEach((b, idx) => {
+      const rawKat = b.kategori ? String(b.kategori).trim() : 'Umum';
+      const katStr = rawKat.charAt(0).toUpperCase() + rawKat.slice(1);
+      const penulisStr = (b.penulis && b.penulis !== '-') ? b.penulis : '-';
+
+      tableRows += '<tr>' +
+        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1;">' + (idx + 1) + '</td>' +
+        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; font-weight: 600; color: #0f172a;">' + escapeHtml(b.judul_buku) + '</td>' +
+        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; color: #475569;">' + escapeHtml(penulisStr) + '</td>' +
+        '<td style="padding: 7px 10px; border: 1px solid #cbd5e1; text-align: center;"><span style="background: #eef2ff; color: #0052cc; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600;">' + escapeHtml(katStr) + '</span></td>' +
+        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #0052cc;">' + Number(b.dipinjam || 0).toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #16a34a;">' + Number(b.dikembalikan || 0).toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #d97706;">' + Number(b.masih_dipinjam || 0).toLocaleString('id-ID') + '</td>' +
+        '<td style="text-align: center; padding: 7px 6px; border: 1px solid #cbd5e1; font-weight: bold; color: #dc2626;">' + Number(b.terlambat || 0).toLocaleString('id-ID') + '</td>' +
+      '</tr>';
+    });
+
+    const printHtml = '<!DOCTYPE html>' +
+'<html lang="id">' +
+'<head>' +
+  '<meta charset="utf-8">' +
+  '<title>Laporan Perpustakaan - SiPustaka</title>' +
+  '<style>' +
+    '@page { size: A4 portrait; margin: 15mm; }' +
+    'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1e293b; margin: 0; padding: 0; font-size: 12px; line-height: 1.4; background: #ffffff; }' +
+    '.header-kop { border-bottom: 2.5px solid #0052cc; padding-bottom: 12px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }' +
+    '.kop-title { font-size: 18px; font-weight: 800; color: #0052cc; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 4px 0; }' +
+    '.kop-sub { font-size: 11px; color: #64748b; margin: 0; }' +
+    '.meta-box { text-align: right; font-size: 11px; color: #475569; }' +
+    '.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }' +
+    '.stat-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; background: #f8fafc; }' +
+    '.stat-title { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 4px; }' +
+    '.stat-val { font-size: 18px; font-weight: 800; color: #0f172a; }' +
+    'table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 11px; }' +
+    'th { background-color: #f1f5f9; color: #334155; font-weight: 700; text-align: center; padding: 8px 6px; border: 1px solid #cbd5e1; text-transform: uppercase; font-size: 10px; }' +
+    '.footer-sign { display: flex; justify-content: flex-end; margin-top: 30px; page-break-inside: avoid; }' +
+    '.sign-box { text-align: center; width: 220px; }' +
+    '@media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }' +
+  '</style>' +
+'</head>' +
+'<body>' +
+  '<div class="header-kop">' +
+    '<div>' +
+      '<h1 class="kop-title">SiPustaka - Sistem Perpustakaan</h1>' +
+      '<p class="kop-sub">Laporan Rekapitulasi &amp; Statistik Sirkulasi Koleksi Buku</p>' +
+    '</div>' +
+    '<div class="meta-box">' +
+      '<div><b>Tanggal Cetak:</b> ' + tglCetak + '</div>' +
+      '<div><b>Petugas:</b> ' + escapeHtml(petugasNama) + '</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="stats-grid">' +
+    '<div class="stat-card" style="border-left: 4px solid #0052cc;">' +
+      '<div class="stat-title">Total Peminjaman</div>' +
+      '<div class="stat-val" style="color: #0052cc;">' + totalPinjam + '</div>' +
+    '</div>' +
+    '<div class="stat-card" style="border-left: 4px solid #16a34a;">' +
+      '<div class="stat-title">Sudah Dikembalikan</div>' +
+      '<div class="stat-val" style="color: #16a34a;">' + totalKembali + '</div>' +
+    '</div>' +
+    '<div class="stat-card" style="border-left: 4px solid #d97706;">' +
+      '<div class="stat-title">Sedang Dipinjam</div>' +
+      '<div class="stat-val" style="color: #d97706;">' + masihDipinjam + '</div>' +
+    '</div>' +
+    '<div class="stat-card" style="border-left: 4px solid #dc2626;">' +
+      '<div class="stat-title">Terlambat</div>' +
+      '<div class="stat-val" style="color: #dc2626;">' + terlambat + '</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<table>' +
+    '<thead>' +
+      '<tr>' +
+        '<th style="width: 35px;">No.</th>' +
+        '<th style="text-align: left;">Judul Buku</th>' +
+        '<th style="text-align: left;">Penulis</th>' +
+        '<th style="width: 80px;">Kategori</th>' +
+        '<th style="width: 65px;">Total Pinjam</th>' +
+        '<th style="width: 65px;">Kembali</th>' +
+        '<th style="width: 65px;">Dipinjam</th>' +
+        '<th style="width: 65px;">Terlambat</th>' +
+      '</tr>' +
+    '</thead>' +
+    '<tbody>' +
+      tableRows +
+    '</tbody>' +
+  '</table>' +
+
+  '<div class="footer-sign">' +
+    '<div class="sign-box">' +
+      '<div>Dicetak pada: ' + tglCetak + '</div>' +
+      '<div style="margin-top: 4px;">Pengelola Perpustakaan,</div>' +
+      '<div style="height: 60px;"></div>' +
+      '<div style="font-weight: bold; text-decoration: underline;">' + escapeHtml(petugasNama) + '</div>' +
+      '<div style="font-size: 10px; color: #64748b;">NIP / ID: Administrator</div>' +
+    '</div>' +
+  '</div>' +
+
+  '<script>' +
+    'window.onload = function() {' +
+      'window.focus();' +
+      'window.print();' +
+    '};' +
+  '</script>' +
+'</body>' +
+'</html>';
+
+    const printWin = window.open('', '_blank', 'width=950,height=700');
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(printHtml);
+      printWin.document.close();
+    } else {
+      const frame = document.createElement('iframe');
+      frame.style.position = 'fixed';
+      frame.style.right = '0';
+      frame.style.bottom = '0';
+      frame.style.width = '0';
+      frame.style.height = '0';
+      frame.style.border = '0';
+      document.body.appendChild(frame);
+      const frameDoc = frame.contentWindow.document;
+      frameDoc.open();
+      frameDoc.write(printHtml);
+      frameDoc.close();
+      setTimeout(() => {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        setTimeout(() => document.body.removeChild(frame), 1500);
+      }, 500);
+    }
   }
 
   /* CONTROLLER KENAIKAN KELAS MASSAL (READ-ONLY FLOW PREVIEW) */
