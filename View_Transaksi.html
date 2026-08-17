@@ -104,93 +104,93 @@
         <!-- OTHER SUBVIEWS MATCHING DESIGN REFERENCES -->
         
 
-        <!-- 4. SUBVIEW: SIRKULASI PEMINJAMAN BUKU -->
+        <!-- 4. SUBVIEW: SIRKULASI PEMINJAMAN BUKU (TABEL TRANSAKSI PEMINJAMAN) -->
         <div id="subview-peminjaman" class="d-none">
-          <div class="mb-4">
-            <h3 class="fw-bold m-0 text-dark">Sirkulasi Peminjaman Buku</h3>
-            <small class="text-muted fw-semibold mt-1 d-block"><a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; <a href="#" onclick="switchSubView('peminjaman'); return false;" class="text-decoration-none text-secondary">Peminjaman</a> &gt; <span class="text-dark">Tambah Peminjaman</span></small>
+          <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+            <div>
+              <h3 class="fw-bold m-0 text-dark">Sirkulasi Peminjaman Buku</h3>
+              <small class="text-muted fw-semibold mt-1 d-block">
+                <a href="#" onclick="switchSubView('dashboard'); return false;" class="text-decoration-none text-secondary">Dashboard</a> &gt; 
+                <span class="text-dark">Sirkulasi Peminjaman</span>
+              </small>
+            </div>
+            <button class="btn btn-primary rounded-3 px-4 py-2.5 fw-semibold d-inline-flex align-items-center shadow-xs" onclick="showModalTambahPeminjaman()">
+              <i class="bi bi-plus-lg me-2"></i>
+              <span>Tambah Peminjaman</span>
+            </button>
           </div>
 
-          <div class="row g-4">
-            <!-- LEFT COLUMN: MEMBER & BOOK SELECTION -->
-            <div class="col-md-7">
-              <!-- CARD 1: DATA ANGGOTA -->
-              <div class="card border-0 rounded-4 shadow-sm p-4 mb-4">
-                <div class="d-flex align-items-center gap-2 mb-3 text-primary fw-bold">
-                  <i class="bi bi-person-circle fs-5"></i><span>Data Anggota</span>
-                </div>
-                
-                <div class="mb-3" id="btn-pilih-anggota-container">
-                  <button type="button" class="btn btn-outline-primary w-100 rounded-3 border-dashed py-3 fw-semibold text-primary bg-primary-subtle border-primary bg-opacity-10" onclick="openModalPilihSiswa()">
-                    <i class="bi bi-person-plus-fill me-2"></i>+ Pilih Siswa
-                  </button>
-                </div>
-
-                <div id="selected-anggota-box" class="p-3 bg-light rounded-3 border d-none">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="avatar-circle-sm bg-primary text-white fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;" id="selected-anggota-avatar">S</div>
-                      <div>
-                        <div class="fw-bold text-dark" id="selected-anggota-nama">-</div>
-                        <small class="text-muted" id="selected-anggota-sub">-</small>
-                      </div>
-                    </div>
-                    <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="clearSelectedAnggota()"><i class="bi bi-x-lg"></i></button>
-                  </div>
+          <!-- TABLE & FILTER PEMINJAMAN -->
+          <div class="card border-0 rounded-4 shadow-sm p-4">
+            <div class="row g-3 mb-4 align-items-center">
+              <div class="col-md-3 col-sm-6">
+                <div class="d-flex align-items-center gap-2">
+                  <span class="text-muted small fw-semibold">Tampilkan:</span>
+                  <select id="peminjaman-admin-entries" class="form-select form-select-sm w-auto rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
+                    <option value="5" selected>5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                  </select>
+                  <span class="text-muted small fw-semibold">entri</span>
                 </div>
               </div>
 
-              <!-- CARD 2: DATA BUKU -->
-              <div class="card border-0 rounded-4 shadow-sm p-4">
-                <div class="d-flex align-items-center gap-2 mb-3 text-primary fw-bold">
-                  <i class="bi bi-book-half fs-5"></i><span>Data Buku</span>
+              <div class="col-md-3 col-sm-6">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="bi bi-search text-muted"></i></span>
+                  <input type="text" id="peminjaman-admin-search" class="form-control border-start-0 rounded-end-3" placeholder="Cari Siswa, Judul, ID..." onkeyup="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
                 </div>
+              </div>
 
-                <div class="mb-3" id="btn-pilih-buku-container">
-                  <button type="button" class="btn btn-outline-primary w-100 rounded-3 border-dashed py-3 fw-semibold text-primary bg-primary-subtle border-primary bg-opacity-10" onclick="openModalPilihBuku()">
-                    <i class="bi bi-book-half me-2"></i>+ Pilih Buku
-                  </button>
-                </div>
+              <div class="col-md-3 col-sm-6">
+                <select id="peminjaman-admin-filter-kelas" class="form-select rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
+                  <option value="semua">Semua Kelas</option>
+                </select>
+              </div>
 
-                <div id="selected-buku-box" class="p-3 bg-light rounded-3 border d-none">
-                  <div class="d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                      <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;" id="selected-buku-icon"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>
-                      <div>
-                        <div class="fw-bold text-dark" id="selected-buku-judul">-</div>
-                        <small class="text-muted" id="selected-buku-sub">-</small>
-                      </div>
-                    </div>
-                    <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="clearSelectedBuku()"><i class="bi bi-x-lg"></i></button>
-                  </div>
-                </div>
+              <div class="col-md-3 col-sm-6">
+                <select id="peminjaman-admin-filter-status" class="form-select rounded-3" onchange="peminjamanAdminCurrentPage = 1; executeRenderPeminjamanAdminTable();">
+                  <option value="semua">Semua Status</option>
+                  <option value="dipinjam">Dipinjam (Aktif)</option>
+                  <option value="terlambat">Terlambat</option>
+                  <option value="dikembalikan">Sudah Dikembalikan</option>
+                </select>
               </div>
             </div>
 
-            <!-- RIGHT COLUMN: DETAIL PEMINJAMAN -->
-            <div class="col-md-5">
-              <div class="card border-0 rounded-4 shadow-sm p-4">
-                <div class="d-flex align-items-center gap-2 mb-3 text-primary fw-bold">
-                  <i class="bi bi-calendar-event fs-5"></i><span>Detail Peminjaman</span>
-                </div>
+            <div class="table-responsive">
+              <table class="table align-middle table-hover table-bordered mb-0" style="border-color: #e2e8f0;">
+                <thead class="bg-light text-muted small uppercase">
+                  <tr>
+                    <th class="ps-3 text-center" style="width: 50px;">NO.</th>
+                    <th class="border-start text-center" style="width: 140px;">ID PINJAM</th>
+                    <th class="border-start">SISWA / PEMINJAM</th>
+                    <th class="border-start">BUKU YANG DIPINJAM</th>
+                    <th class="border-start text-center" style="width: 120px;">TGL PINJAM</th>
+                    <th class="border-start text-center" style="width: 120px;">JATUH TEMPO</th>
+                    <th class="border-start text-center" style="width: 140px;">STATUS</th>
+                    <th class="pe-3 text-center border-start" style="width: 120px;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody id="peminjaman-admin-table-body">
+                  <tr>
+                    <td colspan="8" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Memuat data peminjaman...</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
 
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold text-secondary">Tanggal Pinjam</label>
-                  <input type="date" id="pinjam-tgl-pinjam" class="form-control rounded-3 bg-light" readonly>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label small fw-semibold text-secondary">Tanggal Jatuh Tempo</label>
-                  <input type="date" id="pinjam-tgl-tempo" class="form-control rounded-3">
-                </div>
-
-                
-
-                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
-                  <button type="button" class="btn btn-outline-secondary rounded-3 px-3 fw-semibold" onclick="resetFormPeminjaman()">Batal</button>
-                  <button type="button" class="btn btn-primary rounded-3 px-4 fw-semibold" onclick="handleSimpanPeminjaman()"><i class="bi bi-box-arrow-right me-2"></i>Simpan Peminjaman</button>
-                </div>
+            <!-- FOOTER PAGINASI -->
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mt-3 pt-3 border-top">
+              <div class="text-muted small fw-semibold" id="peminjaman-admin-pagination-info">
+                Menampilkan 0 sampai 0 dari 0 entri
               </div>
+              <nav aria-label="Navigasi halaman">
+                <ul class="pagination pagination-sm m-0 gap-1" id="peminjaman-admin-pagination-controls">
+                </ul>
+              </nav>
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ function getStudentLoansFull(nis) {
     }
   };
 }
+
 // ==========================================
 // API TRANSAKSI PEMINJAMAN & PENGEMBALIAN
 // ==========================================
@@ -221,7 +222,6 @@ function processPengembalianBuku(idTransaksi) {
   if (dendaIdx !== -1) sheetTrx.getRange(rowToUpdate, dendaIdx + 1).setValue(0); // Denda dihilangkan (selalu 0)
 
   // Update Stok Buku
-
   if (idBukuToUpdate && sheetBuku) {
     const bukuValues = sheetBuku.getDataRange().getValues();
     const bHeaders = bukuValues[0].map(h => String(h).trim().toLowerCase());
@@ -355,5 +355,51 @@ function getTransaksiPeminjamanAktif(searchQuery) {
   return activeLoans;
 }
 
+function getAllTransaksiPeminjamanListFull() {
+  const transaksi = getSheetData('transaksi') || [];
+  const buku = getSheetData('buku') || [];
+  const anggota = getSheetData('siswa') || [];
 
-
+  const mapBuku = {};
+  buku.forEach(b => {
+    if (b && b.id_buku) mapBuku[String(b.id_buku).trim()] = b;
+  });
+
+  const mapAnggota = {};
+  anggota.forEach(a => {
+    if (a && a.nis) mapAnggota[String(a.nis).trim()] = a;
+  });
+
+  const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+
+  const list = [];
+  transaksi.forEach(t => {
+    if (!t || !t.id_transaksi) return;
+    const nis = String(t.nis || t.nis_anggota || t.id_anggota || '').trim();
+    const idBuku = String(t.id_buku || '').trim();
+    const bInfo = mapBuku[idBuku] || {};
+    const aInfo = mapAnggota[nis] || {};
+
+    const rawStatus = String(t.status || 'dipinjam').trim().toLowerCase();
+    const isLate = rawStatus === 'dipinjam' && t.tgl_jatuh_tempo && String(t.tgl_jatuh_tempo).trim() < todayStr;
+
+    list.push({
+      id_transaksi: t.id_transaksi,
+      nis: nis,
+      nama_anggota: aInfo.nama_lengkap || t.nama_anggota || t.nama_siswa || '-',
+      kelas: aInfo.kelas || '-',
+      id_buku: idBuku,
+      judul_buku: bInfo.judul_buku || t.judul_buku || '-',
+      kategori: bInfo.kategori || '-',
+      url_sampul: bInfo.url_sampul || '',
+      tgl_pinjam: t.tgl_pinjam || '',
+      tgl_jatuh_tempo: t.tgl_jatuh_tempo || '',
+      tgl_dikembalikan: t.tgl_dikembalikan || t.tgl_kembali || '',
+      status: rawStatus,
+      is_late: isLate
+    });
+  });
+
+  list.reverse();
+  return list;
+}

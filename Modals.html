@@ -61,8 +61,8 @@
 
         <div class="modal-body px-4 py-3">
           <!-- INFO BANNER -->
-          <div class="p-3.5 rounded-3 mb-3 d-flex align-items-start gap-3" style="background-color: #f0f7ff; border: 1px solid #bae0fd;">
-            <i class="bi bi-info-circle-fill text-primary fs-5 mt-0.5 flex-shrink-0"></i>
+          <div class="rounded-3 mb-3 d-flex align-items-start" style="background-color: #f0f7ff; border: 1px solid #bae0fd; padding: 14px 18px;">
+            <i class="bi bi-info-circle-fill text-primary fs-5 flex-shrink-0" style="margin-right: 12px; margin-top: 2px;"></i>
             <div class="small text-secondary">
               <strong class="text-dark d-block mb-1">Pratinjau Alur Kenaikan Kelas:</strong>
               Sistem akan memindahkan seluruh siswa aktif ke tingkat kelas di atasnya secara otomatis. Siswa di tingkat akhir (Kelas 6) akan secara otomatis dialihkan ke status <b>LULUS (Nonaktif/Alumni)</b>.
@@ -336,6 +336,114 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FORM TAMBAH PEMINJAMAN BUKU (ADMIN) -->
+  <div class="modal fade" id="modalFormTambahPeminjaman" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+        <div class="modal-header border-0 bg-white px-4 pt-4 pb-3">
+          <div class="d-flex align-items-center gap-3">
+            <div class="p-2.5 rounded-3 bg-primary-subtle text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+              <i class="bi bi-journal-arrow-up fs-5"></i>
+            </div>
+            <div>
+              <h5 class="modal-title fw-bold text-dark mb-0.5">Tambah Peminjaman Buku</h5>
+              <p class="text-muted small mb-0">Pilih data anggota siswa, buku yang dipinjam, dan tentukan jatuh tempo.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body px-4 py-3">
+          <div class="row g-3">
+            <!-- 1. DATA SISWA -->
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-4 border h-100 d-flex flex-column justify-content-between">
+                <div>
+                  <label class="form-label small fw-bold text-dark mb-2 d-flex align-items-center">
+                    <i class="bi bi-person-circle text-primary" style="margin-right: 8px;"></i>Data Siswa / Anggota <span class="text-danger fw-bold ms-1">*</span>
+                  </label>
+                  
+                  <div id="btn-pilih-anggota-container" class="mb-2">
+                    <button type="button" class="btn btn-outline-primary w-100 rounded-3 border-dashed py-3 fw-semibold text-primary bg-white border-primary" onclick="openModalPilihSiswa()">
+                      <i class="bi bi-person-plus-fill me-2"></i>+ Cari &amp; Pilih Siswa
+                    </button>
+                  </div>
+
+                  <div id="selected-anggota-box" class="p-3 bg-white rounded-3 border d-none shadow-2xs">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="avatar-circle-sm bg-primary text-white fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;" id="selected-anggota-avatar">S</div>
+                        <div>
+                          <div class="fw-bold text-dark" id="selected-anggota-nama">-</div>
+                          <small class="text-muted d-block" id="selected-anggota-sub">-</small>
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="clearSelectedAnggota()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. DATA BUKU -->
+            <div class="col-md-6">
+              <div class="p-3 bg-light rounded-4 border h-100 d-flex flex-column justify-content-between">
+                <div>
+                  <label class="form-label small fw-bold text-dark mb-2 d-flex align-items-center">
+                    <i class="bi bi-book-half text-primary" style="margin-right: 8px;"></i>Data Buku Yang Dipinjam <span class="text-danger fw-bold ms-1">*</span>
+                  </label>
+                  
+                  <div id="btn-pilih-buku-container" class="mb-2">
+                    <button type="button" class="btn btn-outline-primary w-100 rounded-3 border-dashed py-3 fw-semibold text-primary bg-white border-primary" onclick="openModalPilihBuku()">
+                      <i class="bi bi-book-half me-2"></i>+ Cari &amp; Pilih Buku
+                    </button>
+                  </div>
+
+                  <div id="selected-buku-box" class="p-3 bg-white rounded-3 border d-none shadow-2xs">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center overflow-hidden flex-shrink-0" style="width: 42px; height: 42px;" id="selected-buku-icon"><i class="bi bi-journal-bookmark-fill fs-5"></i></div>
+                        <div class="overflow-hidden">
+                          <div class="fw-bold text-dark text-truncate" style="max-width: 180px;" id="selected-buku-judul">-</div>
+                          <small class="text-muted d-block" id="selected-buku-sub">-</small>
+                        </div>
+                      </div>
+                      <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="clearSelectedBuku()"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. PERIODE PINJAM -->
+            <div class="col-12 mt-3">
+              <div class="p-3 bg-white rounded-4 border">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Tanggal Pinjam <span class="text-danger fw-bold">*</span></label>
+                    <input type="date" id="pinjam-tgl-pinjam" class="form-control rounded-3 py-2 px-3 bg-light" readonly>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label small fw-semibold text-dark mb-1.5">Tanggal Jatuh Tempo <span class="text-danger fw-bold">*</span></label>
+                    <input type="date" id="pinjam-tgl-tempo" class="form-control rounded-3 py-2 px-3">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer border-0 px-4 pb-4 pt-2 d-flex justify-content-end gap-2.5">
+          <button type="button" class="btn btn-outline-secondary rounded-3 px-4 py-2.5 fw-semibold" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary rounded-3 px-4 py-2.5 fw-semibold d-inline-flex align-items-center shadow-xs" id="btn-save-pinjam-modal" onclick="handleSimpanPeminjaman()">
+            <i class="bi bi-check2-circle me-2"></i>
+            <span>Simpan Peminjaman</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
