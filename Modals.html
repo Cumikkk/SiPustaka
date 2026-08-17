@@ -191,9 +191,9 @@
         
         <!-- TOPBAR THEATER HEADER -->
         <div class="px-3 px-md-4 py-2.5 d-flex align-items-center justify-content-between border-bottom border-dark border-opacity-50" style="background-color: #111827; height: 60px; z-index: 10;">
-          <div class="d-flex align-items-center gap-2.5 overflow-hidden me-3">
-            <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill small fw-bold d-inline-flex align-items-center gap-1.5 shadow-sm">
-              <i class="bi bi-book-half"></i>
+          <div class="d-flex align-items-center gap-2 overflow-hidden me-3">
+            <span class="badge bg-primary text-white px-2.5 py-1.5 rounded-pill small fw-bold d-inline-flex align-items-center me-1 shadow-sm">
+              <i class="bi bi-book-half" style="margin-right: 6px;"></i>
               <span>E-Reader</span>
             </span>
             <div class="text-truncate">
@@ -203,26 +203,26 @@
           
           <div class="d-flex align-items-center gap-2 flex-shrink-0">
             <!-- Tombol Fullscreen -->
-            <button type="button" class="btn btn-sm btn-outline-secondary text-light border-secondary border-opacity-50 rounded-3 px-2.5 py-1.5 d-none d-sm-inline-flex align-items-center gap-1.5" id="btn-reader-fullscreen" onclick="toggleReaderFullscreen()" title="Layar Penuh">
-              <i class="bi bi-arrows-fullscreen"></i>
+            <button type="button" class="btn btn-sm btn-outline-secondary text-light border-secondary border-opacity-50 rounded-3 px-3 py-1.5 d-none d-sm-inline-flex align-items-center" id="btn-reader-fullscreen" onclick="toggleReaderFullscreen()" title="Layar Penuh">
+              <i class="bi bi-arrows-fullscreen" style="margin-right: 6px;"></i>
               <span class="small d-none d-md-inline">Layar Penuh</span>
             </button>
 
             <!-- Tombol Buka Tab Baru -->
-            <a href="#" id="baca-buku-btn-external" target="_blank" class="btn btn-sm btn-outline-secondary text-light border-secondary border-opacity-50 rounded-3 px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5" title="Buka di Tab Baru">
-              <i class="bi bi-box-arrow-up-right"></i>
+            <a href="#" id="baca-buku-btn-external" target="_blank" class="btn btn-sm btn-outline-secondary text-light border-secondary border-opacity-50 rounded-3 px-3 py-1.5 d-inline-flex align-items-center" title="Buka di Tab Baru">
+              <i class="bi bi-box-arrow-up-right" style="margin-right: 6px;"></i>
               <span class="small d-none d-md-inline">Tab Baru</span>
             </a>
 
             <!-- Tombol Unduh PDF -->
-            <a href="#" id="baca-buku-btn-unduh" target="_blank" class="btn btn-sm btn-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm" title="Unduh File E-Book">
-              <i class="bi bi-download"></i>
+            <a href="#" id="baca-buku-btn-unduh" target="_blank" class="btn btn-sm btn-primary rounded-3 px-3 py-1.5 fw-semibold d-inline-flex align-items-center shadow-sm" title="Unduh File E-Book">
+              <i class="bi bi-download" style="margin-right: 6px;"></i>
               <span class="small d-none d-md-inline">Unduh</span>
             </a>
 
             <!-- Tombol Tutup Reader -->
-            <button type="button" class="btn btn-sm btn-danger rounded-3 px-2.5 py-1.5 d-inline-flex align-items-center gap-1 ms-1" data-bs-dismiss="modal" aria-label="Close" onclick="closeModalBacaBuku()" title="Tutup Pembaca">
-              <i class="bi bi-x-lg fs-6"></i>
+            <button type="button" class="btn btn-sm btn-danger rounded-3 px-3 py-1.5 d-inline-flex align-items-center ms-1" data-bs-dismiss="modal" aria-label="Close" onclick="closeModalBacaBuku()" title="Tutup Pembaca">
+              <i class="bi bi-x-lg fs-6" style="margin-right: 6px;"></i>
               <span class="small fw-semibold d-none d-sm-inline">Tutup</span>
             </button>
           </div>
