@@ -25,99 +25,114 @@ function getStudentLoansFull(nis) {
 // ==========================================
 
 function createTransaksiPeminjaman(nis, idBuku, tglPinjam, tglTempo, catatan) {
-  const ss = getDb();
-  
-  // Validasi Siswa
-  const sheetSiswa = getFlexibleSheet(ss, 'siswa');
-  const siswaData = sheetSiswa.getDataRange().getValues();
-  const siswaHeaders = siswaData[0].map(h => String(h).trim().toLowerCase());
-  const nisIdx = siswaHeaders.indexOf('nis');
-  let siswaFound = false;
-  let namaSiswa = '';
-  for (let i = 1; i < siswaData.length; i++) {
-    if (String(siswaData[i][nisIdx]).trim() === String(nis).trim()) {
-      siswaFound = true;
-      namaSiswa = String(siswaData[i][siswaHeaders.indexOf('nama_lengkap')] || '');
-      break;
-    }
-  }
-  if (!siswaFound) return { success: false, message: 'NIS tidak ditemukan.' };
+  const lock = LockService.getScriptLock();
+  try {
+    // 1. Kunci Antrean Eksekusi (Maks 10 detik) untuk mencegah Race Condition & Stok Minus
+    lock.waitLock(10000);
 
-  // Validasi Buku
-  const sheetBuku = ss.getSheetByName('buku');
-  const bukuData = sheetBuku.getDataRange().getValues();
-  const bukuHeaders = bukuData[0].map(h => String(h).trim().toLowerCase());
-  const idBukuIdx = bukuHeaders.indexOf('id_buku');
-  let stokIdx = bukuHeaders.indexOf('stok_buku');
-  if (stokIdx === -1) stokIdx = bukuHeaders.indexOf('stok_aktual');
-  let bukuFound = false;
-  let judulBuku = '';
-  let rowBuku = -1;
-  let currentStok = 0;
-  for (let i = 1; i < bukuData.length; i++) {
-    if (String(bukuData[i][idBukuIdx]).trim() === String(idBuku).trim()) {
-      bukuFound = true;
-      rowBuku = i + 1;
-      judulBuku = String(bukuData[i][bukuHeaders.indexOf('judul_buku')] || '');
-      currentStok = parseInt(bukuData[i][stokIdx]) || 0;
-      break;
-    }
-  }
-  if (!bukuFound) return { success: false, message: 'Buku tidak ditemukan.' };
-  if (currentStok <= 0) return { success: false, message: 'Stok buku habis (0).' };
+    const ss = getDb();
+    
+    // Validasi Siswa
+    const sheetSiswa = getFlexibleSheet(ss, 'siswa');
+    const siswaData = sheetSiswa.getDataRange().getValues();
+    const siswaHeaders = siswaData[0].map(h => String(h).trim().toLowerCase());
+    const nisIdx = siswaHeaders.indexOf('nis');
+    let siswaFound = false;
+    let namaSiswa = '';
+    const cleanNis = String(nis || '').trim();
 
-  // Generate ID Transaksi
-  const sheetTrx = ss.getSheetByName('transaksi');
-  if (!sheetTrx) return { success: false, message: 'Sheet transaksi tidak ditemukan.' };
-  
-  const trxData = sheetTrx.getDataRange().getValues();
-  const trxHeaders = trxData[0].map(h => String(h).trim().toLowerCase());
-  const idTrxIdx = trxHeaders.indexOf('id_transaksi');
-  
-  const dateObj = new Date();
-  const yyyy = dateObj.getFullYear();
-  const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-  const prefix = `trx-${yyyy}${mm}-`;
-  
-  let maxSeq = 0;
-  if (idTrxIdx !== -1) {
-    for (let i = 1; i < trxData.length; i++) {
-      const idVal = String(trxData[i][idTrxIdx] || '');
-      if (idVal.startsWith(prefix)) {
-        const seq = parseInt(idVal.replace(prefix, ''), 10);
-        if (!isNaN(seq) && seq > maxSeq) {
-          maxSeq = seq;
+    for (let i = 1; i < siswaData.length; i++) {
+      if (String(siswaData[i][nisIdx]).trim() === cleanNis) {
+        siswaFound = true;
+        namaSiswa = String(siswaData[i][siswaHeaders.indexOf('nama_lengkap')] || '');
+        break;
+      }
+    }
+    if (!siswaFound) return { success: false, message: 'NIS Siswa tidak ditemukan di database.' };
+
+    // Validasi Buku
+    const sheetBuku = ss.getSheetByName('buku');
+    const bukuData = sheetBuku.getDataRange().getValues();
+    const bukuHeaders = bukuData[0].map(h => String(h).trim().toLowerCase());
+    const idBukuIdx = bukuHeaders.indexOf('id_buku');
+    let stokIdx = bukuHeaders.indexOf('stok_buku');
+    if (stokIdx === -1) stokIdx = bukuHeaders.indexOf('stok_aktual');
+    let bukuFound = false;
+    let judulBuku = '';
+    let rowBuku = -1;
+    let currentStok = 0;
+    const cleanIdBuku = String(idBuku || '').trim();
+
+    for (let i = 1; i < bukuData.length; i++) {
+      if (String(bukuData[i][idBukuIdx]).trim() === cleanIdBuku) {
+        bukuFound = true;
+        rowBuku = i + 1;
+        judulBuku = String(bukuData[i][bukuHeaders.indexOf('judul_buku')] || '');
+        currentStok = parseInt(bukuData[i][stokIdx]) || 0;
+        break;
+      }
+    }
+    if (!bukuFound) return { success: false, message: 'Buku tidak ditemukan di database.' };
+    if (currentStok <= 0) return { success: false, message: 'Stok buku ini sedang habis (0 eksemplar).' };
+
+    // Generate ID Transaksi
+    const sheetTrx = ss.getSheetByName('transaksi');
+    if (!sheetTrx) return { success: false, message: 'Sheet transaksi tidak ditemukan.' };
+    
+    const trxData = sheetTrx.getDataRange().getValues();
+    const trxHeaders = trxData[0].map(h => String(h).trim().toLowerCase());
+    const idTrxIdx = trxHeaders.indexOf('id_transaksi');
+    
+    const dateObj = new Date();
+    const yyyy = dateObj.getFullYear();
+    const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const prefix = `trx-${yyyy}${mm}-`;
+    
+    let maxSeq = 0;
+    if (idTrxIdx !== -1) {
+      for (let i = 1; i < trxData.length; i++) {
+        const idVal = String(trxData[i][idTrxIdx] || '');
+        if (idVal.startsWith(prefix)) {
+          const seq = parseInt(idVal.replace(prefix, ''), 10);
+          if (!isNaN(seq) && seq > maxSeq) {
+            maxSeq = seq;
+          }
         }
       }
     }
+    const nextSeq = String(maxSeq + 1).padStart(3, '0');
+    let newIdTrx = `${prefix}${nextSeq}`;
+
+    // Baris baru dengan sanitasi formula
+    const newRow = trxHeaders.map(h => {
+      if (h === 'id_transaksi') return newIdTrx;
+      if (h === 'nis' || h === 'nis_anggota' || h === 'id_anggota') return sanitizeSheetInput(cleanNis);
+      if (h === 'nama_anggota' || h === 'nama_siswa') return sanitizeSheetInput(namaSiswa);
+      if (h === 'id_buku') return cleanIdBuku;
+      if (h === 'judul_buku') return sanitizeSheetInput(judulBuku);
+      if (h === 'tgl_pinjam') return tglPinjam;
+      if (h === 'tgl_jatuh_tempo') return tglTempo;
+      if (h === 'status') return 'dipinjam';
+      if (h === 'catatan') return sanitizeSheetInput(catatan || '');
+      return '';
+    });
+
+    const nextRow = sheetTrx.getLastRow() + 1;
+    sheetTrx.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
+    applyColumnAlignments('transaksi', nextRow, 1);
+
+    // Kurangi stok buku
+    if (stokIdx !== -1) {
+      sheetBuku.getRange(rowBuku, stokIdx + 1).setValue(Math.max(0, currentStok - 1));
+    }
+
+    invalidateCatalogCache();
+    return { success: true, message: 'Peminjaman berhasil dicatat!' };
+  } catch (err) {
+    return { success: false, message: 'Sistem sedang sibuk memproses antrean. Silakan coba lagi: ' + err.message };
+  } finally {
+    lock.releaseLock();
   }
-  const nextSeq = String(maxSeq + 1).padStart(3, '0');
-  let newIdTrx = `${prefix}${nextSeq}`;
-
-  // Baris baru
-  const newRow = trxHeaders.map(h => {
-    if (h === 'id_transaksi') return newIdTrx;
-    if (h === 'nis' || h === 'nis_anggota' || h === 'id_anggota') return "'" + nis;
-    if (h === 'nama_anggota' || h === 'nama_siswa') return namaSiswa;
-    if (h === 'id_buku') return idBuku;
-    if (h === 'judul_buku') return judulBuku;
-    if (h === 'tgl_pinjam') return tglPinjam;
-    if (h === 'tgl_jatuh_tempo') return tglTempo;
-    if (h === 'status') return 'dipinjam';
-    if (h === 'catatan') return catatan || '';
-    return '';
-  });
-
-  const nextRow = sheetTrx.getLastRow() + 1;
-  sheetTrx.getRange(nextRow, 1, 1, newRow.length).setValues([newRow]);
-  applyColumnAlignments('transaksi', nextRow, 1);
-
-  // Kurangi stok buku
-  if (stokIdx !== -1) {
-    sheetBuku.getRange(rowBuku, stokIdx + 1).setValue(currentStok - 1);
-  }
-
-  return { success: true, message: 'Peminjaman berhasil disimpan!' };
 }
 
 function findTransaksiForReturn(query) {
@@ -182,65 +197,70 @@ function findTransaksiForReturn(query) {
 }
 
 function processPengembalianBuku(idTransaksi) {
-  function parseLocalYMD(str) {
-    if (!str) return new Date();
-    const pts = String(str).split('-');
-    if (pts.length === 3) return new Date(pts[0], parseInt(pts[1]) - 1, pts[2]);
-    return new Date(str);
-  }
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
 
-  const ss = getDb();
-  const sheetTrx = ss.getSheetByName('transaksi');
-  const sheetBuku = ss.getSheetByName('buku');
-  if (!sheetTrx) return { success: false, message: 'Sheet transaksi tidak ditemukan.' };
+    const ss = getDb();
+    const sheetTrx = ss.getSheetByName('transaksi');
+    const sheetBuku = ss.getSheetByName('buku');
+    if (!sheetTrx) return { success: false, message: 'Sheet transaksi tidak ditemukan.' };
 
-  const values = sheetTrx.getDataRange().getValues();
-  const headers = values[0].map(h => String(h).trim().toLowerCase());
-  const idTrxIdx = headers.indexOf('id_transaksi');
-  const idBukuIdx = headers.indexOf('id_buku');
-  const statusIdx = headers.indexOf('status');
-  const tglKembaliIdx = headers.indexOf('tgl_dikembalikan') !== -1 ? headers.indexOf('tgl_dikembalikan') : headers.indexOf('tgl_kembali');
-  const dendaIdx = headers.indexOf('denda_keterlambatan') !== -1 ? headers.indexOf('denda_keterlambatan') : headers.indexOf('denda');
+    const values = sheetTrx.getDataRange().getValues();
+    const headers = values[0].map(h => String(h).trim().toLowerCase());
+    const idTrxIdx = headers.indexOf('id_transaksi');
+    const idBukuIdx = headers.indexOf('id_buku');
+    const statusIdx = headers.indexOf('status');
+    const tglKembaliIdx = headers.indexOf('tgl_dikembalikan') !== -1 ? headers.indexOf('tgl_dikembalikan') : headers.indexOf('tgl_kembali');
+    const dendaIdx = headers.indexOf('denda_keterlambatan') !== -1 ? headers.indexOf('denda_keterlambatan') : headers.indexOf('denda');
 
-  let rowToUpdate = -1;
-  let idBukuToUpdate = '';
-  for (let i = 1; i < values.length; i++) {
-    if (String(values[i][idTrxIdx]).trim() === String(idTransaksi).trim()) {
-      rowToUpdate = i + 1;
-      idBukuToUpdate = String(values[i][idBukuIdx]).trim();
-      break;
+    let rowToUpdate = -1;
+    let idBukuToUpdate = '';
+    const cleanIdTrx = String(idTransaksi || '').trim();
+
+    for (let i = 1; i < values.length; i++) {
+      if (String(values[i][idTrxIdx]).trim() === cleanIdTrx) {
+        rowToUpdate = i + 1;
+        idBukuToUpdate = String(values[i][idBukuIdx]).trim();
+        break;
+      }
     }
-  }
 
-  if (rowToUpdate === -1) return { success: false, message: 'Data transaksi tidak ditemukan.' };
+    if (rowToUpdate === -1) return { success: false, message: 'Data transaksi tidak ditemukan.' };
 
-  const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  
-  // Update Status
-  if (statusIdx !== -1) sheetTrx.getRange(rowToUpdate, statusIdx + 1).setValue('dikembalikan');
-  if (tglKembaliIdx !== -1) sheetTrx.getRange(rowToUpdate, tglKembaliIdx + 1).setValue(todayStr);
-  if (dendaIdx !== -1) sheetTrx.getRange(rowToUpdate, dendaIdx + 1).setValue(0); // Denda dihilangkan (selalu 0)
-
-  // Update Stok Buku
-  if (idBukuToUpdate && sheetBuku) {
-    const bukuValues = sheetBuku.getDataRange().getValues();
-    const bHeaders = bukuValues[0].map(h => String(h).trim().toLowerCase());
-    const bIdIdx = bHeaders.indexOf('id_buku');
-    let stokIdx = bHeaders.indexOf('stok_buku');
-    if (stokIdx === -1) stokIdx = bHeaders.indexOf('stok_aktual');
+    const todayStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
     
-    if (bIdIdx !== -1 && stokIdx !== -1) {
-      for (let i = 1; i < bukuValues.length; i++) {
-        if (String(bukuValues[i][bIdIdx]).trim() === idBukuToUpdate) {
-          const currentStok = parseInt(bukuValues[i][stokIdx]) || 0;
-          sheetBuku.getRange(i + 1, stokIdx + 1).setValue(currentStok + 1);
-          break;
+    // Update Status
+    if (statusIdx !== -1) sheetTrx.getRange(rowToUpdate, statusIdx + 1).setValue('dikembalikan');
+    if (tglKembaliIdx !== -1) sheetTrx.getRange(rowToUpdate, tglKembaliIdx + 1).setValue(todayStr);
+    if (dendaIdx !== -1) sheetTrx.getRange(rowToUpdate, dendaIdx + 1).setValue(0);
+
+    // Update Stok Buku
+    if (idBukuToUpdate && sheetBuku) {
+      const bukuValues = sheetBuku.getDataRange().getValues();
+      const bHeaders = bukuValues[0].map(h => String(h).trim().toLowerCase());
+      const bIdIdx = bHeaders.indexOf('id_buku');
+      let stokIdx = bHeaders.indexOf('stok_buku');
+      if (stokIdx === -1) stokIdx = bHeaders.indexOf('stok_aktual');
+      
+      if (bIdIdx !== -1 && stokIdx !== -1) {
+        for (let i = 1; i < bukuValues.length; i++) {
+          if (String(bukuValues[i][bIdIdx]).trim() === idBukuToUpdate) {
+            const currentStok = parseInt(bukuValues[i][stokIdx]) || 0;
+            sheetBuku.getRange(i + 1, stokIdx + 1).setValue(currentStok + 1);
+            break;
+          }
         }
       }
     }
-  }
 
-  return { success: true, message: 'Buku berhasil dikembalikan!' };
+    invalidateCatalogCache();
+    return { success: true, message: 'Buku berhasil dikembalikan!' };
+  } catch (err) {
+    return { success: false, message: 'Gagal memproses pengembalian: ' + err.message };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ==========================================

@@ -10,13 +10,53 @@
   document.addEventListener('DOMContentLoaded', () => {
     checkAndRestoreSession();
     initOtpBoxListeners();
+    initNetworkListeners();
+    initCrossTabSync();
   });
+
+  /* SINKRONISASI MULTI-TAB & DETEKSI KONEKSI */
+  function initCrossTabSync() {
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'sipustaka_session' && !e.newValue) {
+        // Logout serentak di semua tab
+        currentUser = null;
+        showLoginScreenDirect();
+      }
+    });
+  }
+
+  function initNetworkListeners() {
+    window.addEventListener('offline', () => {
+      Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000
+      }).fire({
+        icon: 'warning',
+        title: 'Koneksi internet terputus!'
+      });
+    });
+
+    window.addEventListener('online', () => {
+      Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      }).fire({
+        icon: 'success',
+        title: 'Terhubung kembali ke internet.'
+      });
+    });
+  }
 
   /* SISTEM SESI LOGIN STANDARD WEB (PERSISTENT & AUTO RENEWAL) */
   function saveUserSession(userObj) {
     if (!userObj) return;
     const sessionData = {
       user: userObj,
+      sessionToken: userObj.sessionToken || '',
       timestamp: new Date().getTime()
     };
     try {

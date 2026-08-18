@@ -310,14 +310,29 @@
 
     const coverFileInput = document.getElementById('modal-buku-sampul-file');
     const ebookFileInput = document.getElementById('modal-buku-file-upload');
+    const btnSubmitBuku = document.querySelector('#form-modal-buku button[type="submit"]');
 
-    // Validasi ukuran berkas PDF E-Book (Maksimal 15 MB)
-    if (ebookFileInput && ebookFileInput.files && ebookFileInput.files[0]) {
-      const pdfSizeMb = ebookFileInput.files[0].size / (1024 * 1024);
-      if (pdfSizeMb > 15) {
-        showErrorAlert('Ukuran berkas PDF terlalu besar (' + pdfSizeMb.toFixed(1) + ' MB). Maksimal 15 MB.');
+    // Validasi ukuran gambar sampul (Maksimal 10 MB)
+    if (coverFileInput && coverFileInput.files && coverFileInput.files[0]) {
+      const coverSizeMb = coverFileInput.files[0].size / (1024 * 1024);
+      if (coverSizeMb > 10) {
+        showErrorAlert('Ukuran berkas sampul terlalu besar (' + coverSizeMb.toFixed(1) + ' MB). Maksimal 10 MB.');
         return;
       }
+    }
+
+    // Validasi ukuran berkas PDF E-Book (Maksimal 25 MB)
+    if (ebookFileInput && ebookFileInput.files && ebookFileInput.files[0]) {
+      const pdfSizeMb = ebookFileInput.files[0].size / (1024 * 1024);
+      if (pdfSizeMb > 25) {
+        showErrorAlert('Ukuran berkas PDF terlalu besar (' + pdfSizeMb.toFixed(1) + ' MB). Maksimal 25 MB.');
+        return;
+      }
+    }
+
+    if (btnSubmitBuku) {
+      btnSubmitBuku.disabled = true;
+      btnSubmitBuku.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
     }
 
     showLoadingAlert('Mengunggah berkas ke Google Drive dan menyimpan...');
@@ -352,6 +367,10 @@
 
       google.script.run
         .withSuccessHandler(res => {
+          if (btnSubmitBuku) {
+            btnSubmitBuku.disabled = false;
+            btnSubmitBuku.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan Buku';
+          }
           closeLoadingAlert();
           if (res && res.success) {
             showSuccessAlert(res.message, () => {
@@ -367,14 +386,22 @@
           }
         })
         .withFailureHandler(err => {
+          if (btnSubmitBuku) {
+            btnSubmitBuku.disabled = false;
+            btnSubmitBuku.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan Buku';
+          }
           closeLoadingAlert();
-          showErrorAlert('Terjadi kesalahan saat menyimpan: ' + (err.message || err));
+          showErrorAlert(err ? err.message : 'Gagal memproses ke server.');
         })
         .saveBukuData(bukuObj);
 
     } catch (err) {
+      if (btnSubmitBuku) {
+        btnSubmitBuku.disabled = false;
+        btnSubmitBuku.innerHTML = '<i class="bi bi-check-lg me-1"></i>Simpan Buku';
+      }
       closeLoadingAlert();
-      showErrorAlert('Gagal membaca berkas: ' + err.message);
+      showErrorAlert('Gagal membaca file: ' + err.message);
     }
   }
 

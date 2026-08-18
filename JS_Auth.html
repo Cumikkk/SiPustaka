@@ -1,5 +1,10 @@
 <script>
-  /* LOGIKA LOGIN SUBMIT */
+  /* ====================================================================
+   * SiPustaka - Modul Controller Autentikasi & Reset Password
+   * ==================================================================== */
+
+  let otpCooldownTimer = null;
+
   function togglePasswordVisibility() {
     const inputPass = document.getElementById('login-password');
     const iconEye = document.getElementById('toggle-eye-icon');
@@ -16,6 +21,7 @@
 
   function handleLoginSubmit(e) {
     if (e && e.preventDefault) e.preventDefault();
+    const btnSubmit = document.querySelector('#form-login button[type="submit"]');
     const credInput = document.getElementById('login-username') || document.getElementById('login-credential');
     const passInput = document.getElementById('login-password');
 
@@ -27,10 +33,19 @@
       return;
     }
 
+    if (btnSubmit) {
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memverifikasi...';
+    }
+
     showLoadingAlert('Memverifikasi akun Anda...');
 
     google.script.run
       .withSuccessHandler(res => {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<span>Masuk ke Akun</span><i class="bi bi-arrow-right ms-2"></i>';
+        }
         closeLoadingAlert();
         if (res && res.success) {
           currentUser = res;
@@ -50,20 +65,25 @@
         }
       })
       .withFailureHandler(err => {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<span>Masuk ke Akun</span><i class="bi bi-arrow-right ms-2"></i>';
+        }
         closeLoadingAlert();
         showErrorAlert(err ? err.message : 'Gagal menghubungi server Google Apps Script.');
       })
       .loginUserUnified(credential, password);
   }
 
-
   /* LOGIKA MODAL OTP RESET PASSWORD */
   function openForgotModal() {
     try {
       const step1 = document.getElementById('otp-step-1');
       const step2 = document.getElementById('otp-step-2');
+      const step3 = document.getElementById('otp-step-3');
       if (step1) step1.classList.remove('d-none');
       if (step2) step2.classList.add('d-none');
+      if (step3) step3.classList.add('d-none');
       
       const modalEl = document.getElementById('modalLupaPassword');
       if (modalEl && typeof bootstrap !== 'undefined') {
@@ -77,14 +97,25 @@
 
   function handleSendOtp() {
     const email = document.getElementById('reset-email').value;
+    const btnSend = document.getElementById('btn-send-otp');
+
     if (!email) {
       showErrorAlert('Silakan masukkan email Anda.');
       return;
     }
 
+    if (btnSend) {
+      btnSend.disabled = true;
+      btnSend.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mengirim...';
+    }
+
     showLoadingAlert('Mengirim kode OTP ke email...');
     google.script.run
       .withSuccessHandler(res => {
+        if (btnSend) {
+          btnSend.disabled = false;
+          btnSend.innerHTML = 'Kirim Kode OTP';
+        }
         closeLoadingAlert();
         if (res && res.success) {
           showSuccessAlert(res.message, () => {
@@ -95,16 +126,41 @@
             if (targetEmailEl) targetEmailEl.innerText = email;
             const firstBox = document.querySelector('.otp-digit-box[data-index="0"]');
             if (firstBox) firstBox.focus();
+            startOtpCooldown(60);
           });
         } else {
           showErrorAlert(res ? res.message : 'Gagal mengirim OTP.');
         }
       })
       .withFailureHandler(err => {
+        if (btnSend) {
+          btnSend.disabled = false;
+          btnSend.innerHTML = 'Kirim Kode OTP';
+        }
         closeLoadingAlert();
         showErrorAlert(err ? err.message : 'Gagal menghubungi server.');
       })
       .requestOtpUniversal(email);
+  }
+
+  function startOtpCooldown(seconds) {
+    const resendBtn = document.getElementById('btn-resend-otp');
+    if (!resendBtn) return;
+
+    if (otpCooldownTimer) clearInterval(otpCooldownTimer);
+    let current = seconds;
+    resendBtn.disabled = true;
+
+    otpCooldownTimer = setInterval(() => {
+      current--;
+      if (current <= 0) {
+        clearInterval(otpCooldownTimer);
+        resendBtn.disabled = false;
+        resendBtn.innerText = 'Kirim Ulang Kode';
+      } else {
+        resendBtn.innerText = `Kirim Ulang (${current}s)`;
+      }
+    }, 1000);
   }
 
   function backToStep1() {
@@ -185,4 +241,19 @@
       .resetPasswordUniversal(email, otp, newPassword);
   }
 
+  function initOtpBoxListeners() {
+    const boxes = document.querySelectorAll('.otp-digit-box');
+    boxes.forEach((box, index) => {
+      box.addEventListener('input', (e) => {
+        if (box.value.length === 1 && index < boxes.length - 1) {
+          boxes[index + 1].focus();
+        }
+      });
+      box.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && box.value.length === 0 && index > 0) {
+          boxes[index - 1].focus();
+        }
+      });
+    });
+  }
 </script>

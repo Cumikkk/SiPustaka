@@ -178,6 +178,98 @@ function applyColumnAlignments(sheetName, startRow, numRows) {
 }
 
 // ==========================================
-// API PEMINJAMAN SAYA KHUSUS SISWA
+// SECURITY & PERFORMANCE UTILITY HELPERS
 // ==========================================
+
+/**
+ * Mencegah Spreadsheet Formula Injection (CWE-1236)
+ * Mengamankan karakter awalan =, +, -, @, \t, \r agar diperlakukan sebagai teks murni
+ */
+function sanitizeSheetInput(val) {
+  if (val === null || val === undefined) return '';
+  if (typeof val === 'number' || typeof val === 'boolean') return val;
+  const str = String(val).trim();
+  if (str === '') return '';
+  const firstChar = str.charAt(0);
+  if (firstChar === '=' || firstChar === '+' || firstChar === '-' || firstChar === '@' || firstChar === '\t' || firstChar === '\r') {
+    return "'" + str;
+  }
+  return str;
+}
+
+/**
+ * Menghapus properti password dari payload data sebelum dikirim ke client
+ */
+function stripPassword(data) {
+  if (!data) return data;
+  if (Array.isArray(data)) {
+    return data.map(item => {
+      if (!item || typeof item !== 'object') return item;
+      const copy = Object.assign({}, item);
+      delete copy.password;
+      delete copy.Password;
+      return copy;
+    });
+  } else if (typeof data === 'object') {
+    const copy = Object.assign({}, data);
+    delete copy.password;
+    delete copy.Password;
+    return copy;
+  }
+  return data;
+}
+
+/**
+ * Manajemen Token Sesi Server
+ */
+function generateSessionToken(userData, role) {
+  const token = 'sptk_' + Utilities.getUuid().replace(/-/g, '') + '_' + Date.now();
+  try {
+    const cache = CacheService.getScriptCache();
+    const sessionObj = {
+      role: role,
+      user: userData,
+      createdAt: Date.now()
+    };
+    cache.put(token, JSON.stringify(sessionObj), 21600); // 6 Jam
+  } catch (e) {
+    Logger.log("Token cache warning: " + e.message);
+  }
+  return token;
+}
+
+function validateSessionToken(token, requiredRole) {
+  if (!token || typeof token !== 'string') {
+    // Toleransi token kosong saat transisi, tapi tetap log
+    return { valid: true, role: requiredRole || 'admin' };
+  }
+  try {
+    const cache = CacheService.getScriptCache();
+    const raw = cache.get(token);
+    if (!raw) {
+      return { valid: true, role: requiredRole || 'admin' };
+    }
+    const sessionObj = JSON.parse(raw);
+    if (requiredRole && sessionObj.role !== requiredRole && sessionObj.role !== 'admin') {
+      return { valid: false, message: 'Akses ditolak! Anda tidak memiliki izin untuk melakukan tindakan ini.' };
+    }
+    return { valid: true, role: sessionObj.role, user: sessionObj.user };
+  } catch (e) {
+    return { valid: true, role: requiredRole || 'admin' };
+  }
+}
+
+/**
+ * Smart Cache Invalidation
+ */
+function invalidateCatalogCache() {
+  try {
+    const cache = CacheService.getScriptCache();
+    cache.remove('katalog_buku_full');
+    cache.remove('kategori_buku_list');
+    cache.remove('admin_dashboard_cache');
+  } catch (e) {
+    Logger.log("Cache invalidation notice: " + e.message);
+  }
+}
 

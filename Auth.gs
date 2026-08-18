@@ -11,7 +11,23 @@ function loginUserUnified(credential, password) {
   const cred = String(credential || '').trim();
   const pass = String(password || '').trim();
 
-  // 1. Cek Admin terlebih dahulu (Username atau Email)
+  if (!cred || !pass) {
+    return { success: false, message: 'Username/Email dan Password wajib diisi!' };
+  }
+
+  // 1. Anti Brute-Force Rate Limiting (Maks 5x gagal dalam 5 menit)
+  const cache = CacheService.getScriptCache();
+  const rateLimitKey = 'login_fail_' + encodeURIComponent(cred.toLowerCase());
+  const failCount = parseInt(cache.get(rateLimitKey) || '0', 10);
+
+  if (failCount >= 5) {
+    return { 
+      success: false, 
+      message: 'Terlalu banyak percobaan login gagal! Akun terkunci sementara selama 5 menit demi keamanan.' 
+    };
+  }
+
+  // 2. Cek Admin terlebih dahulu (Username atau Email)
   const admins = getSheetData('admin');
   const adminUser = admins.find(a => 
     (String(a.username || '').trim().toLowerCase() === cred.toLowerCase() || String(a.email || '').trim().toLowerCase() === cred.toLowerCase()) && 
@@ -19,20 +35,25 @@ function loginUserUnified(credential, password) {
   );
 
   if (adminUser) {
+    cache.remove(rateLimitKey); // Reset rate limit on success
+    const userData = {
+      id_admin: adminUser.id_admin,
+      nama_lengkap: adminUser.nama_lengkap,
+      email: adminUser.email,
+      username: adminUser.username,
+      role_title: 'Petugas / Admin'
+    };
+    const sessionToken = generateSessionToken(userData, 'admin');
+
     return {
       success: true,
       role: 'admin',
-      userData: {
-        id_admin: adminUser.id_admin,
-        nama_lengkap: adminUser.nama_lengkap,
-        email: adminUser.email,
-        username: adminUser.username,
-        role_title: 'Petugas / Admin'
-      }
+      sessionToken: sessionToken,
+      userData: userData
     };
   }
 
-  // 2. Jika bukan Admin, Cek Siswa / Anggota (Strict: Username atau Email Saja)
+  // 3. Jika bukan Admin, Cek Siswa / Anggota (Strict: Username atau Email Saja)
   const anggota = getSheetData('siswa');
   const siswaUser = anggota.find(a => {
     const userClean = String(a.username || '').trim().toLowerCase();
@@ -47,26 +68,51 @@ function loginUserUnified(credential, password) {
     if (String(siswaUser.status || 'aktif').toLowerCase() !== 'aktif') {
       return { success: false, message: 'Akun Siswa Anda sedang dinonaktifkan oleh petugas perpustakaan.' };
     }
+    cache.remove(rateLimitKey); // Reset rate limit on success
+    const userData = {
+      nis: siswaUser.nis,
+      nama_lengkap: siswaUser.nama_lengkap,
+      username: siswaUser.username,
+      kelas: siswaUser.kelas,
+      email: siswaUser.email,
+      status: siswaUser.status || 'Aktif',
+      role_title: 'Siswa (Kelas ' + (siswaUser.kelas || '-') + ')'
+    };
+    const sessionToken = generateSessionToken(userData, 'siswa');
+
     return {
       success: true,
       role: 'siswa',
-      userData: {
-        nis: siswaUser.nis,
-        nama_lengkap: siswaUser.nama_lengkap,
-        username: siswaUser.username,
-        kelas: siswaUser.kelas,
-        email: siswaUser.email,
-        status: siswaUser.status || 'Aktif',
-        role_title: 'Siswa (Kelas ' + (siswaUser.kelas || '-') + ')'
-      }
+      sessionToken: sessionToken,
+      userData: userData
     };
   }
 
-  return { success: false, message: 'Username / Email atau Kata Sandi salah!' };
+  // Catat kegagalan login untuk rate limiting
+  cache.put(rateLimitKey, String(failCount + 1), 300); // 5 Menit
+
+  const remaining = 5 - (failCount + 1);
+  return { 
+    success: false, 
+    message: `Username / Email atau Kata Sandi salah! (Sisa percobaan: ${Math.max(0, remaining)})` 
+  };
 }
 
 function requestOtpUniversal(email) {
   const cleanEmail = String(email).trim().toLowerCase();
+  if (!cleanEmail) {
+    return { success: false, message: 'Email tidak boleh kosong!' };
+  }
+
+  // Proteksi Spam Email / Rate Limit Cooldown (Maks 1 request per 60 detik)
+  const cache = CacheService.getScriptCache();
+  const cooldownKey = 'otp_cooldown_' + encodeURIComponent(cleanEmail);
+  if (cache.get(cooldownKey)) {
+    return { 
+      success: false, 
+      message: 'Mohon tunggu 60 detik sebelum meminta kode OTP baru demi menjaga kuota email.' 
+    };
+  }
   
   const admins = getSheetData('admin');
   let user = admins.find(a => String(a.email).trim().toLowerCase() === cleanEmail);
@@ -91,6 +137,7 @@ function requestOtpUniversal(email) {
     expiry: new Date().getTime() + (10 * 60 * 1000)
   });
   props.setProperty('OTP_' + cleanEmail, otpData);
+  cache.put(cooldownKey, '1', 60); // 60 Detik Cooldown
 
   try {
     const namaUser = user.nama_lengkap || user.username || 'Pengguna SiPustaka';
@@ -140,6 +187,11 @@ function requestOtpUniversal(email) {
 
 function resetPasswordUniversal(email, otpInput, newPassword) {
   const cleanEmail = String(email).trim().toLowerCase();
+  const safePass = sanitizeSheetInput(newPassword);
+  if (!safePass) {
+    return { success: false, message: 'Password baru tidak boleh kosong!' };
+  }
+
   const props = PropertiesService.getScriptProperties();
   const rawData = props.getProperty('OTP_' + cleanEmail);
 
@@ -170,7 +222,7 @@ function resetPasswordUniversal(email, otpInput, newPassword) {
       for (let i = 1; i < values.length; i++) {
         if (emailIdx !== -1 && String(values[i][emailIdx]).trim().toLowerCase() === cleanEmail) {
           if (passIdx !== -1) {
-            sheetAdmin.getRange(i + 1, passIdx + 1).setValue(newPassword);
+            sheetAdmin.getRange(i + 1, passIdx + 1).setValue(safePass);
             updated = true;
           }
           break;
@@ -187,7 +239,7 @@ function resetPasswordUniversal(email, otpInput, newPassword) {
       for (let i = 1; i < values.length; i++) {
         if (emailIdx !== -1 && String(values[i][emailIdx]).trim().toLowerCase() === cleanEmail) {
           if (passIdx !== -1) {
-            sheetSiswa.getRange(i + 1, passIdx + 1).setValue(newPassword);
+            sheetSiswa.getRange(i + 1, passIdx + 1).setValue(safePass);
             updated = true;
           }
           break;
@@ -353,12 +405,12 @@ function updateUserSelfProfile(profileData) {
         if (oldPassword !== currentDbPass) {
           return { success: false, message: 'Password saat ini / lama yang Anda masukkan salah!' };
         }
-        sheet.getRange(rowIndex, passIdx + 1).setValue(newPassword);
+        sheet.getRange(rowIndex, passIdx + 1).setValue(sanitizeSheetInput(newPassword));
       }
 
-      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(namaLengkap);
-      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(username);
-      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(email);
+      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(sanitizeSheetInput(namaLengkap));
+      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(sanitizeSheetInput(username));
+      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(sanitizeSheetInput(email));
 
       return {
         success: true,
@@ -405,12 +457,12 @@ function updateUserSelfProfile(profileData) {
         if (oldPassword !== currentDbPass) {
           return { success: false, message: 'Password saat ini / lama yang Anda masukkan salah!' };
         }
-        sheet.getRange(rowIndex, passIdx + 1).setValue(newPassword);
+        sheet.getRange(rowIndex, passIdx + 1).setValue(sanitizeSheetInput(newPassword));
       }
 
-      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(namaLengkap);
-      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(username);
-      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(email);
+      if (namaIdx !== -1) sheet.getRange(rowIndex, namaIdx + 1).setValue(sanitizeSheetInput(namaLengkap));
+      if (userIdx !== -1) sheet.getRange(rowIndex, userIdx + 1).setValue(sanitizeSheetInput(username));
+      if (emailIdx !== -1) sheet.getRange(rowIndex, emailIdx + 1).setValue(sanitizeSheetInput(email));
 
       const kelasVal = kelasIdx !== -1 ? values[rowIndex - 1][kelasIdx] : '';
       const statusVal = statusIdx !== -1 ? values[rowIndex - 1][statusIdx] : 'Aktif';

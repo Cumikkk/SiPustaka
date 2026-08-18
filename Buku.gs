@@ -1,44 +1,63 @@
-/**
- * ====================================================================
- * SiPustaka - Modul Manajemen & Katalog Buku
- * ====================================================================
- */
-
-// API PUBLIC & KATALOG
+// API PUBLIC & KATALOG DENGAN SERVER-SIDE CACHING
 // ==========================================
 
 function getKatalogBuku(searchQuery, kategori) {
-  const allBuku = getSheetData('buku');
-  const transaksi = getSheetData('transaksi');
-  const activeBorrowMap = {};
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'katalog_buku_full';
+  let allProcessedBuku = null;
 
-  transaksi.forEach(t => {
-    if (String(t.status || '').toLowerCase() === 'dipinjam') {
-      const bId = String(t.id_buku || '');
-      activeBorrowMap[bId] = (activeBorrowMap[bId] || 0) + 1;
+  if (!searchQuery && (!kategori || kategori === 'semua')) {
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      try {
+        allProcessedBuku = JSON.parse(cachedData);
+      } catch (e) {
+        allProcessedBuku = null;
+      }
     }
-  });
+  }
 
-  return allBuku.filter(buku => {
+  if (!allProcessedBuku) {
+    const allBuku = getSheetData('buku');
+    const transaksi = getSheetData('transaksi');
+    const activeBorrowMap = {};
+
+    transaksi.forEach(t => {
+      if (String(t.status || '').toLowerCase() === 'dipinjam') {
+        const bId = String(t.id_buku || '');
+        activeBorrowMap[bId] = (activeBorrowMap[bId] || 0) + 1;
+      }
+    });
+
+    allProcessedBuku = allBuku.map(buku => {
+      const bId = String(buku.id_buku || '');
+      const baseStok = Number(buku.stok_buku !== undefined ? buku.stok_buku : (buku.stok_aktual !== undefined ? buku.stok_aktual : 0));
+      const activeCount = activeBorrowMap[bId] || 0;
+      const sisaStok = Math.max(0, baseStok - activeCount);
+      
+      const bCopy = {};
+      for (let key in buku) { bCopy[key] = buku[key]; }
+      bCopy.stok_buku = sisaStok;
+      return bCopy;
+    });
+
+    try {
+      cache.put(cacheKey, JSON.stringify(allProcessedBuku), 300); // Cache 5 Menit
+    } catch (e) {
+      Logger.log("Cache put notice: " + e.message);
+    }
+  }
+
+  return allProcessedBuku.filter(buku => {
     const matchesSearch = !searchQuery || 
-      String(buku.judul_buku).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(buku.penulis).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(buku.isbn).toLowerCase().includes(searchQuery.toLowerCase());
+      String(buku.judul_buku || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(buku.penulis || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(buku.isbn || '').toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesKategori = !kategori || kategori === 'semua' || 
-      String(buku.kategori).toLowerCase() === kategori.toLowerCase();
+      String(buku.kategori || '').toLowerCase() === kategori.toLowerCase();
 
     return matchesSearch && matchesKategori;
-  }).map(buku => {
-    const bId = String(buku.id_buku || '');
-    const baseStok = Number(buku.stok_buku !== undefined ? buku.stok_buku : (buku.stok_aktual !== undefined ? buku.stok_aktual : 0));
-    const activeCount = activeBorrowMap[bId] || 0;
-    const sisaStok = Math.max(0, baseStok - activeCount);
-    
-    const bCopy = {};
-    for (let key in buku) { bCopy[key] = buku[key]; }
-    bCopy.stok_buku = sisaStok;
-    return bCopy;
   });
 }
 
@@ -46,9 +65,9 @@ function getKategoriList() {
   const allBuku = getSheetData('buku');
   const setKategori = new Set();
   allBuku.forEach(b => {
-    if (b.kategori) setKategori.add(String(b.kategori).trim().toLowerCase());
+    if (b.kategori) setKategori.add(String(b.kategori).trim());
   });
-  return Array.from(setKategori);
+  return Array.from(setKategori).sort();
 }
 
 function getBukuListFull(searchQuery, kategori, statusFilter) {
@@ -263,21 +282,21 @@ function saveBukuData(bukuObj) {
     }
   }
 
-  const stokVal = Number(bukuObj.stok_buku || bukuObj.stok_aktual || 1);
+  const stokVal = Math.max(0, parseInt(bukuObj.stok_buku || bukuObj.stok_aktual || 1, 10));
 
   if (!isEdit) {
     const nextRow = Math.max(sheet.getLastRow() + 1, 2);
     const newId = 'bk-' + String(nextRow - 1).padStart(3, '0');
     
-    // Construct row matching current headers dynamically
+    // Construct row matching current headers dynamically dengan sanitasi formula
     const rowData = headers.map(h => {
       if (h === 'id_buku') return newId;
-      if (h === 'isbn') return bukuObj.isbn || '';
-      if (h === 'judul_buku') return bukuObj.judul_buku || '';
-      if (h === 'penulis') return bukuObj.penulis || '';
-      if (h === 'penerbit') return bukuObj.penerbit || '';
-      if (h === 'tahun_terbit') return bukuObj.tahun_terbit || '';
-      if (h === 'kategori') return bukuObj.kategori || 'Fiksi';
+      if (h === 'isbn') return sanitizeSheetInput(bukuObj.isbn || '');
+      if (h === 'judul_buku') return sanitizeSheetInput(bukuObj.judul_buku || '');
+      if (h === 'penulis') return sanitizeSheetInput(bukuObj.penulis || '');
+      if (h === 'penerbit') return sanitizeSheetInput(bukuObj.penerbit || '');
+      if (h === 'tahun_terbit') return sanitizeSheetInput(bukuObj.tahun_terbit || '');
+      if (h === 'kategori') return sanitizeSheetInput(bukuObj.kategori || 'Umum');
       if (h === 'stok_buku' || h === 'stok_aktual') return stokVal;
       if (h === 'url_sampul') return bukuObj.url_sampul || '';
       if (h === 'url_file_buku') return bukuObj.url_file_buku || '';
@@ -286,17 +305,19 @@ function saveBukuData(bukuObj) {
 
     sheet.getRange(nextRow, 1, 1, rowData.length).setValues([rowData]);
     applyColumnAlignments('buku', nextRow, 1);
+    invalidateCatalogCache();
     return { success: true, message: 'Buku baru berhasil ditambahkan dan berkas tersimpan!' };
   } else {
-    if (isbnIdx !== -1) sheet.getRange(rowToUpdate, isbnIdx + 1).setValue(bukuObj.isbn || '');
-    if (judulIdx !== -1) sheet.getRange(rowToUpdate, judulIdx + 1).setValue(bukuObj.judul_buku || '');
-    if (penulisIdx !== -1) sheet.getRange(rowToUpdate, penulisIdx + 1).setValue(bukuObj.penulis || '');
-    if (penerbitIdx !== -1) sheet.getRange(rowToUpdate, penerbitIdx + 1).setValue(bukuObj.penerbit || '');
-    if (tahunIdx !== -1) sheet.getRange(rowToUpdate, tahunIdx + 1).setValue(bukuObj.tahun_terbit || '');
-    if (kategoriIdx !== -1) sheet.getRange(rowToUpdate, kategoriIdx + 1).setValue(bukuObj.kategori || 'Fiksi');
+    if (isbnIdx !== -1) sheet.getRange(rowToUpdate, isbnIdx + 1).setValue(sanitizeSheetInput(bukuObj.isbn || ''));
+    if (judulIdx !== -1) sheet.getRange(rowToUpdate, judulIdx + 1).setValue(sanitizeSheetInput(bukuObj.judul_buku || ''));
+    if (penulisIdx !== -1) sheet.getRange(rowToUpdate, penulisIdx + 1).setValue(sanitizeSheetInput(bukuObj.penulis || ''));
+    if (penerbitIdx !== -1) sheet.getRange(rowToUpdate, penerbitIdx + 1).setValue(sanitizeSheetInput(bukuObj.penerbit || ''));
+    if (tahunIdx !== -1) sheet.getRange(rowToUpdate, tahunIdx + 1).setValue(sanitizeSheetInput(bukuObj.tahun_terbit || ''));
+    if (kategoriIdx !== -1) sheet.getRange(rowToUpdate, kategoriIdx + 1).setValue(sanitizeSheetInput(bukuObj.kategori || 'Umum'));
     if (stokIdx !== -1) sheet.getRange(rowToUpdate, stokIdx + 1).setValue(stokVal);
     if (urlIdx !== -1 && bukuObj.url_sampul !== undefined) sheet.getRange(rowToUpdate, urlIdx + 1).setValue(bukuObj.url_sampul);
     if (urlFileIdx !== -1 && bukuObj.url_file_buku !== undefined) sheet.getRange(rowToUpdate, urlFileIdx + 1).setValue(bukuObj.url_file_buku);
+    invalidateCatalogCache();
     return { success: true, message: 'Data buku berhasil diperbarui dan berkas tersimpan!' };
   }
 }
@@ -306,6 +327,22 @@ function deleteBukuData(idBuku) {
   const sheet = ss.getSheetByName('buku');
   if (!sheet) return { success: false, message: 'Sheet buku tidak ditemukan.' };
 
+  const cleanId = String(idBuku || '').trim();
+
+  // 1. Cascading Integrity Check: Cek apakah buku sedang dipinjam aktif oleh siswa
+  const transaksi = getSheetData('transaksi');
+  const isCurrentlyBorrowed = (transaksi || []).some(t => 
+    String(t.id_buku || '').trim() === cleanId && 
+    String(t.status || '').toLowerCase().trim() === 'dipinjam'
+  );
+
+  if (isCurrentlyBorrowed) {
+    return {
+      success: false,
+      message: 'Tidak dapat menghapus buku ini karena sedang ada siswa yang meminjamnya! Harap tunggu hingga seluruh buku dikembalikan.'
+    };
+  }
+
   const values = sheet.getDataRange().getValues();
   const headers = values[0].map(h => String(h).trim().toLowerCase());
   
@@ -314,7 +351,7 @@ function deleteBukuData(idBuku) {
   const urlFileIdx = headers.indexOf('url_file_buku');
 
   for (let i = 1; i < values.length; i++) {
-    if (String(values[i][idBukuIdx]).trim() === String(idBuku).trim()) {
+    if (String(values[i][idBukuIdx]).trim() === cleanId) {
       const row = values[i];
 
       // 1. Hapus berkas Sampul dari Google Drive jika ada
@@ -329,6 +366,7 @@ function deleteBukuData(idBuku) {
 
       // 3. Hapus baris data dari Google Sheet
       sheet.deleteRow(i + 1);
+      invalidateCatalogCache();
       return { success: true, message: 'Buku beserta seluruh berkasnya di Google Drive berhasil dihapus!' };
     }
   }
