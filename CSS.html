@@ -758,16 +758,33 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* Modals & Dialogs on Mobile */
-    .modal-dialog { 
-      margin: 8px !important; 
-      max-width: calc(100% - 16px) !important; 
+    /* Modals & Dialogs on Mobile (Bebas Flexbox Clipping & Aman Bottom Safe Area) */
+    .modal {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      padding-right: 0 !important;
     }
-    .modal-body { padding: 14px !important; }
+    .modal-dialog { 
+      margin: 14px auto 100px auto !important; 
+      max-width: calc(100% - 24px) !important; 
+    }
+    .modal-dialog-centered {
+      display: flex !important;
+      align-items: flex-start !important;
+      min-height: auto !important;
+    }
+    .modal-content {
+      margin-bottom: 40px !important;
+      border-radius: 16px !important;
+    }
+    .modal-body { 
+      padding: 16px !important; 
+      -webkit-overflow-scrolling: touch;
+    }
     .modal-footer {
       flex-direction: column-reverse !important;
       gap: 8px !important;
-      padding: 12px 14px 16px !important;
+      padding: 14px 16px 20px !important;
     }
     .modal-footer .btn {
       width: 100% !important;
@@ -849,6 +866,21 @@
       -webkit-overflow-scrolling: touch;
     }
     .topbar { padding: 0 18px !important; }
+    .modal {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+    }
+    .modal-dialog { 
+      margin: 20px auto 90px auto !important; 
+    }
+    .modal-dialog-centered {
+      display: flex !important;
+      align-items: flex-start !important;
+      min-height: auto !important;
+    }
+    .modal-content {
+      margin-bottom: 30px !important;
+    }
   }
 
   /* ========================================================
