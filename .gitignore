@@ -4,6 +4,11 @@ backups/
 *.new_bak
 scratch/
 
+# Node modules
+node_modules/
+package.json
+package-lock.json
+
 # File Sistem Operasi
 .DS_Store
 Thumbs.db

@@ -1,0 +1,511 @@
+/* ==========================================================================
+   BUKU PANDUAN SIPUSTAKA - FORMAT A5 STANDAR (148mm x 210mm)
+   Desain Buku Pedoman Resmi Perpustakaan SDN Kedungsumur 03
+   ========================================================================== */
+
+:root {
+  --primary-color: #1e40af;
+  --primary-dark: #1e3a8a;
+  --primary-light: #eff6ff;
+  --accent-color: #0284c7;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+  --bg-page: #f8fafc;
+  --paper-bg: #ffffff;
+  --success-color: #16a34a;
+  --warning-color: #d97706;
+  --danger-color: #dc2626;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--text-dark);
+  background-color: var(--bg-page);
+  line-height: 1.6;
+  font-size: 9.5pt;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================
+   TOPBAR NAVIGASI WEB (NON-PRINT)
+   ========================================== */
+.topbar-control {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary-color);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-print-a5 {
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+  color: #ffffff;
+  border: none;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.25);
+  transition: all 0.2s ease;
+}
+
+.btn-print-a5:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.35);
+}
+
+/* ==========================================
+   CONTAINER BUKU A5 (WEB VIEWER)
+   ========================================== */
+.book-wrapper {
+  max-width: 820px;
+  margin: 80px auto 40px;
+  padding: 0 16px;
+}
+
+.a5-page {
+  background: var(--paper-bg);
+  width: 100%;
+  min-height: 1000px;
+  padding: 40px 48px;
+  margin-bottom: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* ==========================================
+   COVER DEPAN (HALAMAN SAMPUL A5)
+   ========================================== */
+.cover-page {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+  background: linear-gradient(160deg, #f0f7ff 0%, #ffffff 50%, #e0f2fe 100%);
+  border: 2px solid #cbd5e1;
+  padding: 50px 36px 40px;
+  min-height: 1000px;
+}
+
+.cover-header .instansi-badge {
+  display: inline-block;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 12px;
+  padding: 6px 16px;
+  border-radius: 50px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  border: 1px solid #bfdbfe;
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-size: 26pt;
+  font-weight: 800;
+  color: var(--primary-dark);
+  line-height: 1.25;
+  margin-bottom: 12px;
+}
+
+.cover-title span {
+  color: var(--accent-color);
+}
+
+.cover-subtitle {
+  font-size: 12pt;
+  font-weight: 500;
+  color: var(--text-muted);
+  max-width: 500px;
+  margin: 0 auto 30px;
+}
+
+.cover-illustration {
+  margin: 20px auto;
+  max-width: 440px;
+  border-radius: 16px;
+  box-shadow: 0 12px 30px rgba(30, 64, 175, 0.15);
+  border: 4px solid #ffffff;
+}
+
+.cover-illustration img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  display: block;
+}
+
+.cover-footer {
+  margin-top: 30px;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 20px;
+}
+
+.cover-school {
+  font-size: 14pt;
+  font-weight: 700;
+  color: var(--primary-dark);
+}
+
+.cover-author {
+  font-size: 10pt;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.cover-year {
+  display: inline-block;
+  margin-top: 12px;
+  font-weight: 600;
+  font-size: 11pt;
+  color: var(--accent-color);
+}
+
+/* ==========================================
+   TIPOGRAFI & HEADING BAB
+   ========================================== */
+.chapter-header {
+  border-bottom: 2px solid var(--primary-color);
+  padding-bottom: 10px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.chapter-number {
+  font-size: 11pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-color);
+  letter-spacing: 1px;
+}
+
+.chapter-title {
+  font-size: 18pt;
+  font-weight: 800;
+  color: var(--primary-dark);
+}
+
+.section-title {
+  font-size: 12pt;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 20px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title i {
+  color: var(--accent-color);
+}
+
+p {
+  margin-bottom: 12px;
+  text-align: justify;
+}
+
+/* ==========================================
+   GAMBAR DAN TANGKAPAN LAYAR (FIGURE)
+   ========================================== */
+.figure-card {
+  margin: 16px 0 20px;
+  background: #f8fafc;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.figure-img-wrapper {
+  background: #ffffff;
+  padding: 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.figure-img-wrapper img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid #f1f5f9;
+  display: block;
+  margin: 0 auto;
+}
+
+.figure-caption {
+  padding: 8px 14px;
+  font-size: 8.5pt;
+  color: var(--text-muted);
+  text-align: center;
+  font-weight: 500;
+  background: #f8fafc;
+}
+
+.figure-caption strong {
+  color: var(--text-dark);
+}
+
+/* ==========================================
+   KOTAK LANGKAH / STEP LIST
+   ========================================== */
+.steps-container {
+  margin: 14px 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.step-badge {
+  background: var(--primary-color);
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 9pt;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-content {
+  flex: 1;
+  font-size: 9.2pt;
+}
+
+.step-content strong {
+  color: var(--primary-dark);
+}
+
+/* ==========================================
+   ALERTS / CALLOUT BOXES
+   ========================================== */
+.callout {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 14px 0;
+  font-size: 9pt;
+  border-left: 4px solid;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.callout-info {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.callout-success {
+  background: #f0fdf4;
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.callout-warning {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #b45309;
+}
+
+/* ==========================================
+   TABEL INFORMASI
+   ========================================== */
+.table-custom {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0 18px;
+  font-size: 9pt;
+}
+
+.table-custom th {
+  background: #f1f5f9;
+  color: var(--text-dark);
+  font-weight: 700;
+  text-align: left;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+}
+
+.table-custom td {
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+}
+
+.table-custom tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+/* ==========================================
+   DAFTAR ISI (TOC)
+   ========================================== */
+.toc-list {
+  list-style: none;
+  margin: 16px 0;
+}
+
+.toc-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px dotted #cbd5e1;
+  font-size: 9.5pt;
+}
+
+.toc-item.level-1 {
+  font-weight: 700;
+  color: var(--primary-dark);
+  margin-top: 8px;
+}
+
+.toc-item.level-2 {
+  padding-left: 18px;
+  color: var(--text-dark);
+}
+
+.toc-item a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.toc-page {
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+/* ==========================================================================
+   PRINT MEDIA QUERY KHUSUS FORMAT A5 (148mm x 210mm)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 12mm 10mm 14mm 10mm;
+  }
+
+  body {
+    background: transparent !important;
+    color: #000000 !important;
+    font-size: 8.5pt !important;
+    line-height: 1.45 !important;
+  }
+
+  .no-print, .topbar-control {
+    display: none !important;
+  }
+
+  .book-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .a5-page {
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: auto !important;
+    page-break-after: always;
+    break-after: page;
+  }
+
+  .cover-page {
+    height: 100vh !important;
+    min-height: 100% !important;
+    box-sizing: border-box !important;
+    padding: 30mm 15mm 20mm !important;
+    border: 1px solid #94a3b8 !important;
+    page-break-after: always;
+    break-after: page;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .cover-illustration {
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+  }
+
+  .figure-card {
+    box-shadow: none !important;
+    border: 1px solid #94a3b8 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .steps-container, .callout, .table-custom {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .chapter-header {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  .page-break {
+    page-break-after: always;
+    break-after: page;
+  }
+
+  /* Background graphics preserved */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

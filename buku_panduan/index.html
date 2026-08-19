@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buku Panduan Penggunaan SiPustaka - SDN Kedungsumur 03 (Format A5)</title>
+  
+  <!-- Google Fonts: Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Custom Panduan A5 Stylesheet -->
+  <link rel="stylesheet" href="assets/css/panduan.css">
+</head>
+<body>
+
+  <!-- ==========================================
+       TOPBAR CONTROLS (NON-PRINT)
+       ========================================== -->
+  <header class="topbar-control no-print">
+    <div class="topbar-brand">
+      <i class="bi bi-journal-bookmark-fill" style="font-size: 20px;"></i>
+      <span>Buku Panduan SiPustaka (Format A5)</span>
+    </div>
+    <div class="topbar-actions">
+      <span style="font-size: 12px; color: var(--text-muted); margin-right: 8px;">
+        <i class="bi bi-file-earmark-pdf"></i> Standar Kertas: A5 Portrait (148 × 210 mm)
+      </span>
+      <button class="btn-print-a5" onclick="window.print()">
+        <i class="bi bi-printer-fill"></i> Cetak / Simpan PDF (A5)
+      </button>
+    </div>
+  </header>
+
+  <!-- ==========================================
+       CONTAINER BUKU PANDUAN A5
+       ========================================== -->
+  <main class="book-wrapper">
+
+    <!-- ==========================================
+         HALAMAN SAMPUL / COVER DEPAN (A5)
+         ========================================== -->
+    <section class="a5-page cover-page">
+      <div class="cover-header">
+        <div class="instansi-badge">
+          <i class="bi bi-building"></i> SDN KEDUNGSUMUR 03 • KEC. KREMBUNG
+        </div>
+        <h1 class="cover-title">BUKU PANDUAN<br><span>SIPUSTAKA</span></h1>
+        <p class="cover-subtitle">Pedoman Operasional Sistem Informasi Sirkulasi Buku Perpustakaan untuk Administrator, Petugas & Siswa</p>
+      </div>
+
+      <div class="cover-illustration">
+        <img src="assets/images/01_login.png" alt="Tampilan Antarmuka SiPustaka">
+      </div>
+
+      <div class="cover-footer">
+        <div class="cover-school">UPTD SDN KEDUNGSUMUR 03</div>
+        <div class="cover-author">Disusun oleh: <strong>Tim KKN Kelompok 18 UNUSIDA</strong></div>
+        <div class="cover-year">Edisi Resmi • Tahun Ajaran 2025/2026</div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         KATA PENGANTAR & DAFTAR ISI
+         ========================================== -->
+    <section class="a5-page">
+      <div class="chapter-header">
+        <span class="chapter-number">Informasi Dokumen</span>
+        <h2 class="chapter-title">Kata Pengantar</h2>
+      </div>
+
+      <p>Puji syukur kita panjatkan ke hadirat Tuhan Yang Maha Esa atas terselesaikannya pengembangan dan penyusunan <strong>Buku Panduan Penggunaan Sistem Informasi Perpustakaan (SiPustaka) SDN Kedungsumur 03</strong>.</p>
+      <p>Aplikasi <strong>SiPustaka</strong> dirancang untuk mendigitalkan dan mempermudah tata kelola sirkulasi buku perpustakaan, pencatatan transaksi peminjaman, pengembalian mandiri, manajemen buku fisik dan e-book digital, serta rekapitulasi data anggota siswa secara otomatis dan terstruktur.</p>
+      <p>Buku panduan berukuran standar <strong>A5 (148 mm × 210 mm)</strong> ini disusun sebagai pedoman praktis langkah demi langkah (*step-by-step*) bagi Petugas/Administrator Perpustakaan dan seluruh Siswa agar dapat memanfaatkan seluruh fitur sistem secara optimal.</p>
+
+      <div class="callout callout-info" style="margin-top: 20px;">
+        <i class="bi bi-info-circle-fill" style="font-size: 16px;"></i>
+        <div>
+          <strong>Alamat Akses Web Resmi SiPustaka:</strong><br>
+          <a href="https://sipustaka-sdnkedungsumur03.vercel.app" target="_blank" style="color: var(--primary-color); font-weight: 600; text-decoration: underline;">
+            https://sipustaka-sdnkedungsumur03.vercel.app
+          </a>
+        </div>
+      </div>
+
+      <div class="chapter-header" style="margin-top: 36px;">
+        <span class="chapter-number">Struktur Dokumen</span>
+        <h2 class="chapter-title">Daftar Isi</h2>
+      </div>
+
+      <ul class="toc-list">
+        <li class="toc-item level-1">
+          <a href="#bab1">BAB I : PENDAHULUAN & PENGENALAN SISTEM</a>
+        </li>
+        <li class="toc-item level-2"><a href="#sec-1-1">1.1 Tentang Sistem SiPustaka</a></li>
+        <li class="toc-item level-2"><a href="#sec-1-2">1.2 Spesifikasi & Akses Perangkat</a></li>
+        <li class="toc-item level-2"><a href="#sec-1-3">1.3 Hak Akses Akun (Admin vs Siswa)</a></li>
+
+        <li class="toc-item level-1">
+          <a href="#bab2">BAB II : AUTENTIKASI & KEAMANAN AKUN</a>
+        </li>
+        <li class="toc-item level-2"><a href="#sec-2-1">2.1 Alur Masuk Sistem (Login)</a></li>
+        <li class="toc-item level-2"><a href="#sec-2-2">2.2 Lupa Password & Verifikasi OTP Email</a></li>
+        <li class="toc-item level-2"><a href="#sec-2-3">2.3 Profil Diri & Ganti Password Mandiri</a></li>
+
+        <li class="toc-item level-1">
+          <a href="#bab3">BAB III : PANDUAN PENGGUNAAN PORTAL SISWA</a>
+        </li>
+        <li class="toc-item level-2"><a href="#sec-3-1">3.1 Dashboard Siswa & Status Membaca</a></li>
+        <li class="toc-item level-2"><a href="#sec-3-2">3.2 Menjelajahi Katalog Koleksi Buku</a></li>
+        <li class="toc-item level-2"><a href="#sec-3-3">3.3 Membaca Buku Digital (E-Book Reader)</a></li>
+        <li class="toc-item level-2"><a href="#sec-3-4">3.4 Memantau Peminjaman & Tanggal Jatuh Tempo</a></li>
+
+        <li class="toc-item level-1">
+          <a href="#bab4">BAB IV : PANDUAN PORTAL ADMINISTRATOR & PETUGAS</a>
+        </li>
+        <li class="toc-item level-2"><a href="#sec-4-1">4.1 Dashboard Utama & Statistik Sirkulasi</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-2">4.2 Manajemen Master Data Koleksi Buku</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-3">4.3 Formulir Tambah & Unggah Cover 10MB / PDF 25MB</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-4">4.4 Master Data Siswa & Kenaikan Kelas Massal</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-5">4.5 Sirkulasi Peminjaman Buku (Durasi 7 Hari)</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-6">4.6 Pengembalian Cepat (Quick Return 1-Klik)</a></li>
+        <li class="toc-item level-2"><a href="#sec-4-7">4.7 Pembuatan & Pencetakan Laporan Rekapitulasi</a></li>
+
+        <li class="toc-item level-1">
+          <a href="#bab5">BAB V : TANYA JAWAB (FAQ) & PENANGANAN KENDALA</a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ==========================================
+         BAB I : PENDAHULUAN & PENGENALAN SISTEM
+         ========================================== -->
+    <section class="a5-page" id="bab1">
+      <div class="chapter-header">
+        <span class="chapter-number">BAB I</span>
+        <h2 class="chapter-title">Pendahuluan & Pengenalan Sistem</h2>
+      </div>
+
+      <h3 class="section-title" id="sec-1-1"><i class="bi bi-bookmark-star-fill"></i> 1.1 Tentang Sistem SiPustaka</h3>
+      <p><strong>SiPustaka</strong> adalah platform aplikasi berbasis komputasi awan (*Cloud Web App*) yang dikembangkan khusus untuk <strong>SDN Kedungsumur 03</strong>. Sistem ini menggantikan proses pembukuan manual buku perpustakaan menjadi serba digital, transparan, dan dapat diakses dari mana saja secara *real-time*.</p>
+
+      <h3 class="section-title" id="sec-1-2"><i class="bi bi-laptop"></i> 1.2 Spesifikasi & Akses Perangkat</h3>
+      <p>Aplikasi ini bersifat *Responsive Web App* yang dapat dioperasikan melalui berbagai perangkat tanpa perlu instalasi aplikasi khusus:</p>
+      <ul style="padding-left: 20px; margin-bottom: 12px;">
+        <li><strong>Laptop / Komputer PC:</strong> Menggunakan peramban Google Chrome, Microsoft Edge, atau Mozilla Firefox (Sangat direkomendasikan untuk Admin).</li>
+        <li><strong>Smartphone / Tablet Android / iOS:</strong> Tampilan otomatis menyesuaikan layar ponsel secara nyaman dan ergonomis.</li>
+      </ul>
+
+      <h3 class="section-title" id="sec-1-3"><i class="bi bi-people-fill"></i> 1.3 Hak Akses & Peran Pengguna</h3>
+      <table class="table-custom">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Peran (Role)</th>
+            <th style="width: 35%;">Akses Kredensial</th>
+            <th>Kewenangan & Fitur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Administrator / Petugas</strong></td>
+            <td>Username / Email Admin + Kata Sandi</td>
+            <td>Akses penuh ke seluruh menu: Dashboard statistik, Master Data Buku, Master Data Siswa, Sirkulasi Pinjam/Kembali, Kenaikan Kelas Massal, dan Cetak Laporan.</td>
+          </tr>
+          <tr>
+            <td><strong>Siswa (Anggota)</strong></td>
+            <td>Username / NIS Siswa + Kata Sandi</td>
+            <td>Melihat Dashboard Siswa, menjelajah Katalog Buku, membaca E-Book PDF online, dan memantau status peminjaman buku aktif milik pribadi.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ==========================================
+         BAB II : AUTENTIKASI & KEAMANAN AKUN
+         ========================================== -->
+    <section class="a5-page" id="bab2">
+      <div class="chapter-header">
+        <span class="chapter-number">BAB II</span>
+        <h2 class="chapter-title">Autentikasi & Keamanan Akun</h2>
+      </div>
+
+      <h3 class="section-title" id="sec-2-1"><i class="bi bi-box-arrow-in-right"></i> 2.1 Alur Masuk Sistem (Login)</h3>
+      <p>Setiap pengguna (Admin maupun Siswa) masuk melalui satu pintu gerbang masuk terpadu (*Unified Login Portal*):</p>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <span class="step-badge">1</span>
+          <div class="step-content">Buka tautan <strong>sipustaka-sdnkedungsumur03.vercel.app</strong> di browser Chrome Anda.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">2</span>
+          <div class="step-content">Ketik <strong>Username</strong> atau <strong>Email</strong> terdaftar pada kolom pertama.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">3</span>
+          <div class="step-content">Masukkan <strong>Kata Sandi</strong> akun Anda. Klik ikon mata untuk melihat/menyembunyikan sandi.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">4</span>
+          <div class="step-content">Klik tombol biru <strong>"Masuk ke Sistem"</strong>. Sistem akan otomatis mendeteksi peran Anda dan mengarahkan ke dashboard yang sesuai.</div>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/01_login.png" alt="Halaman Login SiPustaka">
+        </div>
+        <div class="figure-caption"><strong>Gambar 2.1:</strong> Antarmuka Halaman Masuk Terpadu (*Unified Login Canvas*) SiPustaka.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-2-2"><i class="bi bi-shield-lock-fill"></i> 2.2 Lupa Password & Verifikasi Kode OTP Email</h3>
+      <p>Jika pengguna lupa kata sandi, sistem menyediakan fitur pemulihan mandiri menggunakan kode verifikasi 6-digit yang dikirimkan langsung ke email resmi:</p>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <span class="step-badge">1</span>
+          <div class="step-content">Klik link <strong>"Lupa sandi?"</strong> di bawah kolom input kata sandi.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">2</span>
+          <div class="step-content">Ketik alamat email Anda yang terdaftar di sekolah, lalu klik <strong>"Kirim Kode Verifikasi"</strong>.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">3</span>
+          <div class="step-content">Buka kotak masuk email Anda, salin kode OTP 6-digit, masukkan ke formulir beserta kata sandi baru Anda, lalu klik <strong>"Simpan Kata Sandi Baru"</strong>.</div>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/14_reset_password_otp.png" alt="Modal Lupa Password OTP">
+        </div>
+        <div class="figure-caption"><strong>Gambar 2.2:</strong> Dialog Pemulihan Kata Sandi dengan Proteksi OTP Email dan Cooldown 60 Detik.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-2-3"><i class="bi bi-person-gear"></i> 2.3 Profil Diri & Ganti Password Mandiri</h3>
+      <p>Pengguna dapat memperbarui informasi nama lengkap, email, username, serta mengganti kata sandi secara berkala pada menu <strong>"Profil Saya"</strong>.</p>
+      
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/15_profil_pengguna.png" alt="Halaman Profil Pengguna">
+        </div>
+        <div class="figure-caption"><strong>Gambar 2.3:</strong> Halaman Profil Pengguna & Pengaturan Kata Sandi Mandiri.</div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         BAB III : PANDUAN PORTAL SISWA
+         ========================================== -->
+    <section class="a5-page" id="bab3">
+      <div class="chapter-header">
+        <span class="chapter-number">BAB III</span>
+        <h2 class="chapter-title">Panduan Penggunaan Portal Siswa</h2>
+      </div>
+
+      <h3 class="section-title" id="sec-3-1"><i class="bi bi-speedometer2"></i> 3.1 Dashboard Siswa & Status Membaca</h3>
+      <p>Setelah siswa berhasil login, dashboard siswa akan menampilkan informasi ramah:</p>
+      <ul style="padding-left: 20px; margin-bottom: 12px;">
+        <li><strong>Total Pinjaman Aktif:</strong> Jumlah buku fisik yang sedang dibawa/dipinjam saat ini.</li>
+        <li><strong>Status Tenggat:</strong> Peringatan sisa hari pinjaman (Badge Biru = Aman, Badge Merah = Jatuh Tempo).</li>
+        <li><strong>Banner Motivasi Membaca:</strong> Sambutan personal sesuai nama siswa.</li>
+      </ul>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/10_dashboard_siswa.png" alt="Dashboard Siswa">
+        </div>
+        <div class="figure-caption"><strong>Gambar 3.1:</strong> Tampilan Dashboard Portal Siswa SDN Kedungsumur 03.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-3-2"><i class="bi bi-grid-fill"></i> 3.2 Menjelajahi Katalog Koleksi Buku</h3>
+      <p>Siswa dapat membuka menu <strong>"Koleksi Buku"</strong> untuk mencari bahan bacaan:</p>
+      <ul style="padding-left: 20px; margin-bottom: 12px;">
+        <li><strong>Pencarian Cepat:</strong> Ketik judul buku, pengarang, atau ISBN di kolom pencarian.</li>
+        <li><strong>Filter Kategori:</strong> Pilih kategori khusus (Sains, Dongeng, Komik, Sejarah, Karakter, Agama, dll).</li>
+        <li><strong>Badge Status Ketersediaan:</strong> Menampilkan sisa stok fisik yang tersedia di perpustakaan.</li>
+      </ul>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/11_katalog_grid_tabel.png" alt="Katalog Koleksi Siswa">
+        </div>
+        <div class="figure-caption"><strong>Gambar 3.2:</strong> Katalog Koleksi Buku Interaktif Siswa.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-3-3"><i class="bi bi-file-earmark-pdf-fill"></i> 3.3 Membaca Buku Digital (E-Book Reader)</h3>
+      <p>Buku yang bertanda lencana <strong>"E-Book"</strong> dapat dibaca langsung oleh siswa secara online melalui gawai/komputer:</p>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <span class="step-badge">1</span>
+          <div class="step-content">Klik salah satu kartu buku yang memiliki tanda <strong>E-Book</strong>.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">2</span>
+          <div class="step-content">Jendela detail buku akan muncul menampilkan ringkasan, penulis, penerbit, dan sinopsis.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">3</span>
+          <div class="step-content">Klik tombol hijau <strong>"📖 Baca E-Book Sekarang"</strong> untuk membuka penampil PDF interaktif.</div>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/12_detail_buku.png" alt="Detail Buku & E-Book Reader">
+        </div>
+        <div class="figure-caption"><strong>Gambar 3.3:</strong> Modal Detail Buku & Fitur Pembaca E-Book PDF Terintegrasi.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-3-4"><i class="bi bi-clock-history"></i> 3.4 Menu Peminjaman Saya</h3>
+      <p>Menu <strong>"Peminjaman Saya"</strong> memuat daftar riwayat seluruh buku yang sedang dipinjam maupun yang sudah dikembalikan oleh siswa, lengkap dengan tanggal peminjaman dan batas waktu pengembalian.</p>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/13_peminjaman_siswa.png" alt="Peminjaman Siswa">
+        </div>
+        <div class="figure-caption"><strong>Gambar 3.4:</strong> Riwayat Peminjaman Buku Siswa.</div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         BAB IV : PANDUAN ADMINISTRATOR & PETUGAS
+         ========================================== -->
+    <section class="a5-page" id="bab4">
+      <div class="chapter-header">
+        <span class="chapter-number">BAB IV</span>
+        <h2 class="chapter-title">Panduan Administrator & Petugas</h2>
+      </div>
+
+      <h3 class="section-title" id="sec-4-1"><i class="bi bi-speedometer2"></i> 4.1 Dashboard Utama & Analisis Statistik Sirkulasi</h3>
+      <p>Dashboard Administrator memberikan ringkasan menyeluruh operasional perpustakaan:</p>
+      <ul style="padding-left: 20px; margin-bottom: 12px;">
+        <li><strong>Metrik Statistik 4 Kartu:</strong> Total Judul Buku, Total Siswa Terdaftar, Total Buku Sedang Dipinjam, dan Total Pengembalian Terlambat.</li>
+        <li><strong>Tabel Peminjaman Aktif:</strong> Memantau secara langsung buku yang sedang beredar di tangan siswa.</li>
+        <li><strong>Grafik Donat Kategori:</strong> Komposisi persebaran koleksi buku perpustakaan.</li>
+      </ul>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/02_dashboard_admin.png" alt="Dashboard Administrator">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.1:</strong> Dashboard Statistik Administrator & Sirkulasi Real-Time.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-4-2"><i class="bi bi-journal-text"></i> 4.2 Manajemen Master Data Koleksi Buku</h3>
+      <p>Menu <strong>"Data Buku"</strong> digunakan untuk mengelola seluruh inventaris perpustakaan:</p>
+      <ul style="padding-left: 20px; margin-bottom: 12px;">
+        <li>Pencarian instan berdasarkan Judul, Penulis, atau ISBN.</li>
+        <li>Penyaringan cepat berdasarkan Kategori dan Status Ketersediaan Stok.</li>
+        <li>Tombol Aksi: Edit (Kuning) dan Hapus (Merah) dengan proteksi anti-hapus jika buku sedang dipinjam.</li>
+      </ul>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/03_master_buku.png" alt="Master Data Buku">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.2:</strong> Tabel Master Data Buku Perpustakaan.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-4-3"><i class="bi bi-plus-circle-fill"></i> 4.3 Formulir Tambah & Unggah Berkas Buku (Drive)</h3>
+      <p>Untuk menambahkan buku baru ke sistem:</p>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <span class="step-badge">1</span>
+          <div class="step-content">Klik tombol biru <strong>"+ Tambah Buku"</strong> di pojok kanan atas halaman Data Buku.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">2</span>
+          <div class="step-content">Isi data lengkap: <strong>Judul Buku, Penulis, Penerbit, Tahun Terbit, Kategori, Jumlah Stok, dan Sinopsis</strong>.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">3</span>
+          <div class="step-content">Unggah foto <strong>Sampul Buku (Maksimal 10 MB)</strong> dalam format JPG/PNG.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">4</span>
+          <div class="step-content"><em>(Opsional)</em> Unggah berkas <strong>E-Book PDF (Maksimal 25 MB)</strong> jika buku memiliki versi digital. File otomatis tersimpan aman di Google Drive sekolah.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">5</span>
+          <div class="step-content">Klik tombol <strong>"Simpan Data Buku"</strong>.</div>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/04_upload_buku.png" alt="Modal Tambah Buku">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.3:</strong> Formulir Tambah Buku & Unggah Berkas ke Google Drive.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-4-4"><i class="bi bi-mortarboard-fill"></i> 4.4 Master Data Siswa & Kenaikan Kelas Massal</h3>
+      <p>Menu <strong>"Anggota"</strong> memuat basis data siswa SDN Kedungsumur 03 dari Kelas 1 hingga Kelas 6. Dilengkapi fitur unggulan <strong>Kenaikan Kelas Massal Otomatis</strong> saat pergantian tahun ajaran baru:</p>
+      
+      <div class="callout callout-success">
+        <i class="bi bi-check-circle-fill" style="font-size: 16px;"></i>
+        <div>
+          <strong>Mekanisme Kenaikan Kelas 1-Klik:</strong><br>
+          Kelas 1 naik ke Kelas 2, Kelas 2 ke Kelas 3, ..., dan <strong>Kelas 6 otomatis dinyatakan Lulus (Alumni)</strong>. Admin juga dapat membersihkan data siswa yang telah lulus dengan tombol pembersihan aman.
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/05_master_siswa.png" alt="Master Data Siswa">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.4:</strong> Master Data Anggota Siswa per Kelas.</div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/06_kenaikan_kelas.png" alt="Modal Kenaikan Kelas">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.5:</strong> Dialog Kenaikan Kelas Otomatis & Manajemen Kelulusan.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-4-5"><i class="bi bi-arrow-left-right"></i> 4.5 Sirkulasi Peminjaman & Pengembalian Buku</h3>
+      <p>Proses pencatatan peminjaman dirancang cepat tanpa perlu mengetik manual:</p>
+
+      <div class="steps-container">
+        <div class="step-item">
+          <span class="step-badge">1</span>
+          <div class="step-content">Buka menu <strong>"Peminjaman"</strong>, lalu klik tombol <strong>"+ Tambah Peminjaman"</strong>.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">2</span>
+          <div class="step-content">Ketik nama siswa atau NIS pada kolom pencarian siswa -> pilih siswa.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">3</span>
+          <div class="step-content">Ketik judul buku yang dipinjam -> pilih buku. Tanggal kembali otomatis disetel baku <strong>7 hari</strong> ke depan.</div>
+        </div>
+        <div class="step-item">
+          <span class="step-badge">4</span>
+          <div class="step-content">Klik <strong>"Simpan Peminjaman"</strong>. Stok buku otomatis berkurang 1 secara aman (*ACID LockService*).</div>
+        </div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/07_sirkulasi_pinjam.png" alt="Sirkulasi Peminjaman">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.6:</strong> Tabel Sirkulasi Transaksi Peminjaman & Pengembalian Aktif.</div>
+      </div>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/08_modal_pinjam.png" alt="Modal Tambah Peminjaman">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.7:</strong> Modal Pencarian Cepat Siswa & Buku pada Form Peminjaman.</div>
+      </div>
+
+      <h3 class="section-title" id="sec-4-6"><i class="bi bi-check2-circle"></i> 4.6 Pengembalian Cepat (Quick Return 1-Klik)</h3>
+      <p>Ketika siswa mengembalikan buku ke meja perpustakaan, petugas cukup menekan tombol hijau <strong>"Kembalikan"</strong> di baris transaksi siswa tersebut. Sistem otomatis mengubah status menjadi <em>"dikembalikan"</em>, mencatat tanggal kembali aktual, dan mengembalikan stok fisik buku ke rak.</p>
+
+      <h3 class="section-title" id="sec-4-7"><i class="bi bi-printer-fill"></i> 4.7 Pembuatan & Cetak Laporan Perpustakaan</h3>
+      <p>Menu <strong>"Laporan"</strong> memungkinkan petugas menyaring data transaksi perpustakaan berdasarkan rentang tanggal tertentu dan status (Semua, Dipinjam, Selesai, Terlambat). Klik tombol <strong>"Cetak Laporan"</strong> untuk mencetak lembar rekapitulasi bertandatangan resmi Kepala Sekolah / Petugas.</p>
+
+      <div class="figure-card">
+        <div class="figure-img-wrapper">
+          <img src="assets/images/09_laporan_cetak.png" alt="Laporan Perpustakaan">
+        </div>
+        <div class="figure-caption"><strong>Gambar 4.8:</strong> Filter & Rekapitulasi Laporan Sirkulasi Perpustakaan.</div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         BAB V : TANYA JAWAB & TROUBLESHOOTING
+         ========================================== -->
+    <section class="a5-page" id="bab5">
+      <div class="chapter-header">
+        <span class="chapter-number">BAB V</span>
+        <h2 class="chapter-title">Tanya Jawab (FAQ) & Kendala</h2>
+      </div>
+
+      <div class="callout callout-warning">
+        <i class="bi bi-question-circle-fill" style="font-size: 16px;"></i>
+        <div>
+          <strong>Tanya: Siswa lupa kata sandi dan tidak memiliki email aktif?</strong><br>
+          <strong>Jawab:</strong> Administrator dapat membantu mengganti atau mengatur ulang kata sandi siswa secara manual melalui formulir Edit Data Siswa pada menu Master Data Anggota.
+        </div>
+      </div>
+
+      <div class="callout callout-warning">
+        <i class="bi bi-question-circle-fill" style="font-size: 16px;"></i>
+        <div>
+          <strong>Tanya: Kenapa data buku tidak bisa dihapus?</strong><br>
+          <strong>Jawab:</strong> Sistem SiPustaka memiliki proteksi integritas relasi (*Cascading Delete Check*). Buku yang sedang dipinjam oleh siswa tidak dapat dihapus sebelum buku tersebut dikembalikan terlebih dahulu.
+        </div>
+      </div>
+
+      <div class="callout callout-warning">
+        <i class="bi bi-question-circle-fill" style="font-size: 16px;"></i>
+        <div>
+          <strong>Tanya: Bagaimana cara mencetak Buku Panduan ini ke format kertas A5 fisik?</strong><br>
+          <strong>Jawab:</strong> Klik tombol biru <em>"Cetak / Simpan PDF (A5)"</em> di pojok kanan atas halaman ini. Pada dialog printer Chrome:
+          <ul style="padding-left: 20px; margin-top: 6px;">
+            <li><strong>Destination:</strong> Save as PDF atau pilih printer fisik Anda.</li>
+            <li><strong>Paper Size:</strong> Pilih <strong>A5</strong>.</li>
+            <li><strong>Options:</strong> Centang <em>"Background graphics"</em> agar warna dan desain cover tercetak sempurna.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="margin-top: 36px; border-top: 2px solid var(--primary-color); padding-top: 20px; text-align: center;">
+        <div style="font-weight: 700; font-size: 12pt; color: var(--primary-dark);">PERPUSTAKAAN SDN KEDUNGSUMUR 03</div>
+        <div style="font-size: 9pt; color: var(--text-muted); margin-top: 4px;">Kecamatan Krembung, Kabupaten Sidoarjo, Jawa Timur</div>
+        <div style="font-size: 8.5pt; color: var(--accent-color); margin-top: 8px; font-weight: 600;">
+          © 2026 SiPustaka • Dikembangkan bersama KKN Kelompok 18 UNUSIDA
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+</body>
+</html>
