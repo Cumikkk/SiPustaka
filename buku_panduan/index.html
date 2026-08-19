@@ -463,12 +463,14 @@
       </div>
 
       <h3 class="subbab-title">3.6 Transaksi Peminjaman Buku</h3>
-      <p>Pencatatan sirkulasi peminjaman buku dilakukan pada menu <strong>"Peminjaman"</strong>:</p>
+      <p>Pencatatan sirkulasi peminjaman buku fisik dilakukan melalui menu <strong>"Peminjaman"</strong> dengan alur seleksi terpadu yang aman dan terstruktur:</p>
+      
       <ol class="makalah-list">
-        <li>Klik tombol <strong>"+ Tambah Peminjaman"</strong>.</li>
-        <li>Cari dan pilih data siswa peminjam melalui dialog seleksi siswa.</li>
-        <li>Cari dan pilih judul buku yang dipinjam. Tanggal batas kembali otomatis ditentukan <strong>7 hari</strong> ke depan.</li>
-        <li>Klik tombol <strong>"Simpan Peminjaman"</strong>. Stok buku akan otomatis terpotong secara aman (*LockService*).</li>
+        <li>Klik tombol biru <strong>"+ Tambah Peminjaman"</strong> di bagian atas tabel sirkulasi peminjaman.</li>
+        <li>Klik tombol <strong>"+ Cari & Pilih Siswa"</strong> untuk membuka jendela seleksi siswa aktif. Cari siswa berdasarkan NIS, nama, atau filter kelas, kemudian klik tombol <strong>"Pilih"</strong>.</li>
+        <li>Klik tombol <strong>"+ Cari & Pilih Buku"</strong> untuk membuka jendela seleksi buku yang memiliki stok fisik tersedia (*stok > 0*). Gunakan pencarian judul/penulis/ISBN atau filter kategori, kemudian klik <strong>"Pilih"</strong>.</li>
+        <li>Sistem secara otomatis menetapkan <strong>Tanggal Pinjam</strong> hari ini dan <strong>Tanggal Jatuh Tempo</strong> baku <strong>7 hari</strong> ke depan.</li>
+        <li>Klik tombol <strong>"Simpan Peminjaman"</strong>. Sistem akan mencatat transaksi peminjaman secara permanen dan memotong stok ketersediaan buku secara aman (*LockService*).</li>
       </ol>
 
       <div class="gambar-makalah-box">
@@ -481,15 +483,37 @@
         <div class="caption-gambar"><strong>Gambar 3.9</strong> Formulir Tambah Peminjaman Buku Baru</div>
       </div>
 
+      <div class="gambar-makalah-box">
+        <img src="assets/images/08a_modal_pilih_siswa.png" alt="Dialog Pilih Siswa">
+        <div class="caption-gambar"><strong>Gambar 3.10</strong> Dialog Modal Pencarian dan Pemilihan Siswa Peminjam</div>
+      </div>
+
+      <div class="gambar-makalah-box">
+        <img src="assets/images/08b_modal_pilih_buku.png" alt="Dialog Pilih Buku">
+        <div class="caption-gambar"><strong>Gambar 3.11</strong> Dialog Modal Pencarian dan Pemilihan Buku yang Tersedia</div>
+      </div>
+
       <h3 class="subbab-title">3.7 Transaksi Pengembalian Cepat (Quick Return)</h3>
-      <p>Ketika siswa mengembalikan buku fisik ke perpustakaan, admin cukup menekan tombol <strong>"Kembali"</strong> (berwarna hijau) pada baris transaksi siswa tersebut di tabel sirkulasi. Sistem akan secara otomatis memperbarui status menjadi <em>"dikembalikan"</em>, mencatat tanggal penyelesaian, dan menambahkan kembali stok buku ke rak secara instan.</p>
+      <p>Ketika siswa mengembalikan buku fisik yang dipinjam ke perpustakaan sekolah, admin dapat menyelesaikan transaksi secara instan dengan mekanisme 1-klik:</p>
+      
+      <ol class="makalah-list">
+        <li>Cari baris transaksi peminjaman siswa yang bersangkutan pada tabel sirkulasi peminjaman aktif.</li>
+        <li>Klik tombol hijau <strong>"Kembali"</strong> di kolom Aksi pada baris data tersebut.</li>
+        <li>Sistem akan memunculkan dialog konfirmasi pengamanan: <em>"Apakah Anda yakin ingin memproses pengembalian buku ini?"</em>.</li>
+        <li>Klik tombol <strong>"Ya, Kembalikan Buku"</strong>. Sistem akan secara otomatis memperbarui status transaksi menjadi <strong>"Dikembalikan" (Selesai)</strong>, mencatat tanggal pengembalian riil, serta mengembalikan jumlah stok buku fisik ke rak perpustakaan secara otomatis.</li>
+      </ol>
+
+      <div class="gambar-makalah-box">
+        <img src="assets/images/08d_konfirmasi_kembali.png" alt="Konfirmasi Pengembalian">
+        <div class="caption-gambar"><strong>Gambar 3.12</strong> Dialog Konfirmasi Pengembalian Buku Fisik</div>
+      </div>
 
       <h3 class="subbab-title">3.8 Rekapitulasi dan Pencetakan Laporan Perpustakaan</h3>
       <p>Menu <strong>"Laporan"</strong> menyediakan fasilitas rekapitulasi data sirkulasi perpustakaan. Admin dapat menyaring data berdasarkan rentang tanggal dan status transaksi, kemudian menekan tombol <strong>"Cetak / Ekspor Laporan"</strong> untuk mencetak lembar laporan fisik yang siap disahkan oleh Kepala Sekolah dan Admin Perpustakaan.</p>
 
       <div class="gambar-makalah-box">
         <img src="assets/images/09_laporan_cetak.png" alt="Laporan Perpustakaan">
-        <div class="caption-gambar"><strong>Gambar 3.10</strong> Halaman Rekapitulasi dan Filter Laporan Perpustakaan</div>
+        <div class="caption-gambar"><strong>Gambar 3.13</strong> Halaman Rekapitulasi dan Filter Laporan Perpustakaan</div>
       </div>
 
       <h3 class="subbab-title">3.9 Pengaturan Profil dan Kata Sandi Admin</h3>
@@ -497,7 +521,7 @@
 
       <div class="gambar-makalah-box">
         <img src="assets/images/15_profil_pengguna.png" alt="Profil Admin">
-        <div class="caption-gambar"><strong>Gambar 3.11</strong> Halaman Pengaturan Profil dan Kata Sandi Pengguna</div>
+        <div class="caption-gambar"><strong>Gambar 3.14</strong> Halaman Pengaturan Profil dan Kata Sandi Pengguna</div>
       </div>
     </section>
 
