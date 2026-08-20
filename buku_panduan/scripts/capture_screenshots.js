@@ -2,7 +2,7 @@
  * ==============================================================================
  * SIPUSTAKA - MASTER SCREENSHOT AUTOMATION SCRIPT
  * Skrip Master Lengkap Pengambil Seluruh 22 Tangkapan Layar Buku Panduan
- * SDN Kedungsumur 03 (Format A5 Resmi)
+ * SDN Kedungsumur 03 (Format A5 Resmi - Resolusi Seragam 1920x945)
  * 
  * Cara Menjalankan:
  * node buku_panduan/scripts/capture_screenshots.js
@@ -31,7 +31,8 @@ async function captureAllScreenshots() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 850, deviceScaleFactor: 2 });
+  // Seragam 1920x945 viewport (100% konsisten di seluruh 22 gambar)
+  await page.setViewport({ width: 1920, height: 945, deviceScaleFactor: 1 });
 
   console.log('🌐 Membuka Web App SiPustaka:', TARGET_URL);
   await page.goto(TARGET_URL, { waitUntil: 'networkidle2', timeout: 60000 });
@@ -53,13 +54,13 @@ async function captureAllScreenshots() {
   // ==========================================
   // 1. SESI UMUM & AUTENTIKASI
   // ==========================================
-  console.log('📸 1. Mengambil Screenshot Login (01_login.png)...');
-  await page.screenshot({ path: path.join(IMAGES_DIR, '01_login.png') });
+  console.log('📸 1. Mengambil Screenshot Login (gbr_2_1_login.png)...');
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_1_login.png') });
 
-  console.log('📸 2. Mengambil Screenshot Modal Lupa Password OTP (14_reset_password_otp.png)...');
+  console.log('📸 2. Mengambil Screenshot Modal Lupa Password OTP (gbr_2_7_reset_password_otp.png)...');
   await appFrame.evaluate(() => { if (typeof openForgotModal === 'function') openForgotModal(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '14_reset_password_otp.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_7_reset_password_otp.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalLupaPassword');
     if (m && typeof bootstrap !== 'undefined') {
@@ -85,22 +86,22 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 6000));
 
   // 3.1 Dashboard Admin
-  console.log('📸 3. Mengambil Dashboard Admin (02_dashboard_admin.png)...');
+  console.log('📸 3. Mengambil Dashboard Admin (gbr_3_1_dashboard_admin.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('dashboard'); });
   await new Promise(r => setTimeout(r, 3500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '02_dashboard_admin.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_1_dashboard_admin.png') });
 
   // 3.2 Master Data Buku
-  console.log('📸 4. Mengambil Master Data Buku (03_master_buku.png)...');
+  console.log('📸 4. Mengambil Master Data Buku (gbr_3_2_master_buku.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('buku'); });
   await new Promise(r => setTimeout(r, 4000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '03_master_buku.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_2_master_buku.png') });
 
   // 3.3 Modal Tambah Buku
-  console.log('📸 5. Mengambil Modal Tambah Buku (04_upload_buku.png)...');
+  console.log('📸 5. Mengambil Modal Tambah Buku (gbr_3_3_upload_buku.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahBuku === 'function') showModalTambahBuku(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '04_upload_buku.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_3_upload_buku.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalFormBuku');
     if (m && typeof bootstrap !== 'undefined') {
@@ -111,16 +112,16 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.4 Master Data Anggota Siswa
-  console.log('📸 6. Mengambil Master Data Siswa (05_master_siswa.png)...');
+  console.log('📸 6. Mengambil Master Data Siswa (gbr_3_4_master_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('anggota'); });
   await new Promise(r => setTimeout(r, 4000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '05_master_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_4_master_siswa.png') });
 
   // 3.4a Tambah Siswa Baru
-  console.log('📸 7. Mengambil Modal Tambah Siswa (05b_tambah_siswa.png)...');
+  console.log('📸 7. Mengambil Modal Tambah Siswa (gbr_3_5_tambah_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahAnggota === 'function') showModalTambahAnggota(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '05b_tambah_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_5_tambah_siswa.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalFormAnggota');
     if (m && typeof bootstrap !== 'undefined') {
@@ -131,18 +132,18 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.4b Dialog Hapus Siswa Lulus
-  console.log('📸 8. Mengambil Dialog Hapus Siswa Lulus (05c_hapus_siswa_lulus.png)...');
+  console.log('📸 8. Mengambil Dialog Hapus Siswa Lulus (gbr_3_6_hapus_siswa_lulus.png)...');
   await appFrame.evaluate(() => { if (typeof handleHapusSiswaLulusMassal === 'function') handleHapusSiswaLulusMassal(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '05c_hapus_siswa_lulus.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_6_hapus_siswa_lulus.png') });
   await appFrame.evaluate(() => { if (typeof Swal !== 'undefined') Swal.close(); });
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.5 Modal Kenaikan Kelas Massal
-  console.log('📸 9. Mengambil Modal Kenaikan Kelas (06_kenaikan_kelas.png)...');
+  console.log('📸 9. Mengambil Modal Kenaikan Kelas (gbr_3_7_kenaikan_kelas.png)...');
   await appFrame.evaluate(() => { if (typeof openModalKenaikanKelas === 'function') openModalKenaikanKelas(); });
   await new Promise(r => setTimeout(r, 1500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '06_kenaikan_kelas.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_7_kenaikan_kelas.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalKenaikanKelas');
     if (m && typeof bootstrap !== 'undefined') {
@@ -153,22 +154,22 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.6 Sirkulasi Peminjaman
-  console.log('📸 10. Mengambil Sirkulasi Peminjaman (07_sirkulasi_pinjam.png)...');
+  console.log('📸 10. Mengambil Sirkulasi Peminjaman (gbr_3_8_sirkulasi_pinjam.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('peminjaman'); });
   await new Promise(r => setTimeout(r, 4000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '07_sirkulasi_pinjam.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_8_sirkulasi_pinjam.png') });
 
   // 3.6 Form Tambah Peminjaman
-  console.log('📸 11. Mengambil Form Tambah Peminjaman (08_modal_pinjam.png)...');
+  console.log('📸 11. Mengambil Form Tambah Peminjaman (gbr_3_9_modal_pinjam.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahPeminjaman === 'function') showModalTambahPeminjaman(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '08_modal_pinjam.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_9_modal_pinjam.png') });
 
   // 3.6 Dialog Pilih Siswa
-  console.log('📸 12. Mengambil Dialog Pilih Siswa (08a_modal_pilih_siswa.png)...');
+  console.log('📸 12. Mengambil Dialog Pilih Siswa (gbr_3_10_modal_pilih_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof openModalPilihSiswa === 'function') openModalPilihSiswa(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '08a_modal_pilih_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_10_modal_pilih_siswa.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalPilihSiswa');
     if (m && typeof bootstrap !== 'undefined') {
@@ -179,10 +180,10 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 800));
 
   // 3.6 Dialog Pilih Buku
-  console.log('📸 13. Mengambil Dialog Pilih Buku (08b_modal_pilih_buku.png)...');
+  console.log('📸 13. Mengambil Dialog Pilih Buku (gbr_3_11_modal_pilih_buku.png)...');
   await appFrame.evaluate(() => { if (typeof openModalPilihBuku === 'function') openModalPilihBuku(); });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '08b_modal_pilih_buku.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_11_modal_pilih_buku.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalPilihBuku');
     if (m && typeof bootstrap !== 'undefined') {
@@ -198,7 +199,7 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.7 Konfirmasi Pengembalian
-  console.log('📸 14. Mengambil Dialog Konfirmasi Pengembalian (08d_konfirmasi_kembali.png)...');
+  console.log('📸 14. Mengambil Dialog Konfirmasi Pengembalian (gbr_3_12_konfirmasi_kembali.png)...');
   await appFrame.evaluate(() => {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
@@ -214,21 +215,21 @@ async function captureAllScreenshots() {
     }
   });
   await new Promise(r => setTimeout(r, 1200));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '08d_konfirmasi_kembali.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_12_konfirmasi_kembali.png') });
   await appFrame.evaluate(() => { if (typeof Swal !== 'undefined') Swal.close(); });
   await new Promise(r => setTimeout(r, 1000));
 
   // 3.8 Laporan Perpustakaan
-  console.log('📸 15. Mengambil Laporan Perpustakaan (09_laporan_cetak.png)...');
+  console.log('📸 15. Mengambil Laporan Perpustakaan (gbr_3_13_laporan_cetak.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('laporan'); });
   await new Promise(r => setTimeout(r, 4000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '09_laporan_cetak.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_13_laporan_cetak.png') });
 
   // 3.9 Profil Admin
-  console.log('📸 16. Mengambil Profil Admin (15_profil_pengguna.png)...');
+  console.log('📸 16. Mengambil Profil Admin (gbr_3_14_profil_admin.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('profil'); });
   await new Promise(r => setTimeout(r, 2500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '15_profil_pengguna.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_14_profil_admin.png') });
 
   // ==========================================
   // 3. SESI PORTAL SISWA (Login: rafi / 123)
@@ -249,34 +250,34 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 6000));
 
   // 2.2 Dashboard Siswa
-  console.log('📸 17. Mengambil Dashboard Siswa (10_dashboard_siswa.png)...');
+  console.log('📸 17. Mengambil Dashboard Siswa (gbr_2_2_dashboard_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('dashboard'); });
   await new Promise(r => setTimeout(r, 4000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '10_dashboard_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_2_dashboard_siswa.png') });
 
   // 2.3 Katalog Grid & Tabel
-  console.log('📸 18. Mengambil Katalog Siswa Mode Grid (11a_katalog_grid.png)...');
+  console.log('📸 18. Mengambil Katalog Siswa Mode Grid (gbr_2_3_katalog_grid.png)...');
   await appFrame.evaluate(() => {
     if (typeof switchSubView === 'function') switchSubView('katalog');
     if (typeof setKatalogViewMode === 'function') setKatalogViewMode('grid');
   });
   await new Promise(r => setTimeout(r, 3500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '11a_katalog_grid.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_3_katalog_grid.png') });
 
-  console.log('📸 19. Mengambil Katalog Siswa Mode Tabel (11b_katalog_tabel.png)...');
+  console.log('📸 19. Mengambil Katalog Siswa Mode Tabel (gbr_2_4_katalog_tabel.png)...');
   await appFrame.evaluate(() => {
     if (typeof setKatalogViewMode === 'function') setKatalogViewMode('table');
   });
   await new Promise(r => setTimeout(r, 2500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '11b_katalog_tabel.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_4_katalog_tabel.png') });
 
   // 2.4 Detail Buku
-  console.log('📸 20. Mengambil Detail Buku & E-Book (12_detail_buku.png)...');
+  console.log('📸 20. Mengambil Detail Buku & E-Book (gbr_2_5_detail_buku.png)...');
   await appFrame.evaluate(() => {
     if (typeof openDetailBukuModal === 'function') openDetailBukuModal('buku-001');
   });
   await new Promise(r => setTimeout(r, 2000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '12_detail_buku.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_5_detail_buku.png') });
   await appFrame.evaluate(() => {
     const m = document.getElementById('modalDetailBuku');
     if (m && typeof bootstrap !== 'undefined') {
@@ -287,16 +288,16 @@ async function captureAllScreenshots() {
   await new Promise(r => setTimeout(r, 1000));
 
   // 2.5 Peminjaman Saya
-  console.log('📸 21. Mengambil Peminjaman Saya Siswa (13_peminjaman_siswa.png)...');
+  console.log('📸 21. Mengambil Peminjaman Saya Siswa (gbr_2_6_peminjaman_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('peminjaman-siswa'); });
   await new Promise(r => setTimeout(r, 3500));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '13_peminjaman_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_6_peminjaman_siswa.png') });
 
   // 2.7 Profil Siswa
-  console.log('📸 22. Mengambil Profil Siswa (14b_profil_siswa.png)...');
+  console.log('📸 22. Mengambil Profil Siswa (gbr_2_8_profil_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('profil'); });
   await new Promise(r => setTimeout(r, 3000));
-  await page.screenshot({ path: path.join(IMAGES_DIR, '14b_profil_siswa.png') });
+  await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_8_profil_siswa.png') });
 
   console.log('✨ Menutup Browser...');
   await browser.close();
