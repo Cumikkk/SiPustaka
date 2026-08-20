@@ -66,7 +66,7 @@ body {
    CONTAINER MAKALAH A5 (WEB VIEWER)
    ========================================== */
 .book-wrapper {
-  max-width: 680px;
+  max-width: 720px;
   margin: 70px auto 40px;
   padding: 0 16px;
 }
@@ -74,10 +74,40 @@ body {
 .a5-page {
   background: #ffffff;
   width: 100%;
-  padding: 30mm 20mm 25mm 25mm; /* Margin Makalah A5: Kiri 25mm, Atas 30mm, Kanan 20mm, Bawah 25mm */
-  margin-bottom: 30px;
+  min-height: 960px;
+  padding: 22mm 20mm 12mm 25mm; /* Margin Makalah A5: Kiri 25mm, Atas 22mm, Kanan 20mm, Bawah 12mm */
+  margin-bottom: 35px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  border: 1px solid #e2e8f0;
+  border: 1px solid #cbd5e1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.page-body {
+  flex: 1 0 auto;
+}
+
+.page-footer {
+  margin-top: auto;
+  padding-top: 10px;
+  padding-bottom: 2px;
+  border-top: 1px solid #cbd5e1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 9pt;
+  color: #64748b;
+  font-style: italic;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.page-footer .page-number {
+  font-weight: bold;
+  font-style: normal;
+  font-size: 10pt;
+  color: #0f172a;
 }
 
 /* ==========================================
@@ -207,22 +237,23 @@ ul.makalah-bullet li {
    FORMAT GAMBAR & CAPTION MAKALAH
    ========================================== */
 .gambar-makalah-box {
-  margin: 16px auto 20px auto;
+  margin: 8px auto 12px auto;
   text-align: center;
 }
 
 .gambar-makalah-box img {
   max-width: 95%;
-  height: auto;
+  max-height: 215px;
+  object-fit: contain;
   border: 1px solid #64748b;
   display: block;
   margin: 0 auto;
 }
 
 .caption-gambar {
-  font-size: 10pt;
+  font-size: 9.5pt;
   text-align: center;
-  margin-top: 6px;
+  margin-top: 4px;
   line-height: 1.3;
 }
 
@@ -269,13 +300,13 @@ ul.makalah-bullet li {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 4px 0;
-  font-size: 11pt;
+  padding: 3px 0;
+  font-size: 10.5pt;
 }
 
 .toc-row.level-1 {
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .toc-row.level-2 {
@@ -294,7 +325,7 @@ ul.makalah-bullet li {
 @media print {
   @page {
     size: A5 portrait;
-    margin: 20mm 15mm 20mm 20mm; /* Standar Margin Cetak Makalah A5 */
+    margin: 15mm 15mm 15mm 20mm; /* Standar Margin Cetak Makalah A5 */
   }
 
   body {
@@ -319,14 +350,18 @@ ul.makalah-bullet li {
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-height: auto !important;
+    min-height: 100vh !important;
+    height: 100vh !important;
     page-break-after: always;
     break-after: page;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
   }
 
   .cover-makalah {
     height: 100vh !important;
-    min-height: 100% !important;
+    min-height: 100vh !important;
     padding: 20mm 10mm 15mm 10mm !important;
     page-break-after: always;
     break-after: page;
@@ -337,8 +372,14 @@ ul.makalah-bullet li {
     break-inside: avoid;
   }
 
-  .bab-header {
-    page-break-before: always;
-    break-before: page;
+  .gambar-makalah-box img {
+    max-height: 250px !important;
+  }
+
+  .page-footer {
+    border-top: 1px solid #000000 !important;
+    color: #000000 !important;
+    padding-top: 6px !important;
+    margin-top: auto !important;
   }
 }
