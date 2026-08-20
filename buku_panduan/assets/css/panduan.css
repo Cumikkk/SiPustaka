@@ -325,14 +325,16 @@ ul.makalah-bullet li {
 @media print {
   @page {
     size: A5 portrait;
-    margin: 15mm 15mm 15mm 20mm; /* Standar Margin Cetak Makalah A5 */
+    margin: 12mm 15mm 12mm 20mm; /* Standar Margin Cetak Makalah A5 */
   }
 
   body {
     background: transparent !important;
     color: #000000 !important;
-    font-size: 10pt !important;
-    line-height: 1.4 !important;
+    font-size: 9.5pt !important;
+    line-height: 1.35 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .no-print, .topbar-control {
@@ -350,30 +352,43 @@ ul.makalah-bullet li {
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-height: 100vh !important;
-    height: 100vh !important;
+    min-height: calc(210mm - 24mm) !important;
+    height: auto !important;
     page-break-after: always;
     break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
+    position: relative !important;
   }
 
   .cover-makalah {
-    height: 100vh !important;
-    min-height: 100vh !important;
-    padding: 20mm 10mm 15mm 10mm !important;
+    min-height: calc(210mm - 24mm) !important;
+    height: auto !important;
+    padding: 15mm 5mm 10mm 5mm !important;
     page-break-after: always;
     break-after: page;
   }
 
-  .gambar-makalah-box, .table-makalah, ol.makalah-list {
+  .page-body {
+    flex: 1 1 auto !important;
+  }
+
+  .gambar-makalah-box {
+    margin: 6px auto 10px auto !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
   .gambar-makalah-box img {
-    max-height: 250px !important;
+    max-height: 175px !important;
+  }
+
+  .table-makalah, ol.makalah-list, ul.makalah-bullet {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   .page-footer {
@@ -381,5 +396,16 @@ ul.makalah-bullet li {
     color: #000000 !important;
     padding-top: 6px !important;
     margin-top: auto !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 8.5pt !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .page-footer .page-number {
+    color: #000000 !important;
+    font-weight: bold !important;
   }
 }
