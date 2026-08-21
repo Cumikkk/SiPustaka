@@ -118,8 +118,8 @@ body {
   min-height: 960px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 25mm 18mm 18mm 22mm;
+  justify-content: space-around;
+  padding: 30mm 18mm 25mm 22mm;
 }
 
 .cover-judul-utama {
@@ -130,21 +130,8 @@ body {
   margin-bottom: 6px;
 }
 
-.cover-subjudul {
-  font-size: 10.5pt;
-  font-weight: normal;
-  line-height: 1.35;
-  margin-top: 4px;
-}
-
-.cover-kategori-tugas {
-  font-size: 10.5pt;
-  margin: 12px 0;
-  font-style: italic;
-}
-
 .cover-logo-box {
-  margin: 14px auto;
+  margin: 20px auto;
   max-width: 320px;
 }
 
@@ -156,16 +143,9 @@ body {
 }
 
 .cover-penyusun-box {
-  font-size: 10.5pt;
+  font-size: 11pt;
   line-height: 1.45;
-  margin: 12px 0;
-}
-
-.cover-instansi-box {
-  font-size: 11.5pt;
-  font-weight: bold;
-  text-transform: uppercase;
-  line-height: 1.35;
+  margin: 15px 0;
 }
 
 /* ==========================================
@@ -173,7 +153,7 @@ body {
    ========================================== */
 .bab-header {
   text-align: center;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .bab-nomor {
@@ -291,52 +271,34 @@ ul.makalah-bullet li {
    DAFTAR ISI (TOC) MAKALAH
    ========================================== */
 .toc-makalah {
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
 .toc-row {
   display: flex;
   align-items: baseline;
-  margin-bottom: 6px;
-  line-height: 1.35;
+  margin-bottom: 2px;
+  line-height: 1.25;
+  font-size: 10pt;
 }
 
 .toc-row.level-1 {
   font-weight: bold;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .toc-row.level-2 {
-  padding-left: 14px;
+  padding-left: 12px;
   font-weight: normal;
+  font-size: 9.5pt;
 }
 
 .toc-dots {
   flex: 1;
   border-bottom: 1px dotted #000000;
-  margin: 0 6px;
+  margin: 0 4px;
   position: relative;
   top: -3px;
-}
-
-/* ==========================================
-   BLOK TANDA TANGAN / PENGESAHAN
-   ========================================== */
-.signature-box {
-  margin-top: 18px;
-  display: flex;
-  justify-content: space-between;
-  text-align: center;
-  font-size: 10pt;
-  line-height: 1.4;
-}
-
-.signature-item {
-  width: 45%;
-}
-
-.signature-space {
-  height: 50px;
 }
 
 /* ==========================================
@@ -385,9 +347,12 @@ ul.makalah-bullet li {
   .cover-makalah {
     min-height: calc(210mm - 28mm) !important;
     height: auto !important;
-    padding: 10mm 5mm 8mm 5mm !important;
+    padding: 15mm 5mm 15mm 5mm !important;
     page-break-after: always;
     break-after: page;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-around !important;
   }
 
   .page-body {
@@ -407,6 +372,24 @@ ul.makalah-bullet li {
   .table-makalah, ol.makalah-list, ul.makalah-bullet {
     page-break-inside: avoid;
     break-inside: avoid;
+  }
+
+  .toc-makalah {
+    margin-top: 0 !important;
+  }
+
+  .toc-row {
+    margin-bottom: 1.5px !important;
+    line-height: 1.2 !important;
+    font-size: 9.5pt !important;
+  }
+
+  .toc-row.level-1 {
+    margin-top: 3px !important;
+  }
+
+  .toc-row.level-2 {
+    font-size: 9pt !important;
   }
 
   .page-footer {
