@@ -14,7 +14,7 @@ body {
   font-family: 'Times New Roman', Times, serif;
   color: #000000;
   background-color: #f1f5f9;
-  line-height: 1.5;
+  line-height: 1.45;
   font-size: 11pt;
   -webkit-font-smoothing: antialiased;
 }
@@ -75,7 +75,7 @@ body {
   background: #ffffff;
   width: 100%;
   min-height: 960px;
-  padding: 22mm 20mm 12mm 25mm; /* Margin Makalah A5: Kiri 25mm, Atas 22mm, Kanan 20mm, Bawah 12mm */
+  padding: 20mm 18mm 12mm 22mm; /* Margin A5: Kiri 22mm, Atas 20mm, Kanan 18mm, Bawah 12mm */
   margin-bottom: 35px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
   border: 1px solid #cbd5e1;
@@ -91,7 +91,7 @@ body {
 
 .page-footer {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 8px;
   padding-bottom: 2px;
   border-top: 1px solid #cbd5e1;
   display: flex;
@@ -115,36 +115,36 @@ body {
    ========================================== */
 .cover-makalah {
   text-align: center;
-  min-height: 800px;
+  min-height: 960px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40mm 20mm 30mm 20mm;
+  padding: 25mm 18mm 18mm 22mm;
 }
 
 .cover-judul-utama {
-  font-size: 14pt;
+  font-size: 13.5pt;
   font-weight: bold;
   text-transform: uppercase;
-  line-height: 1.4;
-  margin-bottom: 8px;
+  line-height: 1.35;
+  margin-bottom: 6px;
 }
 
 .cover-subjudul {
-  font-size: 11pt;
+  font-size: 10.5pt;
   font-weight: normal;
-  line-height: 1.4;
-  margin-top: 6px;
+  line-height: 1.35;
+  margin-top: 4px;
 }
 
 .cover-kategori-tugas {
-  font-size: 11pt;
-  margin: 20px 0;
+  font-size: 10.5pt;
+  margin: 12px 0;
   font-style: italic;
 }
 
 .cover-logo-box {
-  margin: 20px auto;
+  margin: 14px auto;
   max-width: 320px;
 }
 
@@ -156,16 +156,16 @@ body {
 }
 
 .cover-penyusun-box {
-  font-size: 11pt;
-  line-height: 1.5;
-  margin: 20px 0;
+  font-size: 10.5pt;
+  line-height: 1.45;
+  margin: 12px 0;
 }
 
 .cover-instansi-box {
-  font-size: 12pt;
+  font-size: 11.5pt;
   font-weight: bold;
   text-transform: uppercase;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 /* ==========================================
@@ -173,35 +173,36 @@ body {
    ========================================== */
 .bab-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 18px;
 }
 
 .bab-nomor {
-  font-size: 12pt;
+  font-size: 11.5pt;
   font-weight: bold;
   text-transform: uppercase;
   display: block;
 }
 
 .bab-judul {
-  font-size: 12pt;
+  font-size: 11.5pt;
   font-weight: bold;
   text-transform: uppercase;
   display: block;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .subbab-title {
-  font-size: 11pt;
+  font-size: 10.5pt;
   font-weight: bold;
-  margin: 18px 0 8px 0;
+  margin: 12px 0 6px 0;
   text-align: left;
 }
 
 p {
   text-align: justify;
-  text-indent: 10mm; /* Indentasi paragraf 1 cm */
-  margin-bottom: 10px;
+  text-indent: 8mm; /* Indentasi paragraf */
+  margin-bottom: 8px;
+  line-height: 1.45;
 }
 
 p.no-indent {
@@ -212,38 +213,38 @@ p.no-indent {
    PENOMORAN DAFTAR (LIST) MAKALAH
    ========================================== */
 ol.makalah-list {
-  padding-left: 20px;
-  margin-bottom: 12px;
+  padding-left: 22px;
+  margin-bottom: 8px;
   text-align: justify;
 }
 
 ol.makalah-list li {
-  margin-bottom: 6px;
-  line-height: 1.45;
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 ul.makalah-bullet {
-  padding-left: 20px;
-  margin-bottom: 12px;
+  padding-left: 22px;
+  margin-bottom: 8px;
   text-align: justify;
 }
 
 ul.makalah-bullet li {
-  margin-bottom: 6px;
-  line-height: 1.45;
+  margin-bottom: 4px;
+  line-height: 1.4;
 }
 
 /* ==========================================
    FORMAT GAMBAR & CAPTION MAKALAH
    ========================================== */
 .gambar-makalah-box {
-  margin: 8px auto 12px auto;
+  margin: 6px auto 10px auto;
   text-align: center;
 }
 
 .gambar-makalah-box img {
-  max-width: 95%;
-  max-height: 215px;
+  max-width: 98%;
+  max-height: 195px;
   object-fit: contain;
   border: 1px solid #64748b;
   display: block;
@@ -251,10 +252,10 @@ ul.makalah-bullet li {
 }
 
 .caption-gambar {
-  font-size: 9.5pt;
-  text-align: center;
+  font-size: 9pt;
   margin-top: 4px;
-  line-height: 1.3;
+  color: #000000;
+  text-align: center;
 }
 
 .caption-gambar strong {
@@ -262,83 +263,99 @@ ul.makalah-bullet li {
 }
 
 /* ==========================================
-   TABEL MAKALAH STANDAR FORMAL
+   TABEL MAKALAH STANDAR
    ========================================== */
 .table-makalah {
   width: 100%;
   border-collapse: collapse;
-  margin: 14px 0 18px 0;
-  font-size: 10pt;
+  margin: 10px 0 12px 0;
+  font-size: 9.5pt;
+}
+
+.table-makalah th,
+.table-makalah td {
+  border: 1px solid #000000;
+  padding: 6px 8px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.35;
 }
 
 .table-makalah th {
-  border-top: 2px solid #000000;
-  border-bottom: 1px solid #000000;
-  padding: 6px 10px;
-  text-align: left;
+  background-color: #f8fafc;
   font-weight: bold;
-}
-
-.table-makalah td {
-  border-bottom: 1px solid #cbd5e1;
-  padding: 6px 10px;
-  vertical-align: top;
-}
-
-.table-makalah tr:last-child td {
-  border-bottom: 2px solid #000000;
+  text-align: center;
 }
 
 /* ==========================================
-   DAFTAR ISI MAKALAH FORMAL
+   DAFTAR ISI (TOC) MAKALAH
    ========================================== */
 .toc-makalah {
-  margin: 8px 0;
+  margin-top: 10px;
 }
 
 .toc-row {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  padding: 1px 0;
-  font-size: 9.5pt;
-  line-height: 1.2;
+  margin-bottom: 6px;
+  line-height: 1.35;
 }
 
 .toc-row.level-1 {
   font-weight: bold;
-  margin-top: 3px;
+  margin-top: 8px;
 }
 
 .toc-row.level-2 {
   padding-left: 14px;
+  font-weight: normal;
 }
 
 .toc-dots {
   flex: 1;
   border-bottom: 1px dotted #000000;
   margin: 0 6px;
+  position: relative;
+  top: -3px;
 }
 
-/* ==========================================================================
-   PRINT MEDIA QUERY KHUSUS MAKALAH A5
-   ========================================================================== */
+/* ==========================================
+   BLOK TANDA TANGAN / PENGESAHAN
+   ========================================== */
+.signature-box {
+  margin-top: 18px;
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+  font-size: 10pt;
+  line-height: 1.4;
+}
+
+.signature-item {
+  width: 45%;
+}
+
+.signature-space {
+  height: 50px;
+}
+
+/* ==========================================
+   PRINT MEDIA RULES (CETAK A5 RESMI)
+   ========================================== */
 @media print {
   @page {
     size: A5 portrait;
-    margin: 12mm 15mm 12mm 20mm; /* Standar Margin Cetak Makalah A5 */
+    margin: 16mm 15mm 12mm 20mm; /* Standar Margin Cetak A5 */
   }
 
   body {
-    background: transparent !important;
+    background: #ffffff !important;
+    font-size: 10pt !important;
+    line-height: 1.4 !important;
     color: #000000 !important;
-    font-size: 9.5pt !important;
-    line-height: 1.35 !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 
-  .no-print, .topbar-control {
+  .topbar-control {
     display: none !important;
   }
 
@@ -353,7 +370,7 @@ ul.makalah-bullet li {
     border: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    min-height: calc(210mm - 24mm) !important;
+    min-height: calc(210mm - 28mm) !important;
     height: auto !important;
     page-break-after: always;
     break-after: page;
@@ -366,9 +383,9 @@ ul.makalah-bullet li {
   }
 
   .cover-makalah {
-    min-height: calc(210mm - 24mm) !important;
+    min-height: calc(210mm - 28mm) !important;
     height: auto !important;
-    padding: 15mm 5mm 10mm 5mm !important;
+    padding: 10mm 5mm 8mm 5mm !important;
     page-break-after: always;
     break-after: page;
   }
@@ -378,13 +395,13 @@ ul.makalah-bullet li {
   }
 
   .gambar-makalah-box {
-    margin: 6px auto 10px auto !important;
+    margin: 4px auto 8px auto !important;
     page-break-inside: avoid;
     break-inside: avoid;
   }
 
   .gambar-makalah-box img {
-    max-height: 175px !important;
+    max-height: 165px !important;
   }
 
   .table-makalah, ol.makalah-list, ul.makalah-bullet {
@@ -395,7 +412,7 @@ ul.makalah-bullet li {
   .page-footer {
     border-top: 1px solid #000000 !important;
     color: #000000 !important;
-    padding-top: 6px !important;
+    padding-top: 5px !important;
     margin-top: auto !important;
     display: flex !important;
     justify-content: space-between !important;
