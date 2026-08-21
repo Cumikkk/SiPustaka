@@ -51,6 +51,28 @@ async function captureAllScreenshots() {
     } catch (e) {}
   }
 
+  // Helper fungsi di dalam frame untuk menutup SEMUA modal & backdrop secara tuntas
+  const forceCloseAllModals = async () => {
+    await appFrame.evaluate(() => {
+      if (typeof Swal !== 'undefined') Swal.close();
+      document.querySelectorAll('.modal').forEach(el => {
+        if (typeof bootstrap !== 'undefined') {
+          const bs = bootstrap.Modal.getInstance(el);
+          if (bs) bs.hide();
+        }
+        el.classList.remove('show');
+        el.style.display = 'none';
+        el.setAttribute('aria-hidden', 'true');
+        el.removeAttribute('aria-modal');
+      });
+      document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      document.body.style.removeProperty('padding-right');
+    });
+    await new Promise(r => setTimeout(r, 800));
+  };
+
   // ==========================================
   // 1. SESI UMUM & AUTENTIKASI
   // ==========================================
@@ -59,16 +81,9 @@ async function captureAllScreenshots() {
 
   console.log('📸 2. Mengambil Screenshot Modal Lupa Password OTP (gbr_2_7_reset_password_otp.png)...');
   await appFrame.evaluate(() => { if (typeof openForgotModal === 'function') openForgotModal(); });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_7_reset_password_otp.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalLupaPassword');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // ==========================================
   // 2. SESI PORTAL ADMIN (Login: admin / 123)
@@ -100,16 +115,9 @@ async function captureAllScreenshots() {
   // 3.3 Modal Tambah Buku
   console.log('📸 5. Mengambil Modal Tambah Buku (gbr_3_3_upload_buku.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahBuku === 'function') showModalTambahBuku(); });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_3_upload_buku.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalFormBuku');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // 3.4 Master Data Anggota Siswa
   console.log('📸 6. Mengambil Master Data Siswa (gbr_3_4_master_siswa.png)...');
@@ -120,38 +128,23 @@ async function captureAllScreenshots() {
   // 3.4a Tambah Siswa Baru
   console.log('📸 7. Mengambil Modal Tambah Siswa (gbr_3_5_tambah_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahAnggota === 'function') showModalTambahAnggota(); });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_5_tambah_siswa.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalFormAnggota');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // 3.4b Dialog Hapus Siswa Lulus
   console.log('📸 8. Mengambil Dialog Hapus Siswa Lulus (gbr_3_6_hapus_siswa_lulus.png)...');
   await appFrame.evaluate(() => { if (typeof handleHapusSiswaLulusMassal === 'function') handleHapusSiswaLulusMassal(); });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_6_hapus_siswa_lulus.png') });
-  await appFrame.evaluate(() => { if (typeof Swal !== 'undefined') Swal.close(); });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // 3.5 Modal Kenaikan Kelas Massal
   console.log('📸 9. Mengambil Modal Kenaikan Kelas (gbr_3_7_kenaikan_kelas.png)...');
   await appFrame.evaluate(() => { if (typeof openModalKenaikanKelas === 'function') openModalKenaikanKelas(); });
-  await new Promise(r => setTimeout(r, 1500));
+  await new Promise(r => setTimeout(r, 1800));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_7_kenaikan_kelas.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalKenaikanKelas');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // 3.6 Sirkulasi Peminjaman
   console.log('📸 10. Mengambil Sirkulasi Peminjaman (gbr_3_8_sirkulasi_pinjam.png)...');
@@ -162,44 +155,42 @@ async function captureAllScreenshots() {
   // 3.6 Form Tambah Peminjaman
   console.log('📸 11. Mengambil Form Tambah Peminjaman (gbr_3_9_modal_pinjam.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahPeminjaman === 'function') showModalTambahPeminjaman(); });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_9_modal_pinjam.png') });
+  await forceCloseAllModals();
 
   // 3.6 Dialog Pilih Siswa
   console.log('📸 12. Mengambil Dialog Pilih Siswa (gbr_3_10_modal_pilih_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof openModalPilihSiswa === 'function') openModalPilihSiswa(); });
+  // Wait until table has loaded rows (no spinner)
+  await appFrame.waitForFunction(() => {
+    const tbody = document.getElementById('pilih-siswa-tbody');
+    return tbody && tbody.querySelectorAll('.btn').length > 0 && !tbody.querySelector('.spinner-border');
+  }, { timeout: 20000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1200));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_10_modal_pilih_siswa.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalPilihSiswa');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 800));
+  await forceCloseAllModals();
 
   // 3.6 Dialog Pilih Buku
   console.log('📸 13. Mengambil Dialog Pilih Buku (gbr_3_11_modal_pilih_buku.png)...');
-  await appFrame.evaluate(() => { if (typeof openModalPilihBuku === 'function') openModalPilihBuku(); });
+  await appFrame.evaluate(() => {
+    if (typeof openModalPilihBuku === 'function') openModalPilihBuku();
+  });
+  // Wait until table has loaded rows (no spinner)
+  await appFrame.waitForFunction(() => {
+    const tbody = document.getElementById('pilih-buku-tbody');
+    return tbody && tbody.querySelectorAll('.btn').length > 0 && !tbody.querySelector('.spinner-border');
+  }, { timeout: 20000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1200));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_11_modal_pilih_buku.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalPilihBuku');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-    const mPinjam = document.getElementById('modalFormTambahPeminjaman');
-    if (mPinjam && typeof bootstrap !== 'undefined') {
-      const bsPinjam = bootstrap.Modal.getInstance(mPinjam);
-      if (bsPinjam) bsPinjam.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
-  // 3.7 Konfirmasi Pengembalian
+  // 3.7 Konfirmasi Pengembalian (Tampilan bersih di menu Peminjaman)
   console.log('📸 14. Mengambil Dialog Konfirmasi Pengembalian (gbr_3_12_konfirmasi_kembali.png)...');
+  await appFrame.evaluate(() => {
+    if (typeof switchSubView === 'function') switchSubView('peminjaman');
+  });
+  await new Promise(r => setTimeout(r, 2000));
   await appFrame.evaluate(() => {
     if (typeof Swal !== 'undefined') {
       Swal.fire({
@@ -214,21 +205,20 @@ async function captureAllScreenshots() {
       });
     }
   });
-  await new Promise(r => setTimeout(r, 1200));
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_12_konfirmasi_kembali.png') });
-  await appFrame.evaluate(() => { if (typeof Swal !== 'undefined') Swal.close(); });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
-  // 3.8 Laporan Perpustakaan
+  // 3.8 Laporan Perpustakaan (Tampilan bersih)
   console.log('📸 15. Mengambil Laporan Perpustakaan (gbr_3_13_laporan_cetak.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('laporan'); });
   await new Promise(r => setTimeout(r, 4000));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_13_laporan_cetak.png') });
 
-  // 3.9 Profil Admin
+  // 3.9 Profil Admin (Tampilan bersih)
   console.log('📸 16. Mengambil Profil Admin (gbr_3_14_profil_admin.png)...');
   await appFrame.evaluate(() => { if (typeof switchSubView === 'function') switchSubView('profil'); });
-  await new Promise(r => setTimeout(r, 2500));
+  await new Promise(r => setTimeout(r, 3000));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_14_profil_admin.png') });
 
   // ==========================================
@@ -278,14 +268,7 @@ async function captureAllScreenshots() {
   });
   await new Promise(r => setTimeout(r, 2000));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_5_detail_buku.png') });
-  await appFrame.evaluate(() => {
-    const m = document.getElementById('modalDetailBuku');
-    if (m && typeof bootstrap !== 'undefined') {
-      const bs = bootstrap.Modal.getInstance(m);
-      if (bs) bs.hide();
-    }
-  });
-  await new Promise(r => setTimeout(r, 1000));
+  await forceCloseAllModals();
 
   // 2.5 Peminjaman Saya
   console.log('📸 21. Mengambil Peminjaman Saya Siswa (gbr_2_6_peminjaman_siswa.png)...');
