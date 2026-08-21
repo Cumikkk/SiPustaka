@@ -1,5 +1,10 @@
+node_modules/**
+buku_panduan/**
+.git/**
+package.json
+package-lock.json
 **/*.bak
 **/*.txt
-scratch/
-backup_features_kta_bebas_pustaka/
+scratch/**
+backup_features_kta_bebas_pustaka/**
 *.new_bak
