@@ -158,8 +158,8 @@
     const roleBadge = document.getElementById('user-role-badge');
 
     if (res.role === 'admin') {
-      if (roleBadge) roleBadge.innerText = 'Panel Administrasi';
-      if (roleTitle) roleTitle.innerText = 'Administrator';
+      if (roleBadge) roleBadge.innerText = 'Portal Admin';
+      if (roleTitle) roleTitle.innerText = 'Admin';
       document.querySelectorAll('.role-admin-only').forEach(el => el.classList.remove('d-none'));
       document.querySelectorAll('.role-siswa-only').forEach(el => el.classList.add('d-none'));
     } else {
@@ -282,7 +282,7 @@
 
     const roleEl = document.getElementById('profil-card-role');
     if (roleEl) {
-      roleEl.innerText = isSiswa ? ('Siswa • Kelas ' + (ud.kelas || '-')) : 'Administrator Sistem';
+      roleEl.innerText = isSiswa ? ('Siswa • Kelas ' + (ud.kelas || '-')) : 'Admin';
     }
 
     const nisBox = document.getElementById('profil-field-nis-box');
@@ -476,7 +476,7 @@
         closeLoadingAlert();
         if (!info) info = {};
         Swal.fire({
-          title: 'Kontak Administrator Perpustakaan',
+          title: 'Kontak Admin Perpustakaan',
           html: `
             <div class="text-start fs-6 lh-base p-2">
               <p class="mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i><b>Lokasi:</b> ${escapeHtml(info.lokasi_perpus || 'Ruang Perpustakaan Sekolah')}</p>
