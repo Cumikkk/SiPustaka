@@ -98,7 +98,14 @@ async function captureAllScreenshots() {
       handleLoginSubmit({ preventDefault: () => {} });
     }
   });
-  await new Promise(r => setTimeout(r, 6000));
+
+  // Tunggu eksplisit hingga login berhasil dan masuk ke main app
+  await appFrame.waitForFunction(() => {
+    const mainApp = document.getElementById('page-main-app');
+    const loginCanvas = document.getElementById('page-login-canvas');
+    return mainApp && !mainApp.classList.contains('d-none') && (!loginCanvas || loginCanvas.classList.contains('d-none'));
+  }, { timeout: 35000 });
+  await new Promise(r => setTimeout(r, 2000));
 
   // 3.1 Dashboard Admin
   console.log('📸 3. Mengambil Dashboard Admin (gbr_3_1_dashboard_admin.png)...');
@@ -115,6 +122,10 @@ async function captureAllScreenshots() {
   // 3.3 Modal Tambah Buku
   console.log('📸 5. Mengambil Modal Tambah Buku (gbr_3_3_upload_buku.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahBuku === 'function') showModalTambahBuku(); });
+  await appFrame.waitForFunction(() => {
+    const m = document.getElementById('modalTambahBuku');
+    return m && m.classList.contains('show');
+  }, { timeout: 10000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_3_upload_buku.png') });
   await forceCloseAllModals();
@@ -128,21 +139,32 @@ async function captureAllScreenshots() {
   // 3.4a Tambah Siswa Baru
   console.log('📸 7. Mengambil Modal Tambah Siswa (gbr_3_5_tambah_siswa.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahAnggota === 'function') showModalTambahAnggota(); });
+  await appFrame.waitForFunction(() => {
+    const m = document.getElementById('modalTambahAnggota');
+    return m && m.classList.contains('show');
+  }, { timeout: 10000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_5_tambah_siswa.png') });
   await forceCloseAllModals();
 
-  // 3.4b Dialog Hapus Siswa Lulus
+  // 3.4b Dialog Hapus Siswa Lulus (handleHapusSemuaSiswaLulus)
   console.log('📸 8. Mengambil Dialog Hapus Siswa Lulus (gbr_3_6_hapus_siswa_lulus.png)...');
-  await appFrame.evaluate(() => { if (typeof handleHapusSiswaLulusMassal === 'function') handleHapusSiswaLulusMassal(); });
+  await appFrame.evaluate(() => { if (typeof handleHapusSemuaSiswaLulus === 'function') handleHapusSemuaSiswaLulus(); });
+  await appFrame.waitForFunction(() => {
+    return document.querySelector('.swal2-container.swal2-shown') !== null;
+  }, { timeout: 10000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_6_hapus_siswa_lulus.png') });
   await forceCloseAllModals();
 
-  // 3.5 Modal Kenaikan Kelas Massal
+  // 3.5 Modal Kenaikan Kelas Massal (showModalKenaikanKelas)
   console.log('📸 9. Mengambil Modal Kenaikan Kelas (gbr_3_7_kenaikan_kelas.png)...');
-  await appFrame.evaluate(() => { if (typeof openModalKenaikanKelas === 'function') openModalKenaikanKelas(); });
-  await new Promise(r => setTimeout(r, 1800));
+  await appFrame.evaluate(() => { if (typeof showModalKenaikanKelas === 'function') showModalKenaikanKelas(); });
+  await appFrame.waitForFunction(() => {
+    const c = document.getElementById('kenaikan-kelas-rules-container');
+    return c && !c.querySelector('.spinner-border') && c.innerHTML.includes('Kelas');
+  }, { timeout: 15000 }).catch(() => {});
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_7_kenaikan_kelas.png') });
   await forceCloseAllModals();
 
@@ -155,6 +177,10 @@ async function captureAllScreenshots() {
   // 3.6 Form Tambah Peminjaman
   console.log('📸 11. Mengambil Form Tambah Peminjaman (gbr_3_9_modal_pinjam.png)...');
   await appFrame.evaluate(() => { if (typeof showModalTambahPeminjaman === 'function') showModalTambahPeminjaman(); });
+  await appFrame.waitForFunction(() => {
+    const m = document.getElementById('modalFormTambahPeminjaman');
+    return m && m.classList.contains('show');
+  }, { timeout: 10000 }).catch(() => {});
   await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_3_9_modal_pinjam.png') });
   await forceCloseAllModals();
@@ -237,7 +263,14 @@ async function captureAllScreenshots() {
       handleLoginSubmit({ preventDefault: () => {} });
     }
   });
-  await new Promise(r => setTimeout(r, 6000));
+
+  // Tunggu eksplisit hingga login siswa berhasil dan masuk ke main app
+  await appFrame.waitForFunction(() => {
+    const mainApp = document.getElementById('page-main-app');
+    const loginCanvas = document.getElementById('page-login-canvas');
+    return mainApp && !mainApp.classList.contains('d-none') && (!loginCanvas || loginCanvas.classList.contains('d-none'));
+  }, { timeout: 35000 });
+  await new Promise(r => setTimeout(r, 2000));
 
   // 2.2 Dashboard Siswa
   console.log('📸 17. Mengambil Dashboard Siswa (gbr_2_2_dashboard_siswa.png)...');
@@ -264,9 +297,18 @@ async function captureAllScreenshots() {
   // 2.4 Detail Buku
   console.log('📸 20. Mengambil Detail Buku & E-Book (gbr_2_5_detail_buku.png)...');
   await appFrame.evaluate(() => {
-    if (typeof openDetailBukuModal === 'function') openDetailBukuModal('buku-001');
+    if (typeof catalogDataCache !== 'undefined' && catalogDataCache && catalogDataCache.length > 0) {
+      if (typeof openDetailBukuModal === 'function') openDetailBukuModal(catalogDataCache[0].id_buku);
+    } else {
+      const btn = document.querySelector('#katalog-tbody button, .book-card-item');
+      if (btn) btn.click();
+    }
   });
-  await new Promise(r => setTimeout(r, 2000));
+  await appFrame.waitForFunction(() => {
+    const m = document.getElementById('modalDetailBuku');
+    return m && m.classList.contains('show');
+  }, { timeout: 10000 }).catch(() => {});
+  await new Promise(r => setTimeout(r, 1500));
   await page.screenshot({ path: path.join(IMAGES_DIR, 'gbr_2_5_detail_buku.png') });
   await forceCloseAllModals();
 
